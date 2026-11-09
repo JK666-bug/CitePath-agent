@@ -26,15 +26,12 @@ export function decodeBrief(
       if (
         typeof item.deadline === 'string' &&
         /^\d{4}-\d{2}-\d{2}$/.test(item.deadline) &&
-        typeof item.weeklyHours === 'number' &&
-        item.weeklyHours > 0 &&
         typeof item.earlyDays === 'number' &&
         item.earlyDays >= 0 &&
         typeof item.note === 'string'
       ) {
         return {
           deadline: item.deadline,
-          weeklyHours: item.weeklyHours,
           earlyDays: item.earlyDays,
           note: item.note,
         }
@@ -46,7 +43,6 @@ export function decodeBrief(
 
   return {
     deadline: '',
-    weeklyHours: 0,
     earlyDays: 0,
     note: text,
   }

@@ -3,15 +3,26 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from 'react'
 
 import type { ReactNode } from 'react'
 
+import { deleteCourse } from '../pages/course/api'
+import {
+  decodeBrief,
+  encodeBrief,
+} from '../pages/courseEditor/brief'
 import { getCourses } from '../pages/courses/api'
 import type { CourseSummary } from '../pages/courses/api'
 
-import { getCourse } from '../pages/course/api'
+import {
+  completePlanTask,
+  createPlan,
+  getCourse,
+  getPlan,
+} from '../pages/course/api'
 
 import {
   createDemo,
@@ -25,10 +36,18 @@ import type {
   CourseConfig,
   CourseDetail,
   DemoState,
+  StudyPlan,
 } from '../pages/course/types'
 
-import { encodeBrief } from '../pages/courseEditor/brief'
 import { messageOf } from './request'
+
+type PlanEntry = {
+  plan: StudyPlan | null
+  loaded: boolean
+  loading: boolean
+  error: string
+  generating: boolean
+}
 
 function loadDemo(key: string): DemoState {
   try {
@@ -80,6 +99,14 @@ function useStudyValue(userId: number) {
   const [storageError, setStorageError] =
     useState('')
 
+  const [plans, setPlans] = useState<
+    Record<number, PlanEntry>
+  >({})
+
+  const generatingIds = useRef(
+    new Set<number>(),
+  )
+
   const refreshCourses = useCallback(async () => {
     setCoursesLoading(true)
     setCoursesError('')
@@ -112,6 +139,31 @@ function useStudyValue(userId: number) {
     }
   }, [demo, key])
 
+  const removeCourse = useCallback(
+    async (id: number) => {
+      await deleteCourse(id)
+
+      setCourses((current) =>
+        current.filter(
+          (course) => course.id !== id,
+        ),
+      )
+
+      setDetails((current) => {
+        const next = { ...current }
+        delete next[id]
+        return next
+      })
+
+      setPlans((current) => {
+        const next = { ...current }
+        delete next[id]
+        return next
+      })
+    },
+    [],
+  )
+
   const loadCourse = useCallback(
     async (id: number) => {
       const result = await getCourse(id)
@@ -125,6 +177,176 @@ function useStudyValue(userId: number) {
     },
     [],
   )
+
+  const loadPlan = useCallback(async (id: number) => {
+    if (generatingIds.current.has(id)) {
+      return
+    }
+
+    setPlans((current) => ({
+      ...current,
+      [id]: {
+        plan: current[id]?.plan ?? null,
+        loaded: current[id]?.loaded ?? false,
+        loading: true,
+        error: '',
+        generating: false,
+      },
+    }))
+
+    try {
+      const result = await getPlan(id)
+
+      if (generatingIds.current.has(id)) {
+        return
+      }
+
+      setPlans((current) => ({
+        ...current,
+        [id]: {
+          plan: result.plan,
+          loaded: true,
+          loading: false,
+          error: '',
+          generating: false,
+        },
+      }))
+    } catch (error) {
+      if (generatingIds.current.has(id)) {
+        return
+      }
+
+      setPlans((current) => ({
+        ...current,
+        [id]: {
+          plan: current[id]?.plan ?? null,
+          loaded: true,
+          loading: false,
+          error: messageOf(error),
+          generating: false,
+        },
+      }))
+    }
+  }, [])
+
+  const generateCoursePlan = useCallback(
+    async (id: number, start: string, end: string, note: string) => {
+      generatingIds.current.add(id)
+
+      setPlans((current) => ({
+        ...current,
+        [id]: {
+          plan: current[id]?.plan ?? null,
+          loaded: true,
+          loading: false,
+          error: '',
+          generating: true,
+        },
+      }))
+
+      try {
+        const result = await createPlan(id, start, end, note)
+        const savedNote = note.trim()
+
+        setDetails((current) => {
+          const course = current[id]
+          if (!course) return current
+          const config = decodeBrief(course.student_brief)
+          return {
+            ...current,
+            [id]: {
+              ...course,
+              student_brief: encodeBrief({
+                ...config,
+                note: savedNote,
+              }),
+            },
+          }
+        })
+
+        setCourses((current) =>
+          current.map((course) => {
+            if (course.id !== id) return course
+            const config = decodeBrief(course.student_brief)
+            return {
+              ...course,
+              student_brief: encodeBrief({
+                ...config,
+                note: savedNote,
+              }),
+            }
+          }),
+        )
+
+        setPlans((current) => ({
+          ...current,
+          [id]: {
+            plan: result.plan,
+            loaded: true,
+            loading: false,
+            error: '',
+            generating: false,
+          },
+        }))
+      } catch (error) {
+        setPlans((current) => ({
+          ...current,
+          [id]: {
+            plan: current[id]?.plan ?? null,
+            loaded: true,
+            loading: false,
+            error: messageOf(error),
+            generating: false,
+          },
+        }))
+      } finally {
+        generatingIds.current.delete(id)
+      }
+    },
+    [],
+  )
+
+  const finishPlanTask = useCallback(
+    async (id: number, taskId: string) => {
+      try {
+        const result = await completePlanTask(
+          id,
+          taskId,
+        )
+
+        setPlans((current) => ({
+          ...current,
+          [id]: {
+            plan: result.plan,
+            loaded: true,
+            loading: false,
+            error: '',
+            generating:
+              current[id]?.generating ?? false,
+          },
+        }))
+      } catch (error) {
+        setPlans((current) => ({
+          ...current,
+          [id]: {
+            plan: current[id]?.plan ?? null,
+            loaded: true,
+            loading: false,
+            error: messageOf(error),
+            generating:
+              current[id]?.generating ?? false,
+          },
+        }))
+      }
+    },
+    [],
+  )
+
+  useEffect(() => {
+    for (const course of courses) {
+      void loadPlan(course.id)
+    }
+  }, [courses, loadPlan])
 
   function editDemo(
     name: string,
@@ -197,8 +419,13 @@ function useStudyValue(userId: number) {
     coursesLoading,
     coursesError,
     refreshCourses,
+    removeCourse,
     details,
     loadCourse,
+    plans,
+    loadPlan,
+    generateCoursePlan,
+    finishPlanTask,
     demo,
     storageError,
     editDemo,

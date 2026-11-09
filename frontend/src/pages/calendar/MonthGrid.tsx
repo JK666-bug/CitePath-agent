@@ -1,5 +1,5 @@
 import { dateKey } from '../../shared/format'
-import type { Task } from '../course/types'
+import type { CalendarTask } from '../course/types'
 
 export default function MonthGrid({
   month,
@@ -9,7 +9,7 @@ export default function MonthGrid({
 }: {
   month: Date
   selected: string
-  tasks: Task[]
+  tasks: CalendarTask[]
   onSelect: (date: string) => void
 }) {
   const first = new Date(
@@ -86,6 +86,35 @@ export default function MonthGrid({
                         task.date === key,
                     )
 
+                  const courses = dayTasks.reduce<
+                    {
+                      id: string
+                      name: string
+                      done: boolean
+                    }[]
+                  >((list, task) => {
+                    const current = list.find(
+                      (item) =>
+                        item.id === task.courseId,
+                    )
+
+                    if (current) {
+                      current.done =
+                        current.done &&
+                        task.status === 'Completed'
+                      return list
+                    }
+
+                    list.push({
+                      id: task.courseId,
+                      name: task.courseName,
+                      done:
+                        task.status === 'Completed',
+                    })
+
+                    return list
+                  }, [])
+
                   return (
                     <td
                       key={key}
@@ -115,7 +144,14 @@ export default function MonthGrid({
                               dateStyle: 'full',
                             },
                           ).format(date) +
-                          `, ${dayTasks.length} tasks`
+                          (courses.length
+                            ? `, ${courses
+                                .map(
+                                  (course) =>
+                                    course.name,
+                                )
+                                .join(', ')}`
+                            : '')
                         }
                         onClick={() =>
                           onSelect(key)
@@ -139,37 +175,20 @@ export default function MonthGrid({
                         </span>
 
                         <span className="calendar-cell-tasks">
-                          {dayTasks
-                            .slice(0, 2)
-                            .map((task) => (
-                              <span
-                                className={
-                                  `calendar-task type-${task.kind.toLowerCase()} ${
-                                    task.status ===
-                                    'Completed'
-                                      ? 'is-completed'
-                                      : ''
-                                  }`
-                                }
-                                key={task.id}
-                              >
-                                <strong>
-                                  {task.title}
-                                </strong>
-
-                                <small>
-                                  Demo · {task.kind}
-                                </small>
-                              </span>
-                            ))}
-
-                          {dayTasks.length >
-                            2 && (
-                            <small className="more-tasks">
-                              +{dayTasks.length - 2}
-                              {' '}more
-                            </small>
-                          )}
+                          {courses.map((course) => (
+                            <span
+                              className={
+                                `calendar-course ${
+                                  course.done
+                                    ? 'is-completed'
+                                    : ''
+                                }`
+                              }
+                              key={course.id}
+                            >
+                              {course.name}
+                            </span>
+                          ))}
                         </span>
                       </button>
                     </td>

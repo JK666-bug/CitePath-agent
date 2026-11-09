@@ -12,7 +12,6 @@ def read_pdf(data: bytes) -> list[dict]:
     if page_count == 0:
         return []
     document = _convert(data)
-    chapters = _chapters(document, page_count)
     owned, carried = _split_cross_page_text(document)
     pages = []
     for number in range(1, page_count + 1):
@@ -35,7 +34,6 @@ def read_pdf(data: bytes) -> list[dict]:
         pages.append(
             {
                 "page_number": number,
-                "chapter": chapters.get(number, "Untitled"),
                 "body": body or None,
                 "usable": 1 if body else 0,
             }
@@ -87,30 +85,6 @@ def _body_layer():
     from docling_core.types.doc import ContentLayer
 
     return ContentLayer.BODY
-
-
-def _chapters(document, page_count: int) -> dict[int, str]:
-    from docling_core.types.doc import ContentLayer, DocItemLabel
-
-    headers = {DocItemLabel.TITLE, DocItemLabel.SECTION_HEADER}
-    first_header: dict[int, str] = {}
-    for item, _level in document.iterate_items(
-        included_content_layers={ContentLayer.BODY}
-    ):
-        if getattr(item, "label", None) not in headers:
-            continue
-        text = str(getattr(item, "text", "") or "").strip()
-        page_no = _page_no(item)
-        if text and page_no:
-            first_header.setdefault(page_no, text[:255])
-
-    chapters = {}
-    current = "Untitled"
-    for number in range(1, page_count + 1):
-        if number in first_header:
-            current = first_header[number]
-        chapters[number] = current
-    return chapters
 
 
 def _split_cross_page_text(document) -> tuple[dict[int, list[tuple[str, str]]], dict[int, list[str]]]:

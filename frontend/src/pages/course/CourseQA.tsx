@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 
 import type {
@@ -6,7 +6,7 @@ import type {
   QAResponse,
 } from './types'
 
-import { askCourse } from './api'
+import { askCourse, listQuestions } from './api'
 import { messageOf } from '../../shared/request'
 import { Link } from '../../shared/router'
 
@@ -45,6 +45,27 @@ export default function CourseQA({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
+  useEffect(() => {
+    if (demo) return
+    let active = true
+    listQuestions(course.id)
+      .then((rows) => {
+        if (!active) return
+        setRecords(
+          rows.map((row) => ({
+            question: row.question || '',
+            response: row,
+          })),
+        )
+      })
+      .catch((reason) => {
+        if (active) setError(messageOf(reason))
+      })
+    return () => {
+      active = false
+    }
+  }, [course.id, demo])
+
   async function submit(
     event: FormEvent<HTMLFormElement>,
   ) {
@@ -74,11 +95,11 @@ export default function CourseQA({
       )
 
       setRecords((current) => [
-        ...current,
         {
           question: text,
           response,
         },
+        ...current,
       ])
 
       setQuestion('')
@@ -166,8 +187,7 @@ export default function CourseQA({
             </button>
 
             <small className="muted">
-              Answers in this view are not
-              restored after refresh.
+              Earlier questions stay on this page after you refresh.
             </small>
           </div>
         </form>
@@ -225,7 +245,15 @@ export default function CourseQA({
           >
             {record.response.refused
               ? 'Insufficient evidence'
-              : 'Answer from your materials'}
+              : record.response.origin === 'account'
+                ? 'Answer from your account'
+                : record.response.origin === 'chat'
+                  ? 'Noted'
+                  : record.response.web_sources?.length
+                  ? 'Supplemented from the web'
+                  : record.response.cited_pages.length
+                    ? 'Answer from your materials'
+                    : 'Answer from your study record'}
           </span>
 
           <p className="answer-text">
@@ -237,6 +265,19 @@ export default function CourseQA({
               record.response.cited_pages
             }
           />
+
+          {record.response.web_sources?.map(
+            (source) => (
+              <a
+                key={source.url}
+                href={source.url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Web: {source.title}
+              </a>
+            ),
+          )}
 
           <small className="muted">
             Record {record.response.qa_id}

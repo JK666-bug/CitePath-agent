@@ -1,4 +1,9 @@
-import { Link } from '../../shared/router'
+import { useState } from 'react'
+
+import {
+  Link,
+  navigate,
+} from '../../shared/router'
 
 import {
   useCourse,
@@ -8,9 +13,12 @@ import {
 import {
   DemoNotice,
   Loading,
+  Modal,
   Notice,
   PageHeader,
 } from '../../shared/components/UI'
+
+import { messageOf } from '../../shared/request'
 
 import CoursePlan from './CoursePlan'
 import CourseInfo from './CourseInfo'
@@ -25,7 +33,13 @@ export default function CoursePage({
   courseId: string
   tab: string
 }) {
-  const { resetDemo } = useStudy()
+  const { resetDemo, removeCourse } = useStudy()
+  const [confirming, setConfirming] =
+    useState(false)
+  const [deleting, setDeleting] =
+    useState(false)
+  const [deleteError, setDeleteError] =
+    useState('')
 
   const {
     course,
@@ -79,6 +93,18 @@ export default function CoursePage({
                 }}
               >
                 Reset demo
+              </button>
+            )}
+
+            {!isDemo && (
+              <button
+                className="button danger"
+                onClick={() => {
+                  setDeleteError('')
+                  setConfirming(true)
+                }}
+              >
+                Delete course
               </button>
             )}
 
@@ -138,6 +164,62 @@ export default function CoursePage({
           course={course}
         />
       )}
+
+      <Modal
+        open={confirming}
+        title="Delete this course?"
+        closeable={!deleting}
+        onClose={() => setConfirming(false)}
+      >
+        <p>
+          Delete {course.name} and everything
+          saved for it: PDFs, pages, the study
+          plan, and questions. This cannot be
+          undone.
+        </p>
+
+        {deleteError && (
+          <Notice tone="error">
+            {deleteError}
+          </Notice>
+        )}
+
+        <div className="actions">
+          <button
+            className="button danger"
+            disabled={deleting}
+            onClick={() => {
+              setDeleting(true)
+              setDeleteError('')
+
+              void removeCourse(course.id)
+                .then(() => {
+                  navigate('/courses', true)
+                })
+                .catch((reason) => {
+                  setDeleteError(
+                    messageOf(reason),
+                  )
+                  setDeleting(false)
+                })
+            }}
+          >
+            {deleting
+              ? 'Deleting…'
+              : 'Delete course'}
+          </button>
+
+          <button
+            className="button secondary"
+            disabled={deleting}
+            onClick={() =>
+              setConfirming(false)
+            }
+          >
+            Cancel
+          </button>
+        </div>
+      </Modal>
     </div>
   )
 }

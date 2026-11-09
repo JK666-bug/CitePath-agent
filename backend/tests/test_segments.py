@@ -1,6 +1,6 @@
 import unittest
 
-from vector.segments import _continued_sentence, _open_sentence
+from vector.segments import _continued_sentence, _open_sentence, select_page_keys
 
 
 class BridgeSentenceTest(unittest.TestCase):
@@ -33,6 +33,24 @@ class BridgeSentenceTest(unittest.TestCase):
         self.assertIsNone(_continued_sentence("## Chapter 2\n\nText."))
         self.assertIsNone(_continued_sentence("| op | cost |"))
         self.assertIsNone(_continued_sentence("- first item"))
+
+    def test_a_retrieved_bridge_returns_both_pages(self):
+        hits = [
+            {"document_id": 1, "page_number": 1, "score": 0.9, "text": "bridge"},
+            {"document_id": 1, "page_number": 4, "score": 0.8, "text": "other"},
+        ]
+
+        def bridge_page(hit):
+            return 2 if hit["text"] == "bridge" else None
+
+        self.assertEqual(select_page_keys(hits, 1, bridge_page), [(1, 1), (1, 2)])
+
+    def test_a_page_hit_keeps_its_own_page(self):
+        hits = [
+            {"document_id": 1, "page_number": 1, "score": 0.9, "text": "intro"},
+            {"document_id": 1, "page_number": 3, "score": 0.8, "text": "later"},
+        ]
+        self.assertEqual(select_page_keys(hits, 2, lambda hit: None), [(1, 1), (1, 3)])
 
     def test_decimal_point_does_not_end_a_sentence(self):
         self.assertEqual(

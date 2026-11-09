@@ -118,6 +118,19 @@ def user_from_token(token: str | None) -> dict | None:
     return {"id": row["id"], "username": row["username"]}
 
 
+def username_of(user_id: int) -> str:
+    connection = connect()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT username FROM users WHERE id = %s", (user_id,))
+            row = cursor.fetchone()
+    finally:
+        connection.close()
+    if row is None:
+        raise LookupError("User not found")
+    return str(row["username"])
+
+
 def hash_password(password: str) -> str:
     salt = secrets.token_hex(16)
     digest = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 200_000).hex()

@@ -9,7 +9,6 @@ import { Link } from '../../shared/router'
 import {
   dateKey,
   daysBetween,
-  duration,
   prettyDate,
 } from '../../shared/format'
 
@@ -39,16 +38,11 @@ export default function CourseCard({
     ? taskTotals(plan.tasks)
     : null
 
-  const today = plan?.tasks
-    .filter(
-      (task) =>
-        task.date === dateKey() &&
-        task.status !== 'Completed',
-    )
-    .reduce(
-      (sum, task) => sum + task.minutes,
-      0,
-    )
+  const today = plan?.tasks.filter(
+    (task) =>
+      task.date === dateKey() &&
+      task.status !== 'Completed',
+  ).length
 
   const next =
     plan?.tasks
@@ -94,7 +88,9 @@ export default function CourseCard({
           <span className="badge">
             {demo
               ? 'Interface demo'
-              : 'Plan pending'}
+              : plan
+                ? 'Study plan'
+                : 'Plan pending'}
           </span>
         </div>
 
@@ -144,39 +140,35 @@ export default function CourseCard({
 
       <div className="course-metrics">
         <div>
-          <small>Today’s suggestion</small>
+          <small>Today</small>
           <strong>
             {today === undefined
               ? '—'
               : today
-                ? duration(today)
+                ? `${today} tasks`
                 : 'Rest day'}
           </strong>
         </div>
 
         <div>
-          <small>Total study time</small>
+          <small>Tasks left</small>
           <strong>
             {totals
-              ? duration(totals.total)
+              ? totals.remaining
               : '—'}
           </strong>
         </div>
 
         <div>
-          <small>Remaining</small>
+          <small>Planned finish</small>
           <strong>
-            {totals
-              ? duration(totals.remaining)
-              : '—'}
-          </strong>
-        </div>
-
-        <div>
-          <small>Scheduled remaining</small>
-          <strong>
-            {totals
-              ? duration(totals.remaining)
+            {plan
+              ? prettyDate(
+                  plan.tasks
+                    .map((task) => task.date)
+                    .sort()
+                    .at(-1) || '',
+                )
               : '—'}
           </strong>
         </div>
@@ -254,9 +246,8 @@ export default function CourseCard({
           </p>
 
           <p className="muted small">
-            Study time and progress will appear
-            when the planning service is
-            connected.
+            Open the plan to build a schedule
+            from your note and PDFs.
           </p>
         </div>
       )}

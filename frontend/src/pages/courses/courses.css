@@ -185,20 +185,6 @@
   padding: 10px 0 22px;
 }
 
-.demo-preview {
-  margin-top: 36px;
-  padding-top: 25px;
-  border-top: 1px solid var(--line);
-}
-
-.demo-preview > .course-grid {
-  margin: 20px 0;
-}
-
-.demo-preview h2 {
-  margin-bottom: 6px;
-}
-
 @media (min-width: 1450px) {
   .course-grid {
     grid-template-columns:

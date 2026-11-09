@@ -2,7 +2,6 @@ import {
   addDays,
   dateKey,
   daysBetween,
-  duration,
   percent,
   prettyDate,
 } from '../format'
@@ -14,19 +13,11 @@ import type {
 } from '../../pages/course/types'
 
 export function taskTotals(tasks: Task[]) {
-  const total = tasks.reduce(
-    (sum, task) => sum + task.minutes,
-    0,
-  )
+  const total = tasks.length
 
-  const done = tasks
-    .filter(
-      (task) => task.status === 'Completed',
-    )
-    .reduce(
-      (sum, task) => sum + task.minutes,
-      0,
-    )
+  const done = tasks.filter(
+    (task) => task.status === 'Completed',
+  ).length
 
   return {
     total,
@@ -61,7 +52,7 @@ export function ProgressTrack({
 
       {unavailable ? (
         <p className="muted small">
-          Waiting for connected plan data.
+          No study plan yet.
         </p>
       ) : (
         <>
@@ -81,8 +72,7 @@ export function ProgressTrack({
           </div>
 
           <small className="muted">
-            {duration(done)} of {duration(total)}
-            {' '}completed
+            {done} of {total} tasks completed
           </small>
         </>
       )}
@@ -99,30 +89,29 @@ export default function PaceLine({
   config: CourseConfig
   compact?: boolean
 }) {
-  const { remaining } =
-    taskTotals(plan.tasks)
+  const target =
+    plan.end ||
+    addDays(
+      config.deadline,
+      -config.earlyDays,
+    )
 
-  const target = addDays(
-    config.deadline,
-    -config.earlyDays,
-  )
+  const axisEnd =
+    plan.end && config.deadline > plan.end
+      ? config.deadline
+      : plan.end || config.deadline
 
-  const forecast = addDays(
-    dateKey(),
-    Math.ceil(
-      remaining /
-        Math.max(
-          1,
-          (config.weeklyHours * 60) / 7,
-        ),
-    ),
-  )
+  const forecast =
+    plan.tasks
+      .map((task) => task.date)
+      .sort()
+      .at(-1) || plan.start
 
   const span = Math.max(
     1,
     daysBetween(
       plan.start,
-      config.deadline,
+      axisEnd,
     ),
   )
 
@@ -163,7 +152,7 @@ export default function PaceLine({
       </div>
 
       <p className="pace-summary">
-        Estimated finish{' '}
+        Planned finish{' '}
         <strong>
           {prettyDate(forecast)}
         </strong>
@@ -212,20 +201,23 @@ export default function PaceLine({
         </span>
 
         <span>
-          Target {prettyDate(target)}
+          {plan.end
+            ? `Ends ${prettyDate(plan.end)}`
+            : `Target ${prettyDate(target)}`}
         </span>
 
         <span>
-          Due {prettyDate(config.deadline)}
+          {plan.end && plan.end !== config.deadline
+            ? `Course due ${prettyDate(config.deadline)}`
+            : `Due ${prettyDate(config.deadline)}`}
         </span>
       </div>
 
       {!compact && (
         <p className="muted small">
-          Projection uses your planned
-          availability of {config.weeklyHours}
-          {' '}hours per week. It is a schedule
-          estimate, not a mastery score.
+          {plan.end
+            ? 'Tasks are placed on dates from the plan start through the plan end.'
+            : 'Tasks are placed on dates through your target.'}
         </p>
       )}
     </section>

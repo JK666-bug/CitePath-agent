@@ -57,10 +57,42 @@
   margin-bottom: 0;
 }
 
+.report-filter {
+  display: flex;
+  gap: 8px;
+}
+
 .question-card h2 {
   font-size: 16px;
   font-weight: 500;
   margin-bottom: 20px;
+}
+
+.question-concept {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.practice-concepts {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.practice-concepts li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+
+.practice-concepts li.current {
+  font-weight: 500;
 }
 
 .question-options {

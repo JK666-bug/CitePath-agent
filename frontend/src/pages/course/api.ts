@@ -2,7 +2,15 @@ import { request } from '../../shared/request'
 import type {
   CourseDetail,
   QAResponse,
+  StudyPlan,
 } from './types'
+
+export function deleteCourse(id: number) {
+  return request<{ ok: boolean }>(
+    `/api/courses/${id}`,
+    { method: 'DELETE' },
+  )
+}
 
 export function getCourse(id: number) {
   return request<CourseDetail>(
@@ -59,6 +67,51 @@ export function deleteMaterial(
     {
       method: 'DELETE',
     },
+  )
+}
+
+export type PlanResponse = {
+  status: string
+  plan: StudyPlan | null
+}
+
+export function getPlan(id: number) {
+  return request<PlanResponse>(
+    `/api/courses/${id}/plan`,
+  )
+}
+
+export function createPlan(
+  id: number,
+  start: string,
+  end: string,
+  note: string,
+) {
+  return request<PlanResponse>(
+    `/api/courses/${id}/plan`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ start, end, note }),
+    },
+  )
+}
+
+export function completePlanTask(
+  courseId: number,
+  taskId: string,
+) {
+  return request<PlanResponse>(
+    `/api/courses/${courseId}/plan/tasks/${encodeURIComponent(taskId)}/complete`,
+    { method: 'POST' },
+  )
+}
+
+export function listQuestions(courseId: number) {
+  return request<QAResponse[]>(
+    `/api/courses/${courseId}/questions`,
   )
 }
 

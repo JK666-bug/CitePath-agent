@@ -61,6 +61,72 @@ const messages: Record<string, string> = {
   'This course has no material to cite':
     'Upload a readable PDF before asking a question.',
 
+  'Upload a readable PDF before generating a plan':
+    'Upload a readable PDF before generating a plan.',
+
+  'Choose a start date and an end date.':
+    'Choose a start date and an end date.',
+
+  'The study brief is too long.':
+    'The study brief must contain at most 9,000 characters.',
+
+  'The end date must be on or after the start date.':
+    'The end date must be on or after the start date.',
+
+  'Could not divide these lecture pages into chapters. Try again.':
+    'Could not divide these lecture pages into chapters. Try again.',
+
+  'Add a learning deadline before generating a plan':
+    'Add a learning deadline before generating a plan.',
+
+  'Add your goals and dates before generating a plan':
+    'Add your goals and dates before generating a plan.',
+
+  'Practice questions are not available yet':
+    'Practice questions are not available yet.',
+
+  'Task not found':
+    'This task could not be found.',
+
+  'Could not create a study plan':
+    'Unable to create a study plan. Please try again.',
+
+  'Could not create an exam':
+    'Unable to create an exam. Please try again.',
+
+  'Could not grade this exam':
+    'Unable to grade this exam. Please try again.',
+
+  'Could not write an exam for this chapter. Try again.':
+    'Could not write an exam for this chapter. Try again.',
+
+  'Could not start practice':
+    'Unable to start practice. Please try again.',
+
+  'Could not write a practice question. Try again.':
+    'Could not write a practice question. Try again.',
+
+  'Could not grade this practice question':
+    'Unable to grade this practice question. Please try again.',
+
+  'Practice not found':
+    'This practice session could not be found.',
+
+  'Write an answer':
+    'Write an answer before continuing.',
+
+  'Answer the current question':
+    'Answer the current question.',
+
+  'This chapter has no concepts or readable pages to examine':
+    'This chapter has no concepts or readable pages to examine.',
+
+  'Chapter not found':
+    'This chapter could not be found.',
+
+  'Exam not found':
+    'This exam could not be found.',
+
   'Could not answer':
     'Unable to answer this question. Please try again.',
 }

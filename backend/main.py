@@ -6,16 +6,22 @@ from fastapi import Depends, FastAPI, File, HTTPException, Request, Response, Up
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from agent.exam import open_exam, save_exam_drafts, start_exam, submit_exam
+from agent.practice import answer_practice, open_practice, start_practice
 from agent.llm import ping
-from agent.qa import answer_question
+from agent.plan import generate_plan
+from agent.qa import answer_question, list_questions
 from db.auth import authenticate, close_session, open_session, register_user, user_from_token
 from db.courses import (
     create_course,
+    delete_course,
     delete_document_rows,
     get_course,
     list_courses,
     owns_document,
 )
+from db.plans import complete_task, ensure_plan_storage, get_plan
+from db.practice import list_chapter_reports
 from db.uploads import existing_upload, save_document
 from ingest.pdf_reader import read_pdf
 from vector.segments import delete_segments
@@ -45,6 +51,26 @@ class CourseBody(BaseModel):
 
 class QuestionBody(BaseModel):
     question: str = Field(max_length=2000)
+
+
+class PlanWindow(BaseModel):
+    start: str = Field(max_length=10)
+    end: str = Field(max_length=10)
+    note: str = Field(default="", max_length=9000)
+
+
+class ExamAnswer(BaseModel):
+    question_id: int
+    response: str = Field(default="", max_length=5000)
+
+
+class ExamSubmit(BaseModel):
+    answers: list[ExamAnswer] = Field(default_factory=list, max_length=40)
+
+
+class PracticeAnswer(BaseModel):
+    question_id: int
+    response: str = Field(default="", max_length=5000)
 
 
 def current_user(request: Request) -> dict:
@@ -117,6 +143,20 @@ def add_course(body: CourseBody, user: dict = Depends(current_user)):
     return create_course(user["id"], name, brief)
 
 
+@app.delete("/api/courses/{course_id}")
+def remove_course(course_id: int, user: dict = Depends(current_user)):
+    ensure_plan_storage()
+    document_ids = delete_course(user["id"], course_id)
+    if document_ids is None:
+        raise HTTPException(status_code=404, detail="Course not found")
+    for document_id in document_ids:
+        try:
+            delete_segments(document_id)
+        except Exception:
+            pass
+    return {"ok": True}
+
+
 @app.get("/api/courses/{course_id}")
 def course_detail(course_id: int, user: dict = Depends(current_user)):
     course = get_course(user["id"], course_id)
@@ -164,6 +204,176 @@ def remove_document(
     except Exception:
         pass
     return {"ok": True}
+
+
+@app.get("/api/courses/{course_id}/plan")
+def course_plan(course_id: int, user: dict = Depends(current_user)):
+    try:
+        return get_plan(user["id"], course_id)
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail="Course not found") from error
+
+
+@app.post("/api/courses/{course_id}/plan")
+def create_plan(course_id: int, body: PlanWindow, user: dict = Depends(current_user)):
+    try:
+        return generate_plan(user["id"], course_id, body.start, body.end, body.note)
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail="Course not found") from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
+    except Exception as error:
+        raise HTTPException(status_code=502, detail="Could not create a study plan") from error
+
+
+@app.post("/api/courses/{course_id}/plan/tasks/{task_id}/complete")
+def finish_task(course_id: int, task_id: str, user: dict = Depends(current_user)):
+    try:
+        return complete_task(user["id"], course_id, task_id)
+    except LookupError as error:
+        detail = "Course not found" if str(error) == "Course not found" else "Task not found"
+        raise HTTPException(status_code=404, detail=detail) from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
+@app.post("/api/courses/{course_id}/chapters/{chapter_id}/exams")
+def create_exam(course_id: int, chapter_id: int, user: dict = Depends(current_user)):
+    try:
+        return start_exam(user["id"], course_id, chapter_id)
+    except LookupError as error:
+        detail = "Course not found" if str(error) == "Course not found" else "Chapter not found"
+        raise HTTPException(status_code=404, detail=detail) from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
+    except Exception as error:
+        raise HTTPException(status_code=502, detail="Could not create an exam") from error
+
+
+@app.get("/api/courses/{course_id}/exams/{exam_id}")
+def course_exam(course_id: int, exam_id: int, user: dict = Depends(current_user)):
+    try:
+        return open_exam(user["id"], course_id, exam_id)
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail="Exam not found") from error
+
+
+@app.post("/api/courses/{course_id}/exams/{exam_id}/drafts")
+def save_course_exam_drafts(
+    course_id: int,
+    exam_id: int,
+    body: ExamSubmit,
+    user: dict = Depends(current_user),
+):
+    try:
+        return save_exam_drafts(
+            user["id"],
+            course_id,
+            exam_id,
+            [item.model_dump() for item in body.answers],
+        )
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail="Exam not found") from error
+
+
+@app.post("/api/courses/{course_id}/exams/{exam_id}/submit")
+def submit_course_exam(
+    course_id: int,
+    exam_id: int,
+    body: ExamSubmit,
+    user: dict = Depends(current_user),
+):
+    try:
+        return submit_exam(
+            user["id"],
+            course_id,
+            exam_id,
+            [item.model_dump() for item in body.answers],
+        )
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail="Exam not found") from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
+    except Exception as error:
+        raise HTTPException(status_code=502, detail="Could not grade this exam") from error
+
+
+@app.post("/api/courses/{course_id}/chapters/{chapter_id}/practice")
+def create_practice(course_id: int, chapter_id: int, user: dict = Depends(current_user)):
+    try:
+        return start_practice(user["id"], course_id, chapter_id)
+    except LookupError as error:
+        detail = "Course not found" if str(error) == "Course not found" else "Chapter not found"
+        raise HTTPException(status_code=404, detail=detail) from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
+    except Exception as error:
+        raise HTTPException(status_code=502, detail="Could not start practice") from error
+
+
+@app.get("/api/courses/{course_id}/practice/{session_id}")
+def course_practice(course_id: int, session_id: int, user: dict = Depends(current_user)):
+    try:
+        return open_practice(user["id"], course_id, session_id)
+    except LookupError as error:
+        detail = "Practice not found" if str(error) == "Practice not found" else "Chapter not found"
+        if str(error) == "Course not found":
+            detail = "Course not found"
+        raise HTTPException(status_code=404, detail=detail) from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
+    except Exception as error:
+        raise HTTPException(status_code=502, detail="Could not start practice") from error
+
+
+@app.post("/api/courses/{course_id}/practice/{session_id}/answer")
+def answer_course_practice(
+    course_id: int,
+    session_id: int,
+    body: PracticeAnswer,
+    user: dict = Depends(current_user),
+):
+    try:
+        return answer_practice(
+            user["id"],
+            course_id,
+            session_id,
+            body.question_id,
+            body.response,
+        )
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail="Practice not found") from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
+    except Exception as error:
+        raise HTTPException(status_code=502, detail="Could not grade this practice question") from error
+
+
+@app.get("/api/courses/{course_id}/chapters/{chapter_id}/reports")
+def chapter_reports(course_id: int, chapter_id: int, user: dict = Depends(current_user)):
+    try:
+        return list_chapter_reports(user["id"], course_id, chapter_id)
+    except LookupError as error:
+        detail = "Course not found" if str(error) == "Course not found" else "Chapter not found"
+        raise HTTPException(status_code=404, detail=detail) from error
+
+
+@app.get("/api/courses/{course_id}/questions")
+def course_questions(course_id: int, user: dict = Depends(current_user)):
+    try:
+        return list_questions(user["id"], course_id)
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail="Course not found") from error
 
 
 @app.post("/api/courses/{course_id}/questions")

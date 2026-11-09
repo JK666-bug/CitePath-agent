@@ -127,7 +127,7 @@ export default function CourseInfo({
 
       if (saved > 0) {
         parts.push(
-          'Materials saved. A new study plan requires the planning service, which is not connected yet.',
+          'Materials saved. Open the Plan tab to generate a schedule from these PDFs and your note.',
         )
       }
 
@@ -209,15 +209,6 @@ export default function CourseInfo({
           </div>
 
           <div>
-            <dt>Weekly study time</dt>
-            <dd>
-              {config.weeklyHours
-                ? `${config.weeklyHours} hours`
-                : 'Not set'}
-            </dd>
-          </div>
-
-          <div>
             <dt>Finish early by</dt>
             <dd>
               {config.deadline
@@ -272,7 +263,7 @@ export default function CourseInfo({
                     </strong>
 
                     <p>
-                      Doc {material.id}
+                      Doc {material.position}
                       {' · '}
                       {material.page_count}
                       {' '}pages

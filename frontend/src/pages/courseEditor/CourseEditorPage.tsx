@@ -77,7 +77,6 @@ function Editor({
               dateKey(),
               30,
             ),
-            weeklyHours: 6,
             earlyDays: 2,
             note: '',
           }),
@@ -139,17 +138,6 @@ function Editor({
     }
 
     if (
-      !Number.isFinite(
-        value.weeklyHours,
-      ) ||
-      value.weeklyHours < 0.5 ||
-      value.weeklyHours > 168
-    ) {
-      next.weeklyHours =
-        'Enter a weekly study time between 0.5 and 168 hours.'
-    }
-
-    if (
       !Number.isInteger(
         value.earlyDays,
       ) ||
@@ -189,7 +177,6 @@ function Editor({
 
     const brief = encodeBrief({
       deadline: value.deadline,
-      weeklyHours: value.weeklyHours,
       earlyDays: value.earlyDays,
       note: value.note,
     })

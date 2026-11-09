@@ -1,4 +1,7 @@
+import json
+
 from db.connection import connect
+from db.uploads import ensure_document_numbers
 
 
 def list_courses(user_id: int) -> list[dict]:
@@ -52,7 +55,67 @@ def create_course(user_id: int, name: str, student_brief: str) -> dict:
     return get_course(user_id, course_id)
 
 
+def brief_with_note(text: str, note: str) -> str:
+    cleaned = note.strip()
+    if len(cleaned) > 9000:
+        raise ValueError("The study brief is too long.")
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        data = None
+    if not isinstance(data, dict) or data.get("schema") != "citepath-course-v1":
+        data = {
+            "schema": "citepath-course-v1",
+            "deadline": "",
+            "earlyDays": 0,
+        }
+    data["note"] = cleaned
+    return json.dumps(data, ensure_ascii=False)
+
+
+def save_course_note(user_id: int, course_id: int, note: str) -> str:
+    connection = connect()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT student_brief
+                FROM courses
+                WHERE id = %s AND user_id = %s
+                """,
+                (course_id, user_id),
+            )
+            row = cursor.fetchone()
+            if row is None:
+                raise LookupError("Course not found")
+            updated = brief_with_note(row["student_brief"], note)
+            cursor.execute(
+                """
+                UPDATE courses
+                SET student_brief = %s
+                WHERE id = %s AND user_id = %s
+                """,
+                (updated, course_id, user_id),
+            )
+            cursor.execute(
+                """
+                UPDATE study_plans
+                SET student_brief = %s
+                WHERE course_id = %s
+                """,
+                (updated, course_id),
+            )
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+    return updated
+
+
 def get_course(user_id: int, course_id: int) -> dict | None:
+    ensure_document_numbers()
     connection = connect()
     try:
         with connection.cursor() as cursor:
@@ -69,14 +132,14 @@ def get_course(user_id: int, course_id: int) -> dict | None:
                 return None
             cursor.execute(
                 """
-                SELECT d.id, d.filename, d.ingest_status,
+                SELECT d.id, d.position, d.filename, d.ingest_status,
                        COUNT(p.id) AS page_count,
                        SUM(CASE WHEN p.usable = 1 THEN 1 ELSE 0 END) AS usable_page_count
                 FROM documents d
                 LEFT JOIN pages p ON p.document_id = d.id
                 WHERE d.course_id = %s
-                GROUP BY d.id, d.filename, d.ingest_status
-                ORDER BY d.id
+                GROUP BY d.id, d.position, d.filename, d.ingest_status
+                ORDER BY d.position, d.id
                 """,
                 (course_id,),
             )
@@ -91,6 +154,7 @@ def get_course(user_id: int, course_id: int) -> dict | None:
         "documents": [
             {
                 "id": row["id"],
+                "position": int(row["position"]),
                 "filename": row["filename"],
                 "ingest_status": row["ingest_status"],
                 "page_count": int(row["page_count"] or 0),
@@ -117,6 +181,81 @@ def owns_document(user_id: int, course_id: int, document_id: int) -> bool:
             return cursor.fetchone() is not None
     finally:
         connection.close()
+
+
+def delete_course(user_id: int, course_id: int) -> list[int] | None:
+    connection = connect()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id
+                FROM courses
+                WHERE id = %s AND user_id = %s
+                """,
+                (course_id, user_id),
+            )
+            if cursor.fetchone() is None:
+                return None
+            cursor.execute(
+                "SELECT id FROM documents WHERE course_id = %s",
+                (course_id,),
+            )
+            document_ids = [int(row["id"]) for row in cursor.fetchall()]
+            cursor.execute(
+                """
+                DELETE pages
+                FROM plan_chapter_pages pages
+                JOIN plan_chapters chapters ON chapters.id = pages.chapter_id
+                WHERE chapters.course_id = %s
+                """,
+                (course_id,),
+            )
+            cursor.execute(
+                """
+                DELETE concepts
+                FROM plan_concepts concepts
+                JOIN plan_chapters chapters ON chapters.id = concepts.chapter_id
+                WHERE chapters.course_id = %s
+                """,
+                (course_id,),
+            )
+            cursor.execute(
+                "DELETE FROM plan_chapters WHERE course_id = %s",
+                (course_id,),
+            )
+            cursor.execute(
+                "DELETE FROM qa_records WHERE course_id = %s",
+                (course_id,),
+            )
+            cursor.execute(
+                "DELETE FROM study_plans WHERE course_id = %s",
+                (course_id,),
+            )
+            if document_ids:
+                marks = ", ".join(["%s"] * len(document_ids))
+                cursor.execute(
+                    f"DELETE FROM pages WHERE document_id IN ({marks})",
+                    document_ids,
+                )
+            cursor.execute(
+                "DELETE FROM documents WHERE course_id = %s",
+                (course_id,),
+            )
+            cursor.execute(
+                """
+                DELETE FROM courses
+                WHERE id = %s AND user_id = %s
+                """,
+                (course_id, user_id),
+            )
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+    return document_ids
 
 
 def delete_document_rows(document_id: int) -> None:

@@ -10,7 +10,7 @@ From the repository root:
 
 ```powershell
 docker compose up -d
-Get-Content .\backend\db\schema.sql -Raw | docker exec -i citepath-mysql mysql -ucitepath -pcitepath citepath
+Get-Content .\backend\db\schema.sql -Raw | docker exec -i citepath-agent-mysql mysql -ucitepath_agent -pcitepath_agent citepath_agent
 cd backend
 python -m venv .venv
 .\.venv\Scripts\python -m pip install -r requirements.txt

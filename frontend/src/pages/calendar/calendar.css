@@ -74,7 +74,7 @@
   border-top: 1px solid var(--line);
   border-right: 1px solid var(--line);
   vertical-align: top;
-  height: 93px;
+  height: auto;
 }
 
 .month-grid td:last-child {
@@ -84,7 +84,7 @@
 .calendar-date-button {
   display: block;
   width: 100%;
-  height: 100%;
+  height: auto;
   min-height: 93px;
   padding: 7px;
   border: 0;
@@ -127,17 +127,13 @@
   gap: 4px;
 }
 
-.calendar-task {
+.calendar-course {
   display: block;
   background: #faf0e4;
   border-left: 2px solid #c5976e;
   border-radius: 4px;
-  padding: 4px 5px;
+  padding: 3px 5px;
   min-width: 0;
-}
-
-.calendar-task strong {
-  display: block;
   font-size: 10px;
   font-weight: 500;
   white-space: nowrap;
@@ -145,33 +141,9 @@
   text-overflow: ellipsis;
 }
 
-.calendar-task small {
-  display: block;
-  font-size: 8px;
-  color: #9c836f;
-}
-
-.calendar-task.type-practice {
-  background: #f5f0f8;
-  border-color: #a291b3;
-}
-
-.calendar-task.type-review {
-  background: #f5f1e7;
-  border-color: #b7a477;
-}
-
-.calendar-task.is-completed {
+.calendar-course.is-completed {
   opacity: .5;
-}
-
-.calendar-task.is-completed strong {
   text-decoration: line-through;
-}
-
-.more-tasks {
-  font-size: 9px;
-  color: var(--muted);
 }
 
 .day-overview {
@@ -287,21 +259,17 @@
     grid-template-columns: 1fr;
   }
 
-  .month-grid td,
+  .month-grid td {
+    height: auto;
+  }
+
   .calendar-date-button {
     min-height: 78px;
-    height: 78px;
+    height: auto;
   }
 
-  .calendar-task small {
-    display: none;
-  }
-
-  .calendar-task {
-    padding: 3px;
-  }
-
-  .calendar-task strong {
+  .calendar-course {
+    padding: 2px 3px;
     font-size: 8px;
   }
 }
@@ -309,17 +277,16 @@
 @media
   (max-height: 850px) and
   (min-width: 851px) {
-  .month-grid td,
+  .month-grid td {
+    height: auto;
+  }
+
   .calendar-date-button {
     min-height: 69px;
-    height: 69px;
+    height: auto;
   }
 
-  .calendar-task {
+  .calendar-course {
     padding: 2px 4px;
-  }
-
-  .calendar-task small {
-    display: none;
   }
 }

@@ -31,6 +31,10 @@ import CourseEditorPage from './pages/courseEditor/CourseEditorPage'
 import CalendarPage from './pages/calendar/CalendarPage'
 import CoursePage from './pages/course/CoursePage'
 
+import ExamPage from './pages/exam/ExamPage'
+import ExamReportPage from './pages/exam/ExamReportPage'
+import PracticeLivePage from './pages/practice/PracticeLivePage'
+import ReportsPage from './pages/practice/ReportsPage'
 import PracticePage from './pages/practice/PracticePage'
 import PracticeSessionPage from './pages/practice/PracticeSessionPage'
 import ChapterReportPage from './pages/practice/ChapterReportPage'
@@ -120,6 +124,54 @@ function ProtectedPages() {
         key={course[1]}
         courseId={course[1]}
         tab={course[2]}
+      />
+    )
+  }
+
+  const reports = path.match(
+    /^\/courses\/([1-9]\d*)\/chapters\/([1-9]\d*)\/reports$/,
+  )
+
+  if (reports) {
+    return (
+      <ReportsPage
+        key={reports[2]}
+        courseId={reports[1]}
+        chapterId={reports[2]}
+      />
+    )
+  }
+
+  const exam = path.match(
+    /^\/exams\/([1-9]\d*)\/([1-9]\d*)(\/report)?$/,
+  )
+
+  if (exam) {
+    return exam[3] ? (
+      <ExamReportPage
+        key={exam[2]}
+        courseId={exam[1]}
+        examId={exam[2]}
+      />
+    ) : (
+      <ExamPage
+        key={exam[2]}
+        courseId={exam[1]}
+        examId={exam[2]}
+      />
+    )
+  }
+
+  const livePractice = path.match(
+    /^\/practice\/([1-9]\d*)\/sessions\/([1-9]\d*)$/,
+  )
+
+  if (livePractice) {
+    return (
+      <PracticeLivePage
+        key={livePractice[2]}
+        courseId={livePractice[1]}
+        sessionId={livePractice[2]}
       />
     )
   }

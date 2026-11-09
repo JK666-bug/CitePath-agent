@@ -3,7 +3,6 @@ import { useState } from 'react'
 import {
   BookOpen,
   CalendarDays,
-  FlaskConical,
   FolderOpen,
   LogOut,
   PencilLine,
@@ -205,19 +204,6 @@ export default function Sidebar({
           ))}
         </nav>
       </div>
-
-      <Link
-        className="nav-link demo-nav"
-        href="/courses/demo/plan"
-        aria-current={
-          path.includes('/demo')
-            ? 'page'
-            : undefined
-        }
-      >
-        <FlaskConical size={17} />
-        Interface demo
-      </Link>
 
       <footer className="sidebar-account">
         <div className="account-name">

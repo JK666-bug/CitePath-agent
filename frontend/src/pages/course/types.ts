@@ -1,13 +1,13 @@
 //集中定义课程、任务和练习的数据格式。
 export type CourseConfig = {
   deadline: string
-  weeklyHours: number
   earlyDays: number
   note: string
 }
 
 export type Material = {
   id: number
+  position: number
   filename: string
   ingest_status: string
   page_count: number
@@ -24,6 +24,7 @@ export type CourseDetail = {
 
 export type Source = {
   document_id: number
+  position?: number
   filename: string
   page_number: number
 }
@@ -34,7 +35,6 @@ export type Task = {
   title: string
   kind: 'Reading' | 'Practice' | 'Review'
   date: string
-  minutes: number
   status:
     | 'Not started'
     | 'In progress'
@@ -53,9 +53,15 @@ export type Chapter = {
 export type StudyPlan = {
   version: number
   start: string
+  end?: string
   tasks: Task[]
   chapters: Chapter[]
   reason: string
+}
+
+export type CalendarTask = Task & {
+  courseId: string
+  courseName: string
 }
 
 export type Question = {
@@ -108,5 +114,7 @@ export type QAResponse = {
   question?: string
   answer: string
   cited_pages: Source[]
+  web_sources?: { title: string; url: string }[]
   refused: boolean
+  origin?: string
 }

@@ -1,6 +1,7 @@
 import {
   addDays,
   dateKey,
+  daysBetween,
   percent,
 } from '../../shared/format.ts'
 
@@ -22,12 +23,20 @@ export function scheduleDemo(
   config: CourseConfig,
   reason: string,
 ): StudyPlan {
-  let allocated = 0
+  const today = dateKey()
+  const target = config.deadline
+    ? addDays(config.deadline, -config.earlyDays)
+    : today
+  const chapterIds: string[] = []
 
-  const dailyMinutes = Math.max(
-    1,
-    (config.weeklyHours * 60) / 7,
-  )
+  for (const task of plan.tasks) {
+    if (
+      task.status !== 'Completed' &&
+      !chapterIds.includes(task.chapterId)
+    ) {
+      chapterIds.push(task.chapterId)
+    }
+  }
 
   return {
     ...plan,
@@ -38,12 +47,26 @@ export function scheduleDemo(
         return task
       }
 
-      const date = addDays(
-        dateKey(),
-        Math.floor(allocated / dailyMinutes),
+      const index = chapterIds.indexOf(
+        task.chapterId,
       )
+      const span = Math.max(
+        0,
+        daysBetween(today, target),
+      )
+      const offset =
+        target < today ||
+        chapterIds.length <= 1
+          ? 0
+          : Math.round(
+              (index * span) /
+                (chapterIds.length - 1),
+            )
+      let date = addDays(today, offset)
 
-      allocated += task.minutes
+      if (target >= today && date > target) {
+        date = target
+      }
 
       return { ...task, date }
     }),
@@ -53,7 +76,6 @@ export function scheduleDemo(
 export function createDemo(): DemoState {
   const config: CourseConfig = {
     deadline: addDays(dateKey(), 21),
-    weeklyHours: 6,
     earlyDays: 2,
     note:
       'Prepare for the algorithms exam. Focus on trees, graphs, and dynamic programming. I know basic Python.',
@@ -112,7 +134,6 @@ export function createDemo(): DemoState {
         title: `Read: ${chapter.title}`,
         kind: 'Reading' as const,
         date: dateKey(),
-        minutes: 35,
         status: 'Not started' as const,
         sources: chapter.sources,
         concepts: chapter.concepts,
@@ -123,7 +144,6 @@ export function createDemo(): DemoState {
         title: `Practice: ${chapter.title}`,
         kind: 'Practice' as const,
         date: dateKey(),
-        minutes: 25,
         status: 'Not started' as const,
         sources: chapter.sources,
         concepts: chapter.concepts,
@@ -141,6 +161,7 @@ export function createDemo(): DemoState {
       documents: chapters.map(
         (chapter, index) => ({
           id: chapter.sources[0].document_id,
+          position: index + 1,
           filename: chapter.sources[0].filename,
           ingest_status: 'complete',
           page_count: 12 + index,
@@ -415,7 +436,6 @@ export function submitDemo(
         title: `Review: ${chapter.title}`,
         kind: 'Review',
         date: dateKey(),
-        minutes: 20,
         status: 'Not started',
         concepts: chapter.concepts,
         sources: chapter.sources,

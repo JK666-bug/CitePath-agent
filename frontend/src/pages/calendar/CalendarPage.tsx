@@ -33,6 +33,7 @@ import PaceLine, {
 } from '../../shared/components/PaceLine'
 
 import { decodeBrief } from '../courseEditor/brief'
+import type { CalendarTask } from '../course/types'
 
 import MonthGrid from './MonthGrid'
 import DayOverview from './DayOverview'
@@ -59,6 +60,9 @@ export default function CalendarPage() {
     demo,
     courses,
     completeTask,
+    plans,
+    loadPlan,
+    finishPlanTask,
   } = useStudy()
 
   const { search } = useLocation()
@@ -70,6 +74,12 @@ export default function CalendarPage() {
     search.get('course') || 'all'
 
   const demoMode = filter === 'demo'
+
+  useEffect(() => {
+    for (const course of courses) {
+      void loadPlan(course.id)
+    }
+  }, [courses, loadPlan])
 
   const [month, setMonth] = useState(
     () =>
@@ -84,9 +94,55 @@ export default function CalendarPage() {
     }
   }, [selected])
 
+  const selectedCourse = courses.find(
+    (course) =>
+      String(course.id) === filter,
+  )
+
+  const demoTasks: CalendarTask[] =
+    demo.plan.tasks.map((task) => ({
+      ...task,
+      courseId: 'demo',
+      courseName: demo.course.name,
+    }))
+
+  const realTasks: CalendarTask[] =
+    courses.flatMap((course) => {
+      if (
+        filter !== 'all' &&
+        String(course.id) !== filter
+      ) {
+        return []
+      }
+
+      const plan = plans[course.id]?.plan
+
+      if (!plan) {
+        return []
+      }
+
+      return plan.tasks.map((task) => ({
+        ...task,
+        courseId: String(course.id),
+        courseName: course.name,
+      }))
+    })
+
   const tasks = demoMode
-    ? demo.plan.tasks
-    : []
+    ? demoTasks
+    : realTasks
+
+  const outlookPlan = demoMode
+    ? demo.plan
+    : selectedCourse
+      ? plans[selectedCourse.id]?.plan
+      : null
+
+  const outlookConfig = demoMode
+    ? decodeBrief(demo.course.student_brief)
+    : selectedCourse
+      ? decodeBrief(selectedCourse.student_brief)
+      : null
 
   const todayTasks = tasks.filter(
     (task) =>
@@ -132,33 +188,41 @@ export default function CalendarPage() {
       {demoMode ? (
         <DemoNotice />
       ) : (
-        <Notice>
-          Real courses will appear here once
-          the planning service is connected.
-          {' '}
-          <Link href="/calendar?course=demo">
-            Preview the sample calendar
-          </Link>.
-        </Notice>
+        !tasks.length && (
+          <Notice>
+            Generate a study plan from a course
+            to see it here.{' '}
+            <Link
+              href={
+                selectedCourse
+                  ? `/courses/${selectedCourse.id}/plan`
+                  : '/courses'
+              }
+            >
+              Open a course plan
+            </Link>
+            .
+          </Notice>
+        )
       )}
 
       <div className="calendar-progress">
         <section className="panel">
           <ProgressTrack
             label="Today’s study pace"
-            unavailable={!demoMode}
+            unavailable={!tasks.length}
             done={todayTotals.done}
             total={todayTotals.total}
           />
 
-          {demoMode ? (
+          {tasks.length ? (
             <small className="muted">
               Target: complete today’s
               scheduled tasks.
             </small>
           ) : (
             <small className="muted">
-              No connected plan data.
+              No tasks scheduled yet.
             </small>
           )}
         </section>
@@ -168,20 +232,18 @@ export default function CalendarPage() {
             Overall schedule outlook
           </h2>
 
-          {demoMode ? (
+          {outlookPlan && outlookConfig ? (
             <PaceLine
-              plan={demo.plan}
-              config={decodeBrief(
-                demo.course.student_brief,
-              )}
+              plan={outlookPlan}
+              config={outlookConfig}
               compact
             />
           ) : (
             <ProgressTrack
               label="Overall study pace"
-              unavailable
-              done={0}
-              total={0}
+              unavailable={!tasks.length}
+              done={taskTotals(tasks).done}
+              total={taskTotals(tasks).total}
             />
           )}
         </section>
@@ -318,11 +380,20 @@ export default function CalendarPage() {
               (task) =>
                 task.date === selected,
             )}
-            courseName={demo.course.name}
             onClose={() =>
               update({ date: '' })
             }
-            onComplete={completeTask}
+            onComplete={(task) => {
+              if (task.courseId === 'demo') {
+                completeTask(task.id)
+                return
+              }
+
+              void finishPlanTask(
+                Number(task.courseId),
+                task.id,
+              )
+            }}
           />
         )}
       </div>

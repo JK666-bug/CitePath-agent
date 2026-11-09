@@ -219,7 +219,7 @@ export function Sources({
             }
           >
             <FileText size={12} />
-            Doc {source.document_id}
+            Doc {source.position ?? source.document_id}
             {' · '}
             p. {source.page_number}
           </button>
@@ -238,7 +238,7 @@ export function Sources({
             </strong>
 
             <p>
-              Document {selected.document_id}
+              Document {selected.position ?? selected.document_id}
               {' · '}
               PDF page {selected.page_number}
             </p>

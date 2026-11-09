@@ -90,40 +90,6 @@ export default function CourseForm({
 
       <label className="field">
         <span>
-          Weekly study time (hours)
-        </span>
-
-        <input
-          id="course-weeklyHours"
-          type="number"
-          min="0.5"
-          max="168"
-          step="0.5"
-          value={value.weeklyHours || ''}
-          disabled={disabled}
-          aria-invalid={
-            Boolean(errors.weeklyHours)
-          }
-          aria-describedby={
-            errors.weeklyHours
-              ? 'course-weeklyHours-error'
-              : undefined
-          }
-          onChange={(event) =>
-            onChange({
-              ...value,
-              weeklyHours: Number(
-                event.target.value,
-              ),
-            })
-          }
-        />
-
-        {error('weeklyHours')}
-      </label>
-
-      <label className="field">
-        <span>
           Finish early by (days)
         </span>
 
@@ -161,8 +127,8 @@ export default function CourseForm({
         </strong>
 
         <p>
-          Your deadline and available time help
-          shape a realistic schedule.
+          Your deadline and how many days
+          you finish early shape the schedule.
         </p>
       </div>
 

@@ -62,19 +62,6 @@ export function prettyDate(
   }).format(date)
 }
 
-export function duration(minutes: number) {
-  const value = Math.max(0, Math.round(minutes))
-
-  if (value < 60) {
-    return `${value} min`
-  }
-
-  const hours = Math.floor(value / 60)
-  const remaining = value % 60
-
-  return `${hours}h${remaining ? ` ${remaining}m` : ''}`
-}
-
 export function percent(
   done: number,
   total: number,

@@ -4,6 +4,54 @@ from db.connection import connect
 from vector.segments import has_segments, sync_pages
 
 
+_numbers_ready = False
+
+
+def ensure_document_numbers() -> None:
+    global _numbers_ready
+    if _numbers_ready:
+        return
+    connection = connect()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT COUNT(*) AS n
+                FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = 'documents'
+                  AND COLUMN_NAME = 'position'
+                """
+            )
+            if int(cursor.fetchone()["n"]) == 0:
+                cursor.execute("ALTER TABLE documents ADD COLUMN position INT NULL")
+                cursor.execute(
+                    """
+                    UPDATE documents d
+                    JOIN (
+                      SELECT id,
+                             ROW_NUMBER() OVER (PARTITION BY course_id ORDER BY id) AS n
+                      FROM documents
+                    ) ranked ON ranked.id = d.id
+                    SET d.position = ranked.n
+                    """
+                )
+                cursor.execute("ALTER TABLE documents MODIFY position INT NOT NULL")
+                cursor.execute(
+                    """
+                    ALTER TABLE documents
+                    ADD UNIQUE KEY uq_course_document_pos (course_id, position)
+                    """
+                )
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+    _numbers_ready = True
+
+
 def existing_upload(course_id: int, content_hash: str) -> dict | None:
     row = _hash_row(course_id, content_hash)
     if row is None:
@@ -16,27 +64,36 @@ def existing_upload(course_id: int, content_hash: str) -> dict | None:
 
 
 def save_document(course_id: int, filename: str, pages: list[dict], content_hash: str) -> dict:
+    ensure_document_numbers()
     connection = connect()
     try:
         with connection.cursor() as cursor:
             cursor.execute(
                 """
-                INSERT INTO documents (course_id, filename, content_hash, ingest_status)
-                VALUES (%s, %s, %s, 'pending')
+                SELECT COALESCE(MAX(position), 0) + 1 AS n
+                FROM documents
+                WHERE course_id = %s
                 """,
-                (course_id, filename, content_hash),
+                (course_id,),
+            )
+            position = int(cursor.fetchone()["n"])
+            cursor.execute(
+                """
+                INSERT INTO documents (course_id, position, filename, content_hash, ingest_status)
+                VALUES (%s, %s, %s, %s, 'pending')
+                """,
+                (course_id, position, filename, content_hash),
             )
             document_id = cursor.lastrowid
             cursor.executemany(
                 """
-                INSERT INTO pages (document_id, page_number, chapter, body, usable)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO pages (document_id, page_number, body, usable)
+                VALUES (%s, %s, %s, %s)
                 """,
                 [
                     (
                         document_id,
                         page["page_number"],
-                        page["chapter"],
                         page["body"],
                         page["usable"],
                     )
@@ -97,7 +154,7 @@ def _load_pages(document_id: int) -> list[dict]:
         with connection.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT page_number, chapter, body, usable
+                SELECT page_number, body, usable
                 FROM pages
                 WHERE document_id = %s
                 ORDER BY page_number

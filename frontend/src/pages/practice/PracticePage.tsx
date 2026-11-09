@@ -1,26 +1,37 @@
+import { useState } from 'react'
+
 import {
   Link,
   navigate,
   useLocation,
 } from '../../shared/router'
-
+import { messageOf } from '../../shared/request'
 import { useStudy } from '../../shared/StudyProvider'
-
 import {
   DemoNotice,
   Empty,
+  Loading,
   Notice,
   PageHeader,
 } from '../../shared/components/UI'
 
+import { createPractice } from './api'
+
 import './practice.css'
 
 export default function PracticePage() {
-  const { demo, courses } = useStudy()
+  const { demo, courses, plans } = useStudy()
   const { search } = useLocation()
+  const [startingId, setStartingId] = useState('')
+  const [error, setError] = useState('')
 
   const filter =
     search.get('course') || 'all'
+  const visibleCourses = courses.filter(
+    (course) =>
+      filter === 'all' ||
+      String(course.id) === filter,
+  )
 
   return (
     <div className="practice-page">
@@ -156,31 +167,87 @@ export default function PracticePage() {
           </div>
         </>
       ) : (
-        <>
-          <Notice>
-            The current backend does not expose
-            the practice module yet. No
-            questions or scores are generated
-            for real courses in this interface.
-          </Notice>
-
-          <Empty title="No connected practice sessions">
-            <p>
-              Practice sessions will appear
-              here after the existing B module
-              is connected.
-            </p>
-
-            <div className="actions centered">
-              <Link
-                className="button secondary"
-                href="/practice?course=demo"
-              >
-                Try the fixed interface demo
-              </Link>
-            </div>
-          </Empty>
-        </>
+        <div className="stack">
+          {error && <Notice tone="error">{error}</Notice>}
+          {visibleCourses.length === 0 && (
+            <Empty title="No courses yet">
+              <Link href="/courses">Back to my courses</Link>
+            </Empty>
+          )}
+          {visibleCourses.map((course) => {
+            const entry = plans[course.id]
+            if (!entry?.loaded) {
+              return (
+                <Loading
+                  key={course.id}
+                  text={`Loading ${course.name}…`}
+                />
+              )
+            }
+            const chapters = entry.plan?.chapters ?? []
+            if (!chapters.length) {
+              return (
+                <Empty key={course.id} title={course.name}>
+                  <p>Generate a study plan before practicing.</p>
+                  <Link href={`/courses/${course.id}/plan`}>
+                    Open plan
+                  </Link>
+                </Empty>
+              )
+            }
+            return (
+              <section className="stack" key={course.id}>
+                <h2>{course.name}</h2>
+                <div className="practice-grid">
+                  {chapters.map((chapter, index) => (
+                    <article
+                      className="panel practice-chapter"
+                      key={chapter.id}
+                    >
+                      <p className="eyebrow">
+                        Chapter {index + 1}
+                      </p>
+                      <h2>{chapter.title}</h2>
+                      <p className="muted small">
+                        {chapter.concepts.join(' · ')}
+                      </p>
+                      <div className="actions">
+                        <button
+                          className="button small"
+                          disabled={startingId === `${course.id}-${chapter.id}`}
+                          onClick={() => {
+                            setError('')
+                            setStartingId(`${course.id}-${chapter.id}`)
+                            void createPractice(course.id, Number(chapter.id))
+                              .then((created) =>
+                                navigate(
+                                  `/practice/${course.id}/sessions/${created.id}`,
+                                ),
+                              )
+                              .catch((reason) => {
+                                setError(messageOf(reason))
+                                setStartingId('')
+                              })
+                          }}
+                        >
+                          {startingId === `${course.id}-${chapter.id}`
+                            ? 'Opening…'
+                            : 'Practice'}
+                        </button>
+                        <Link
+                          className="button small secondary"
+                          href={`/courses/${course.id}/chapters/${chapter.id}/reports`}
+                        >
+                          View reports
+                        </Link>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            )
+          })}
+        </div>
       )}
     </div>
   )

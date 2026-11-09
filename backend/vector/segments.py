@@ -143,6 +143,43 @@ def chunk_text(text: str) -> list[str]:
     return [chunk[:MAX_CHARS] for chunk in chunks if chunk.strip()]
 
 
+def select_page_keys(hits: list[dict], limit: int, bridge_page) -> list[tuple[int, int]]:
+    grouped: dict[tuple[int, int], list[dict]] = {}
+    best: dict[tuple[int, int], float] = {}
+    for hit in hits:
+        key = (int(hit["document_id"]), int(hit["page_number"]))
+        grouped.setdefault(key, []).append(hit)
+        score = float(hit.get("score") or 0)
+        if key not in best or score > best[key]:
+            best[key] = score
+    chosen = sorted(best, key=best.get, reverse=True)[:limit]
+    selected: list[tuple[int, int]] = []
+    seen: set[tuple[int, int]] = set()
+
+    def add(key: tuple[int, int], after: tuple[int, int] | None = None) -> None:
+        if key in seen:
+            return
+        if after is not None and after in seen:
+            selected.insert(selected.index(after) + 1, key)
+        else:
+            selected.append(key)
+        seen.add(key)
+
+    for key in chosen:
+        add(key)
+        for hit in grouped.get(key, []):
+            other = bridge_page(hit)
+            if other is None:
+                continue
+            companion = (key[0], int(other))
+            if companion[1] == key[1]:
+                continue
+            earlier, later = (key, companion) if key[1] < companion[1] else (companion, key)
+            add(earlier)
+            add(later, after=earlier)
+    return selected
+
+
 def bridge_text(body: str, next_body: str) -> str | None:
     head = _open_sentence(body)
     if head is None:
@@ -234,7 +271,7 @@ def _pieces(document_id: int, pages: list[dict]) -> list[dict]:
                     "document_id": int(document_id),
                     "page_number": int(page["page_number"]),
                     "chunk_index": index,
-                    "chapter": (page.get("chapter") or "Untitled")[:255],
+                    "chapter": "",
                     "text": chunk[:MAX_CHARS],
                 }
             )

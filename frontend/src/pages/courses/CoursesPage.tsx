@@ -22,14 +22,11 @@ export default function CoursesPage() {
     coursesLoading,
     coursesError,
     refreshCourses,
-    demo,
+    plans,
   } = useStudy()
 
   const [deadlineFirst, setDeadlineFirst] =
     useState(true)
-
-  const [showDemo, setShowDemo] =
-    useState(false)
 
   const sorted = [...courses].sort(
     (a, b) =>
@@ -113,6 +110,10 @@ export default function CoursesPage() {
               key={course.id}
               course={course}
               index={index}
+              plan={
+                plans[course.id]?.plan ||
+                undefined
+              }
             />
           ))}
         </div>
@@ -135,55 +136,6 @@ export default function CoursesPage() {
           </Empty>
         )
       )}
-
-      <section className="demo-preview">
-        <div className="actions spread">
-          <div>
-            <h2>
-              Preview the complete interface
-            </h2>
-
-            <p className="muted small">
-              Explore a sample calendar, plan,
-              practice session, and report.
-              No sample data is added to your
-              real courses.
-            </p>
-          </div>
-
-          <button
-            className="button secondary"
-            onClick={() =>
-              setShowDemo((value) => !value)
-            }
-          >
-            {showDemo
-              ? 'Hide sample card'
-              : 'Show sample card'}
-          </button>
-        </div>
-
-        {showDemo && (
-          <div className="course-grid">
-            <CourseCard
-              demo
-              course={{
-                ...demo.course,
-                document_count:
-                  demo.course.documents.length,
-              }}
-              plan={demo.plan}
-            />
-          </div>
-        )}
-
-        <Link
-          href="/courses/demo/plan"
-          className="text-button"
-        >
-          Open interface demo
-        </Link>
-      </section>
     </div>
   )
 }
