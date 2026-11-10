@@ -20,7 +20,6 @@ import {
 } from './api'
 
 import { useStudy } from '../../shared/StudyProvider'
-import { Link } from '../../shared/router'
 import { messageOf } from '../../shared/request'
 import { prettyDate } from '../../shared/format'
 
@@ -182,20 +181,7 @@ export default function CourseInfo({
   return (
     <div className="stack">
       <section className="panel">
-        <div className="actions spread">
-          <h2>Course settings</h2>
-
-          <Link
-            className="button small secondary"
-            href={
-              `/courses/${courseId}/edit`
-            }
-          >
-            {demo
-              ? 'Edit settings'
-              : 'View settings'}
-          </Link>
-        </div>
+        <h2>Course settings</h2>
 
         <dl className="course-facts">
           <div>

@@ -70,6 +70,18 @@ def save_document(course_id: int, filename: str, pages: list[dict], content_hash
         with connection.cursor() as cursor:
             cursor.execute(
                 """
+                SELECT id
+                FROM courses
+                WHERE id = %s
+                FOR UPDATE
+                """,
+                (course_id,),
+            )
+            if cursor.fetchone() is None:
+                raise LookupError("Course not found")
+
+            cursor.execute(
+                """
                 SELECT COALESCE(MAX(position), 0) + 1 AS n
                 FROM documents
                 WHERE course_id = %s

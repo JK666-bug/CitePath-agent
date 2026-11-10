@@ -257,20 +257,96 @@ def delete_course(user_id: int, course_id: int) -> list[int] | None:
         connection.close()
     return document_ids
 
+def _renumber_documents(cursor, course_id: int) -> None:
+    """将课程内现存文档的显示序号整理为 1、2、3……"""
+    cursor.execute(
+        """
+        SELECT id, position
+        FROM documents
+        WHERE course_id = %s
+        ORDER BY position, id
+        FOR UPDATE
+        """,
+        (course_id,),
+    )
+    rows = cursor.fetchall()
+
+    # 按旧序号从小到大更新，依次填补空位。
+    # 避免触发 (course_id, position) 唯一约束冲突。
+    for new_position, row in enumerate(rows, start=1):
+        if int(row["position"]) == new_position:
+            continue
+
+        cursor.execute(
+            """
+            UPDATE documents
+            SET position = %s
+            WHERE id = %s AND course_id = %s
+            """,
+            (new_position, row["id"], course_id),
+        )
 
 def delete_document_rows(document_id: int) -> None:
+    ensure_document_numbers()
     connection = connect()
+
     try:
         with connection.cursor() as cursor:
-            cursor.execute("DELETE FROM pages WHERE document_id = %s", (document_id,))
-            cursor.execute("DELETE FROM documents WHERE id = %s", (document_id,))
+            # 先找到文档所属课程。
+            cursor.execute(
+                """
+                SELECT course_id
+                FROM documents
+                WHERE id = %s
+                """,
+                (document_id,),
+            )
+            document = cursor.fetchone()
+
+            # 文档已经不存在时，直接结束。
+            if document is None:
+                connection.rollback()
+                return
+
+            course_id = int(document["course_id"])
+
+            # 对同一课程的文档增删使用同一把数据库行锁。
+            cursor.execute(
+                """
+                SELECT id
+                FROM courses
+                WHERE id = %s
+                FOR UPDATE
+                """,
+                (course_id,),
+            )
+            if cursor.fetchone() is None:
+                connection.rollback()
+                return
+
+            cursor.execute(
+                "DELETE FROM pages WHERE document_id = %s",
+                (document_id,),
+            )
+            cursor.execute(
+                """
+                DELETE FROM documents
+                WHERE id = %s AND course_id = %s
+                """,
+                (document_id, course_id),
+            )
+
+            # 删除和重排序在同一事务中完成。
+            _renumber_documents(cursor, course_id)
+
         connection.commit()
+
     except Exception:
         connection.rollback()
         raise
+
     finally:
         connection.close()
-
 
 def _course_summary(row: dict) -> dict:
     return {
