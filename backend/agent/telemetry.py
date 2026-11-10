@@ -1,0 +1,70 @@
+"""Local model usage records. Never store prompts, answers, keys or error text."""
+import json
+import logging
+import os
+import threading
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+from langchain_core.callbacks import BaseCallbackHandler
+
+_write_lock = threading.Lock()
+_logger = logging.getLogger(__name__)
+
+
+def _rate(name):
+    try:
+        value = float(os.environ.get(name, ""))
+        return value if 0 <= value < float("inf") else None
+    except ValueError:
+        return None
+
+
+class UsageLog(BaseCallbackHandler):
+    def __init__(self, model):
+        self.model = model
+        self.started = {}
+        self.lock = threading.Lock()
+
+    def on_chat_model_start(self, serialized, messages, *, run_id, **kwargs):
+        with self.lock:
+            self.started[str(run_id)] = time.perf_counter()
+
+    def on_llm_end(self, response, *, run_id, **kwargs):
+        usage = (response.llm_output or {}).get("token_usage") or {}
+        # Providers may put normalized counts on the returned AIMessage.
+        if not usage and response.generations and response.generations[0]:
+            message = getattr(response.generations[0][0], "message", None)
+            usage = getattr(message, "usage_metadata", None) or {}
+        self._record(run_id, "ok", usage)
+
+    def on_llm_error(self, error, *, run_id, **kwargs):
+        self._record(run_id, "error", {}, type(error).__name__)
+
+    def _record(self, run_id, status, usage, error_type=None):
+        with self.lock:
+            start = self.started.pop(str(run_id), None)
+        input_tokens = usage.get("prompt_tokens", usage.get("input_tokens"))
+        output_tokens = usage.get("completion_tokens", usage.get("output_tokens"))
+        input_rate = _rate("MODEL_INPUT_COST_PER_MILLION")
+        output_rate = _rate("MODEL_OUTPUT_COST_PER_MILLION")
+        cost = None
+        if all(v is not None for v in (input_tokens, output_tokens, input_rate, output_rate)):
+            cost = (input_tokens * input_rate + output_tokens * output_rate) / 1_000_000
+        record = {
+            "at": datetime.now(timezone.utc).isoformat(), "run_id": str(run_id),
+            "model": self.model, "model_calls": 1, "status": status,
+            "latency_ms": round((time.perf_counter() - start) * 1000) if start is not None else None,
+            "input_tokens": input_tokens, "output_tokens": output_tokens,
+            "estimated_cost": cost, "cost_currency": os.environ.get("MODEL_COST_CURRENCY") or None,
+            "error_type": error_type,
+        }
+        path = Path(os.environ.get("MODEL_USAGE_LOG") or Path(__file__).resolve().parents[1] / "logs" / "model-usage.jsonl")
+        try:
+            with _write_lock:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                with path.open("a", encoding="utf-8") as stream:
+                    stream.write(json.dumps(record, ensure_ascii=False) + "\n")
+        except OSError:
+            _logger.warning("Could not write the model usage log")

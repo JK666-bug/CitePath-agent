@@ -32,6 +32,8 @@ export function uploadMaterial(
     usable_page_count: number
     milvus_segments: number
     duplicate: boolean
+    ingest_status?: string
+    ingest_error?: string | null
   }>(
     `/api/courses/${id}/documents`,
     {

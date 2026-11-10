@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 
 import {
@@ -18,8 +18,11 @@ import {
   answerPractice,
   createPractice,
   getPractice,
+  practiceOutcome,
+  savePracticeDraft,
 } from './api'
 import type { PracticeSession } from './api'
+import RoundSummary, { PassThreshold } from './RoundSummary'
 
 import './practice.css'
 
@@ -37,12 +40,22 @@ export default function PracticeLivePage({
   const [busy, setBusy] = useState(false)
   const [starting, setStarting] = useState(false)
   const [wrongOnly, setWrongOnly] = useState(false)
+  const [savedResponse, setSavedResponse] = useState('')
+  const [saveError, setSaveError] = useState('')
+  const [newThreshold, setNewThreshold] = useState(0.8)
+  const draftQueue = useRef<Promise<void>>(Promise.resolve())
+  const currentQuestionId = useRef(0)
 
   useEffect(() => {
     let active = true
     getPractice(Number(courseId), Number(sessionId))
       .then((result) => {
-        if (active) setSession(result)
+        if (active) {
+          setSession(result)
+          setResponse(result.question?.response ?? '')
+          setSavedResponse(result.question?.response ?? '')
+          setNewThreshold(result.passing_threshold ?? 0.8)
+        }
       })
       .catch((reason) => {
         if (active) setError(messageOf(reason))
@@ -51,6 +64,40 @@ export default function PracticeLivePage({
       active = false
     }
   }, [courseId, sessionId])
+
+  const questionId = session?.question?.id
+  useEffect(() => {
+    currentQuestionId.current = questionId ?? 0
+    return () => { currentQuestionId.current = 0 }
+  }, [questionId])
+  useEffect(() => {
+    if (!questionId || busy || response === savedResponse) return
+    const timer = window.setTimeout(() => {
+      const request = draftQueue.current.then(() =>
+        savePracticeDraft(Number(courseId), Number(sessionId), questionId, response),
+      )
+      draftQueue.current = request.then(() => undefined, () => undefined)
+      request.then(() => {
+        if (currentQuestionId.current === questionId) {
+          setSavedResponse(response)
+          setSaveError('')
+        }
+      }).catch((reason) => {
+        if (currentQuestionId.current === questionId) {
+          setSaveError(`Draft not saved. ${messageOf(reason)}`)
+        }
+      })
+    }, 600)
+    return () => window.clearTimeout(timer)
+  }, [busy, courseId, questionId, response, savedResponse, sessionId])
+
+  async function saveCurrentDraft() {
+    if (!session?.question) return
+    await draftQueue.current
+    await savePracticeDraft(Number(courseId), session.id, session.question.id, response)
+    setSavedResponse(response)
+    setSaveError('')
+  }
 
   async function onSubmit(
     event: FormEvent<HTMLFormElement>,
@@ -64,6 +111,9 @@ export default function PracticeLivePage({
     setBusy(true)
     setError('')
     try {
+      // Finish older draft writes first. The answer endpoint saves this response
+      // itself, and also accepts retries after grading or next-round generation.
+      await draftQueue.current
       const next = await answerPractice(
         Number(courseId),
         session.id,
@@ -71,9 +121,11 @@ export default function PracticeLivePage({
         response,
       )
       setSession(next)
-      setResponse('')
+      setResponse(next.question?.response ?? '')
+      setSavedResponse(next.question?.response ?? '')
+      setSaveError('')
     } catch (reason) {
-      setError(messageOf(reason))
+      setError(`${messageOf(reason)} Your answer is kept on this page. Retry to continue; an incomplete grading result does not produce a chapter score.`)
     } finally {
       setBusy(false)
     }
@@ -96,6 +148,9 @@ export default function PracticeLivePage({
 
   const question = session.question
   const report = session.report
+  const threshold = session.passing_threshold ?? report?.passing_threshold ?? 0.8
+  const roundNumber = session.round_number ?? (session.phase === 'review' ? 2 : 1)
+  const rounds = report?.rounds ?? session.round_results ?? []
   const practiceQuestions = report?.questions?.length
     ? report.questions
     : (report?.wrong ?? []).map((item) => ({
@@ -115,6 +170,14 @@ export default function PracticeLivePage({
           subtitle={`${report.started_at} to ${report.finished_at}`}
         />
 
+        {session.migration_notice && <Notice>{session.migration_notice}</Notice>}
+
+        <Notice tone={report.passed ? 'success' : 'info'}>
+          {practiceOutcome(report.outcome)}
+        </Notice>
+
+        {rounds.length > 0 && <RoundSummary rounds={rounds} threshold={threshold} />}
+
         <section className="panel">
           <p className="chapter-score">
             Answered
@@ -122,11 +185,17 @@ export default function PracticeLivePage({
           </p>
           <p>
             {report.correct_count} correct. {report.wrong_count} wrong.
-            {(report.session_count ?? 0) > 1
-              ? ` ${report.session_count} practice rounds.`
-              : ''}
+            {' '}These counts describe all answers in this session.
           </p>
         </section>
+
+        {(report.remaining_weak_concepts?.length ?? 0) > 0 && (
+          <section className="panel stack">
+            <h2>Remaining weak concepts</h2>
+            <p>{report.remaining_weak_concepts!.join(' · ')}</p>
+            <Sources sources={report.remaining_sources ?? []} courseId={courseId} />
+          </section>
+        )}
 
         <section className="stack">
           <h2>Concepts</h2>
@@ -197,14 +266,20 @@ export default function PracticeLivePage({
                 <strong>Expected. </strong>
                 {item.answer}
               </p>
-              {item.explanation && <p>{item.explanation}</p>}
-              <Sources sources={item.sources} />
+              {!item.correct && item.explanation && <p>{item.explanation}</p>}
+              <Sources sources={item.sources} courseId={courseId} />
             </article>
           ))}
         </section>
 
         {error && <Notice tone="error">{error}</Notice>}
 
+        <section className="panel stack">
+          <h2>Start a new chapter session</h2>
+          <p className="muted small">
+            This report stays saved. A new session starts at round 1 and has its own two-round limit.
+          </p>
+          <PassThreshold value={newThreshold} onChange={setNewThreshold} disabled={starting} />
         <div className="actions">
           <button
             className="button"
@@ -213,7 +288,7 @@ export default function PracticeLivePage({
             onClick={() => {
               setError('')
               setStarting(true)
-              void createPractice(Number(courseId), session.chapter_id)
+              void createPractice(Number(courseId), session.chapter_id, newThreshold)
                 .then((created) =>
                   navigate(`/practice/${courseId}/sessions/${created.id}`),
                 )
@@ -223,12 +298,13 @@ export default function PracticeLivePage({
                 })
             }}
           >
-            {starting ? 'Writing question…' : 'Practice again'}
+            {starting ? 'Preparing session…' : 'Start new session'}
           </button>
           <Link href={`/courses/${courseId}/plan`}>
             Back to plan
           </Link>
         </div>
+        </section>
       </div>
     )
   }
@@ -239,30 +315,39 @@ export default function PracticeLivePage({
       onSubmit={onSubmit}
     >
       <PageHeader
-        eyebrow={
-          session.phase === 'review'
-            ? 'Chapter review'
-            : 'Chapter practice'
-        }
+        eyebrow={`Chapter practice · Round ${roundNumber} of 2`}
         title={session.chapter_title}
         subtitle={
-          session.status === 'finished'
-            ? 'Every concept in this chapter is mastered.'
-            : session.phase === 'review'
-              ? 'These questions mix concepts you already practiced. Each question is labeled with its concept.'
-              : 'Two correct answers in a row move this concept on. Each question is labeled with its concept.'
+          `Chapter pass mark: ${Math.round(threshold * 100)}%. ` +
+          (roundNumber === 2
+            ? 'This final round targets weak concepts from round 1.'
+            : 'Answer each question. Passing this round completes the chapter session.')
         }
       />
 
       {error && <Notice tone="error">{error}</Notice>}
+      {session.migration_notice && <Notice>{session.migration_notice}</Notice>}
+      {saveError && <Notice tone="error">{saveError}</Notice>}
+
+      {rounds.length > 0 && <RoundSummary rounds={rounds} threshold={threshold} />}
+
+      {typeof session.round_question_count === 'number' && (
+        <p className="muted small">
+          {session.answered_count ?? 0} of {session.round_question_count} answers saved in this round.
+          A round score appears after every question has been graded.
+        </p>
+      )}
 
       {session.feedback && (
+        <div className="stack">
         <Notice tone={session.feedback.correct ? 'success' : 'error'}>
           <strong>{session.feedback.concept_name}</strong>
           {session.feedback.correct
             ? ' is correct.'
             : ` needs another look. ${session.feedback.explanation} Expected: ${session.feedback.answer}`}
         </Notice>
+        {!session.feedback.correct && <Sources sources={session.feedback.sources ?? []} courseId={courseId} />}
+        </div>
       )}
 
       <ul className="practice-concepts">
@@ -284,7 +369,7 @@ export default function PracticeLivePage({
       </ul>
 
       {question ? (
-        <fieldset className="panel question-card">
+        <fieldset className="panel question-card" disabled={busy}>
           <div className="actions spread">
             <p className="question-concept">
               Concept: {question.concept_name}
@@ -334,7 +419,7 @@ export default function PracticeLivePage({
             </label>
           )}
 
-          <Sources sources={question.sources} />
+          <Sources sources={question.sources} courseId={courseId} />
         </fieldset>
       ) : (
         <p className="muted">This practice session is complete.</p>
@@ -346,10 +431,32 @@ export default function PracticeLivePage({
             {busy ? 'Checking…' : 'Submit answer'}
           </button>
         )}
+        {question && (
+          <button
+            type="button"
+            className="button secondary"
+            disabled={busy || response === savedResponse}
+            onClick={() => {
+              setBusy(true)
+              void saveCurrentDraft()
+                .catch((reason) => setSaveError(`Draft not saved. ${messageOf(reason)}`))
+                .finally(() => setBusy(false))
+            }}
+          >
+            Save answer draft
+          </button>
+        )}
         <Link href={`/courses/${courseId}/plan`}>
           Back to plan
         </Link>
       </div>
+      {question && (
+        <p className="practice-save-status" role="status">
+          {response === savedResponse
+            ? 'Draft saved to your account. Reopening restores this question and answer.'
+            : 'Saving your draft… Keep this page open until it is saved.'}
+        </p>
+      )}
     </form>
   )
 }

@@ -94,6 +94,7 @@ export default function DayOverview({
             </p>
 
             <Sources
+              courseId={task.courseId}
               sources={task.sources}
             />
 

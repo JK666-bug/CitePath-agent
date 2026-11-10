@@ -261,6 +261,7 @@ export default function CourseQA({
           </p>
 
           <Sources
+            courseId={courseId}
             sources={
               record.response.cited_pages
             }

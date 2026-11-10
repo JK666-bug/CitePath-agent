@@ -1,9 +1,33 @@
 import json
+from contextlib import contextmanager
 
 from db.connection import connect
 from db.courses import get_course
 
 _ready = False
+
+
+@contextmanager
+def exam_lock(user_id: int, course_id: int, exam_id: int):
+    """Serialize exam drafts and submissions, including model calls."""
+    ensure_exam_storage()
+    connection = connect()
+    name = f"citepath:exam:{user_id}:{course_id}:{exam_id}"
+    acquired = False
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT GET_LOCK(%s, 30) AS acquired", (name,))
+            acquired = cursor.fetchone()["acquired"] == 1
+        if not acquired:
+            raise RuntimeError("This exam is busy. Retry shortly.")
+        yield
+    finally:
+        try:
+            if acquired:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT RELEASE_LOCK(%s)", (name,))
+        finally:
+            connection.close()
 
 
 def ensure_exam_storage() -> None:
@@ -85,7 +109,9 @@ def ensure_exam_storage() -> None:
     _ready = True
 
 
-def load_chapter(user_id: int, course_id: int, chapter_id: int) -> dict:
+def load_chapter(user_id: int, course_id: int, chapter_id: int, require_ready: bool = True) -> dict:
+    from db.uploads import require_ingested_documents
+
     if get_course(user_id, course_id) is None:
         raise LookupError("Course not found")
     connection = connect()
@@ -102,6 +128,18 @@ def load_chapter(user_id: int, course_id: int, chapter_id: int) -> dict:
             chapter = cursor.fetchone()
             if chapter is None:
                 raise LookupError("Chapter not found")
+            cursor.execute(
+                """
+                SELECT DISTINCT d.id, d.filename, d.ingest_status, d.ingest_error
+                FROM plan_chapter_pages p
+                JOIN documents d ON d.id = p.document_id AND d.course_id = %s
+                WHERE p.chapter_id = %s
+                """,
+                (course_id, chapter_id),
+            )
+            documents = list(cursor.fetchall())
+            if require_ready:
+                require_ingested_documents(documents)
             cursor.execute(
                 """
                 SELECT id, name
@@ -123,12 +161,13 @@ def load_chapter(user_id: int, course_id: int, chapter_id: int) -> dict:
                 JOIN pages ON pages.document_id = p.document_id
                   AND pages.page_number = p.page_number
                 WHERE p.chapter_id = %s
+                  AND d.course_id = %s
                   AND pages.usable = 1
                   AND pages.body IS NOT NULL
                   AND TRIM(pages.body) <> ''
                 ORDER BY p.position, p.id
                 """,
-                (chapter_id,),
+                (chapter_id, course_id),
             )
             pages = list(cursor.fetchall())
     finally:
@@ -140,6 +179,7 @@ def load_chapter(user_id: int, course_id: int, chapter_id: int) -> dict:
         "title": chapter["title"],
         "concepts": concepts,
         "pages": pages,
+        "documents": documents,
     }
 
 
@@ -226,6 +266,8 @@ def get_owned_exam(user_id: int, course_id: int, exam_id: int) -> dict:
 
 
 def finish_exam(user_id: int, course_id: int, exam_id: int, report: dict, graded: list[dict]) -> dict:
+    if not graded or report.get("total") != len(graded):
+        raise ValueError("Cannot publish an empty or incomplete score")
     connection = connect()
     try:
         with connection.cursor() as cursor:
@@ -234,6 +276,7 @@ def finish_exam(user_id: int, course_id: int, exam_id: int, report: dict, graded
                 SELECT status
                 FROM exams
                 WHERE id = %s AND course_id = %s AND user_id = %s
+                FOR UPDATE
                 """,
                 (exam_id, course_id, user_id),
             )
@@ -244,6 +287,11 @@ def finish_exam(user_id: int, course_id: int, exam_id: int, report: dict, graded
                 connection.rollback()
                 stored = get_owned_exam(user_id, course_id, exam_id)
                 return public_exam(stored)
+            cursor.execute("SELECT id FROM exam_questions WHERE exam_id = %s", (exam_id,))
+            expected = {int(question["id"]) for question in cursor.fetchall()}
+            received = [int(item["question_id"]) for item in graded]
+            if not expected or len(received) != len(expected) or set(received) != expected:
+                raise ValueError("All questions must be graded exactly once before publishing a score")
             cursor.executemany(
                 """
                 INSERT INTO exam_answers (
@@ -350,6 +398,12 @@ def _json(value):
 
 
 def save_drafts(user_id: int, course_id: int, exam_id: int, answers: list[dict]) -> dict:
+    with exam_lock(user_id, course_id, exam_id):
+        return _save_drafts(user_id, course_id, exam_id, answers)
+
+
+def _save_drafts(user_id: int, course_id: int, exam_id: int, answers: list[dict]) -> dict:
+    """Caller holds exam_lock across this write and any subsequent grading."""
     exam = get_owned_exam(user_id, course_id, exam_id)
     if exam["status"] != "open":
         return public_exam(exam)

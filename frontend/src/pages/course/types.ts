@@ -10,6 +10,7 @@ export type Material = {
   position: number
   filename: string
   ingest_status: string
+  ingest_error?: string | null
   page_count: number
   usable_page_count: number
 }

@@ -47,6 +47,14 @@ def course_study(user_id: int, course_id: int) -> dict:
             )
             practice_rows = list(cursor.fetchall())
             cursor.execute(
+                """SELECT chapter_id, report_json FROM practice_sessions
+                   WHERE user_id = %s AND course_id = %s AND status = 'finished'
+                     AND workflow_version = 2 AND report_json IS NOT NULL
+                   ORDER BY finished_at DESC, id DESC""",
+                (user_id, course_id),
+            )
+            practice_reports = list(cursor.fetchall())
+            cursor.execute(
                 """
                 SELECT e.chapter_id, c.title AS chapter_title, e.passed, e.report_json
                 FROM exams e
@@ -60,7 +68,7 @@ def course_study(user_id: int, course_id: int) -> dict:
             cursor.execute(
                 """
                 SELECT c.title AS chapter_title, q.concept_name, q.kind, q.prompt,
-                       q.answer, q.options_json, a.response, a.explanation
+                       q.answer, q.options_json, q.sources_json, a.response, a.explanation
                 FROM practice_answers a
                 JOIN practice_questions q ON q.id = a.question_id
                 JOIN practice_sessions s ON s.id = q.session_id
@@ -75,7 +83,7 @@ def course_study(user_id: int, course_id: int) -> dict:
     finally:
         connection.close()
     return {
-        "chapters": _chapters(concept_rows, practice_rows),
+        "chapters": _chapters(concept_rows, practice_rows, practice_reports),
         "practice_wrongs": [_practice_wrong(row) for row in practice_wrongs],
         "exam_wrongs": _exam_wrongs(exam_rows),
         "exams": _exam_counts(exam_rows),
@@ -93,9 +101,16 @@ def review_report(record: dict, chapter: str) -> dict:
                 "concepts_mastered": item["mastered_concepts"],
                 "concepts_total": item["total_concepts"],
                 "finished_practice_rounds": item["finished_rounds"],
+                "finished_practice_sessions": item.get("finished_sessions", 0),
                 "practice_in_progress": item["practice_open"],
                 "practice_correct": item["practice_correct"],
                 "practice_wrong": item["practice_wrong"],
+                "chapter_passed": item.get("chapter_passed"),
+                "practice_outcome": item.get("practice_outcome"),
+                "round_scores": item.get("round_scores", []),
+                "passing_threshold": item.get("passing_threshold"),
+                "remaining_weak_concepts": item.get("remaining_weak_concepts", []),
+                "remaining_sources": item.get("remaining_sources", []),
                 "exams_taken": counts["taken"],
                 "exams_passed": counts["passed"],
             }
@@ -126,6 +141,12 @@ def chapter_report(record: dict, chapter: str) -> dict:
             "mastered_concepts": item["mastered_concepts"],
             "total_concepts": item["total_concepts"],
             "mastered": item["total_concepts"] > 0 and item["mastered_concepts"] == item["total_concepts"],
+            "chapter_passed": item.get("chapter_passed"),
+            "practice_outcome": item.get("practice_outcome"),
+            "round_scores": item.get("round_scores", []),
+            "passing_threshold": item.get("passing_threshold"),
+            "remaining_weak_concepts": item.get("remaining_weak_concepts", []),
+            "remaining_sources": item.get("remaining_sources", []),
         }
         for item in chapters
     ]
@@ -174,20 +195,55 @@ def _select(chapters: list[dict], chapter: str) -> tuple[list[dict], str]:
     return [], f"No chapter title contains {chapter.strip()}."
 
 
-def _chapters(concept_rows: list[dict], practice_rows: list[dict]) -> list[dict]:
+def _practice_outcomes(rows: list[dict]) -> dict[int, dict]:
+    latest = {}
+    for row in rows:
+        chapter_id = int(row["chapter_id"])
+        if chapter_id in latest:
+            continue
+        report = _json_object(row["report_json"]) or {}
+        if report.get("outcome") not in {"passed_round_1", "passed_round_2", "failed_after_2"} or type(report.get("passed")) is not bool:
+            continue
+        latest[chapter_id] = {
+            "chapter_passed": report["passed"],
+            "practice_outcome": report["outcome"],
+            "round_scores": report.get("rounds") or [],
+            "passing_threshold": report.get("passing_threshold"),
+            "remaining_weak_concepts": report.get("remaining_weak_concepts") or [],
+            "remaining_sources": report.get("remaining_sources") or [],
+        }
+    return latest
+
+
+def _chapters(concept_rows: list[dict], practice_rows: list[dict], practice_reports: list[dict] | None = None) -> list[dict]:
+    outcomes = _practice_outcomes(practice_reports or [])
+    round_counts: dict[int, int] = {}
+    for row in practice_reports or []:
+        report = _json_object(row["report_json"]) or {}
+        if report.get("outcome") not in {"passed_round_1", "passed_round_2", "failed_after_2"}:
+            continue
+        rounds = report.get("rounds")
+        if not isinstance(rounds, list):
+            continue
+        numbers = {item.get("round_number") for item in rounds if isinstance(item, dict)}
+        if numbers not in ({1}, {1, 2}) or len(numbers) != len(rounds):
+            continue
+        chapter_id = int(row["chapter_id"])
+        round_counts[chapter_id] = round_counts.get(chapter_id, 0) + len(rounds)
     practice: dict[int, dict] = {}
     for row in practice_rows:
         state = practice.setdefault(
             int(row["chapter_id"]),
             {
                 "finished_rounds": 0,
+                "finished_sessions": 0,
                 "practice_open": False,
                 "practice_correct": 0,
                 "practice_wrong": 0,
             },
         )
         if row["status"] == "finished":
-            state["finished_rounds"] = int(row["sessions"] or 0)
+            state["finished_sessions"] = int(row["sessions"] or 0)
             state["practice_correct"] = int(row["correct_count"] or 0)
             state["practice_wrong"] = int(row["wrong_count"] or 0)
         elif row["status"] == "open" and int(row["sessions"] or 0) > 0:
@@ -204,10 +260,12 @@ def _chapters(concept_rows: list[dict], practice_rows: list[dict]) -> list[dict]
                 "concepts": [],
                 "mastered_concepts": 0,
                 "total_concepts": 0,
-                "finished_rounds": int(counts.get("finished_rounds") or 0),
+                "finished_rounds": round_counts.get(chapter_id, 0),
+                "finished_sessions": int(counts.get("finished_sessions") or 0),
                 "practice_open": bool(counts.get("practice_open")),
                 "practice_correct": int(counts.get("practice_correct") or 0),
                 "practice_wrong": int(counts.get("practice_wrong") or 0),
+                **outcomes.get(chapter_id, {}),
             }
         if row["concept_id"] is None:
             continue
@@ -254,6 +312,7 @@ def _exam_wrongs(rows: list[dict]) -> list[dict]:
                     "response": _clip(item.get("response")),
                     "answer": _clip(item.get("answer")),
                     "explanation": _clip(item.get("explanation")),
+                    "sources": item.get("sources") or [],
                 }
             )
             if len(wrongs) >= 12:
@@ -275,6 +334,7 @@ def _practice_wrong(row: dict) -> dict:
         "response": _clip(row["response"]),
         "answer": _clip(answer),
         "explanation": _clip(row["explanation"]),
+        "sources": _json_list(row.get("sources_json")),
     }
 
 

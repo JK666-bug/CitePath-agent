@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage
 from langchain_openai import AzureChatOpenAI
 
+from agent.telemetry import UsageLog
+
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 DEFAULT_DEPLOYMENT = "gpt-4.1-mini"
@@ -25,6 +27,7 @@ def chat_model() -> AzureChatOpenAI:
         temperature=0,
         timeout=60,
         max_retries=1,
+        callbacks=[UsageLog(deployment)],
         default_headers={
             "api-key": key,
             "Ocp-Apim-Subscription-Key": key,

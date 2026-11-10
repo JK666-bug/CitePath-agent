@@ -4,7 +4,7 @@ import re
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from agent.llm import chat_model
-from db.exams import finish_exam, load_chapter, public_exam, save_exam
+from db.exams import _save_drafts, exam_lock, finish_exam, load_chapter, public_exam, save_exam
 from grading.score import choice_correct, exam_pass, percent, points_pass
 
 EXAM_SYSTEM = """You write one CitePath exam for a single study chapter.
@@ -50,12 +50,22 @@ def save_exam_drafts(user_id: int, course_id: int, exam_id: int, answers: list[d
 
 
 def submit_exam(user_id: int, course_id: int, exam_id: int, answers: list[dict]) -> dict:
+    with exam_lock(user_id, course_id, exam_id):
+        return _submit_exam(user_id, course_id, exam_id, answers)
+
+
+def _submit_exam(user_id: int, course_id: int, exam_id: int, answers: list[dict]) -> dict:
     from db.exams import get_owned_exam
 
     exam = get_owned_exam(user_id, course_id, exam_id)
     if exam["status"] != "open":
         return public_exam(exam)
-    given = {int(item["question_id"]): str(item.get("response") or "") for item in answers}
+    if not exam["questions"]:
+        raise ValueError("Cannot grade an empty question set")
+    # Save before any model call so an interrupted submission can be resumed.
+    _save_drafts(user_id, course_id, exam_id, answers)
+    given = {int(q["id"]): str(q.get("draft_response") or "") for q in exam["questions"]}
+    given.update({int(item["question_id"]): str(item.get("response") or "") for item in answers})
     graded = []
     shorts = []
     for question in exam["questions"]:
@@ -114,7 +124,9 @@ def questions_from_reply(payload: dict | None, chapter: dict) -> list[dict]:
         for page in chapter["pages"]
     }
     found: dict[tuple[str, str], dict] = {}
-    for item in payload.get("questions") or []:
+    if not isinstance(payload.get("questions"), list):
+        return []
+    for item in payload["questions"]:
         if not isinstance(item, dict):
             continue
         concept = concepts.get(str(item.get("concept") or "").strip().casefold())
@@ -122,19 +134,27 @@ def questions_from_reply(payload: dict | None, chapter: dict) -> list[dict]:
         if concept is None or kind not in {"mcq", "short"}:
             continue
         sources = []
-        for page in item.get("pages") or []:
+        if not isinstance(item.get("pages"), list):
+            continue
+        for page in item["pages"]:
             if not isinstance(page, dict):
                 continue
-            source = allowed.get((int(page.get("document_id") or 0), int(page.get("page_number") or 0)))
+            if type(page.get("document_id")) is not int or type(page.get("page_number")) is not int:
+                continue
+            source = allowed.get((page["document_id"], page["page_number"]))
             if source and source not in sources:
                 sources.append(source)
         prompt = str(item.get("prompt") or "").strip()
         if not prompt or not sources:
             continue
         if kind == "mcq":
-            options = [_option_text(option) for option in (item.get("options") or [])]
-            options = [option for option in options if _real_option(option)]
-            answer = str(item.get("answer") or "").strip().upper()[:1]
+            raw_options = item.get("options")
+            if not isinstance(raw_options, list) or len(raw_options) != 4 or any(not isinstance(option, str) for option in raw_options):
+                continue
+            options = [_option_text(option) for option in raw_options]
+            if any(not _real_option(option) for option in options):
+                continue
+            answer = str(item.get("answer") or "").strip().upper()
             if len(options) != 4 or len(set(option.casefold() for option in options)) != 4 or answer not in {"A", "B", "C", "D"}:
                 continue
             question = {
@@ -148,9 +168,12 @@ def questions_from_reply(payload: dict | None, chapter: dict) -> list[dict]:
                 "sources": sources,
             }
         else:
-            rubric = [str(point).strip() for point in (item.get("rubric") or []) if str(point).strip()]
+            raw_rubric = item.get("rubric")
+            if not isinstance(raw_rubric, list) or any(not isinstance(point, str) or not point.strip() for point in raw_rubric):
+                continue
+            rubric = [point.strip() for point in raw_rubric]
             answer = str(item.get("answer") or "").strip()
-            if len(rubric) < 3 or len(rubric) > 5 or not answer:
+            if len(rubric) < 3 or len(rubric) > 5 or len({point.casefold() for point in rubric}) != len(rubric) or not answer:
                 continue
             question = {
                 "concept_id": concept["id"],
@@ -202,25 +225,32 @@ def _grade_shorts(shorts: list[tuple]) -> dict[int, list[int]]:
         return {}
     lines = []
     for question, response, rubric in shorts:
+        if not isinstance(rubric, list) or not rubric or any(not isinstance(p, str) or not p.strip() for p in rubric):
+            raise ValueError("Short-answer grading requires nonempty rubric points")
         points = "\n".join(f"{index}. {point}" for index, point in enumerate(rubric))
         lines.append(
             f"id: {int(question['id'])}\nStudent answer:\n{response or '(blank)'}\nRubric:\n{points}"
         )
-    parsed = _ask(GRADE_SYSTEM, "\n\n".join(lines)) or {}
+    parsed = _ask(GRADE_SYSTEM, "\n\n".join(lines))
+    if not isinstance(parsed, dict) or not isinstance(parsed.get("grades"), list):
+        raise RuntimeError("Short-answer grading is incomplete. Answers are saved; retry grading.")
     hits: dict[int, list[int]] = {}
     allowed = {int(question["id"]): len(rubric) for question, _, rubric in shorts}
-    for item in parsed.get("grades") or []:
-        if not isinstance(item, dict):
-            continue
-        question_id = int(item.get("id") or 0)
+    for item in parsed["grades"]:
+        if not isinstance(item, dict) or type(item.get("id")) is not int or not isinstance(item.get("hits"), list):
+            raise RuntimeError("The model returned an invalid short-answer grade; retry grading.")
+        question_id = item["id"]
         total = allowed.get(question_id)
-        if total is None:
-            continue
+        if total is None or question_id in hits:
+            raise RuntimeError("The model returned an unexpected or duplicate short-answer grade")
         chosen = []
-        for index in item.get("hits") or []:
-            if isinstance(index, int) and not isinstance(index, bool) and 0 <= index < total and index not in chosen:
-                chosen.append(index)
+        for index in item["hits"]:
+            if type(index) is not int or not 0 <= index < total or index in chosen:
+                raise RuntimeError("The model returned invalid rubric-point indexes; retry grading.")
+            chosen.append(index)
         hits[question_id] = chosen
+    if set(hits) != set(allowed):
+        raise RuntimeError("Short-answer grading is incomplete. Answers are saved; retry grading.")
     return hits
 
 

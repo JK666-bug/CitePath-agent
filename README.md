@@ -48,3 +48,43 @@ cd backend
 cd frontend
 npm run dev -- --host 127.0.0.1 --port 5173
 ```
+
+## Checks and current scope
+
+From `backend`, using the configured virtual environment (the lightweight test
+dependencies do not download PDF or embedding runtimes):
+
+```powershell
+.\.venv\Scripts\python -m pip install -r requirements-test.txt
+.\.venv\Scripts\python -m unittest discover -s tests -v
+```
+
+From `frontend`:
+
+```powershell
+npm ci
+npm run build
+npm run lint
+```
+
+The backend regression tests mock external services. They verify grading boundaries,
+two-round practice, recovery, duplicate handling, ingestion and plan rescheduling;
+they do not certify real model answer quality or a live MySQL/Milvus deployment.
+
+Practice defaults to an 80% chapter threshold, fixed within each session, and stops
+after passing or after round 2. A failed/incomplete short-answer model grade remains
+retryable and cannot create an official score. Existing plans are rescheduled while
+preserving completed tasks and chapter identity; adding PDFs does not rebuild those
+chapter boundaries. Study-time estimation remains pending.
+
+Original PDFs are stored in `backend/storage/uploads` by default. Set
+`PDF_STORAGE_DIR` in the backend environment for another persistent directory, and
+back up that directory along with MySQL and Milvus. Source links require the
+owning user's login. Re-upload the same PDF to restore originals missing from
+older records.
+
+See [功能核对与续开发记录](docs/STATUS.zh-CN.md),
+[前后端接口说明](frontend/BACKEND_INTEGRATION.zh-CN.md), and
+[evaluation and configuration freezing](docs/EVALUATION.md) for implementation
+status, remaining work and the distinction between regression tests and formal
+evaluation targets.

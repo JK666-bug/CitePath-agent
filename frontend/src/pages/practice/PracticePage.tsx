@@ -16,6 +16,7 @@ import {
 } from '../../shared/components/UI'
 
 import { createPractice } from './api'
+import { PassThreshold } from './RoundSummary'
 
 import './practice.css'
 
@@ -24,6 +25,7 @@ export default function PracticePage() {
   const { search } = useLocation()
   const [startingId, setStartingId] = useState('')
   const [error, setError] = useState('')
+  const [passingThreshold, setPassingThreshold] = useState(0.8)
 
   const filter =
     search.get('course') || 'all'
@@ -168,6 +170,9 @@ export default function PracticePage() {
         </>
       ) : (
         <div className="stack">
+          <section className="panel">
+            <PassThreshold value={passingThreshold} onChange={setPassingThreshold} disabled={Boolean(startingId)} />
+          </section>
           {error && <Notice tone="error">{error}</Notice>}
           {visibleCourses.length === 0 && (
             <Empty title="No courses yet">
@@ -218,7 +223,7 @@ export default function PracticePage() {
                           onClick={() => {
                             setError('')
                             setStartingId(`${course.id}-${chapter.id}`)
-                            void createPractice(course.id, Number(chapter.id))
+                            void createPractice(course.id, Number(chapter.id), passingThreshold)
                               .then((created) =>
                                 navigate(
                                   `/practice/${course.id}/sessions/${created.id}`,

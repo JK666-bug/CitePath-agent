@@ -4,10 +4,11 @@ from pathlib import Path
 
 from fastapi import Depends, FastAPI, File, HTTPException, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from agent.exam import open_exam, save_exam_drafts, start_exam, submit_exam
-from agent.practice import answer_practice, open_practice, start_practice
+from agent.practice import answer_practice, open_practice, save_practice_draft, start_practice
 from agent.llm import ping
 from agent.plan import generate_plan
 from agent.qa import answer_question, list_questions
@@ -21,6 +22,7 @@ from db.courses import (
     owns_document,
 )
 from db.plans import complete_task, ensure_plan_storage, get_plan
+from db.document_files import original_pdf_path, delete_original_pdf
 from db.practice import list_chapter_reports
 from db.uploads import existing_upload, save_document
 from ingest.pdf_reader import read_pdf
@@ -71,6 +73,10 @@ class ExamSubmit(BaseModel):
 class PracticeAnswer(BaseModel):
     question_id: int
     response: str = Field(default="", max_length=5000)
+
+
+class PracticeStart(BaseModel):
+    passing_threshold: float = Field(default=0.8, gt=0, le=1, allow_inf_nan=False, strict=True)
 
 
 def current_user(request: Request) -> dict:
@@ -150,6 +156,7 @@ def remove_course(course_id: int, user: dict = Depends(current_user)):
     if document_ids is None:
         raise HTTPException(status_code=404, detail="Course not found")
     for document_id in document_ids:
+        delete_original_pdf(document_id)
         try:
             delete_segments(document_id)
         except Exception:
@@ -178,7 +185,12 @@ async def add_document(
     if not data:
         raise HTTPException(status_code=400, detail="The PDF is empty")
     digest = hashlib.sha256(data).hexdigest()
-    existing = existing_upload(course_id, digest)
+    try:
+        existing = existing_upload(course_id, digest, pdf_data=data)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
     if existing is not None:
         return existing
     try:
@@ -187,7 +199,25 @@ async def add_document(
         raise HTTPException(status_code=400, detail="This PDF could not be read") from error
     if not pages:
         raise HTTPException(status_code=400, detail="This PDF has no pages")
-    return save_document(course_id, filename, pages, digest)
+    try:
+        return save_document(course_id, filename, pages, digest, pdf_data=data)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
+
+
+@app.get("/api/courses/{course_id}/documents/{document_id}/file")
+def source_document(course_id: int, document_id: int, user: dict = Depends(current_user)):
+    if not owns_document(user["id"], course_id, document_id):
+        raise HTTPException(status_code=404, detail="Material not found")
+    path = original_pdf_path(document_id)
+    if path is None:
+        raise HTTPException(status_code=404, detail="Original PDF unavailable. Upload the same PDF again to restore it.")
+    return FileResponse(
+        path, media_type="application/pdf", filename=f"document-{document_id}.pdf",
+        content_disposition_type="inline", headers={"Cache-Control": "private, no-store"},
+    )
 
 
 @app.delete("/api/courses/{course_id}/documents/{document_id}")
@@ -199,6 +229,7 @@ def remove_document(
     if not owns_document(user["id"], course_id, document_id):
         raise HTTPException(status_code=404, detail="Material not found")
     delete_document_rows(document_id)
+    delete_original_pdf(document_id)
     try:
         delete_segments(document_id)
     except Exception:
@@ -278,6 +309,8 @@ def save_course_exam_drafts(
         )
     except LookupError as error:
         raise HTTPException(status_code=404, detail="Exam not found") from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
 
 
 @app.post("/api/courses/{course_id}/exams/{exam_id}/submit")
@@ -296,6 +329,8 @@ def submit_course_exam(
         )
     except LookupError as error:
         raise HTTPException(status_code=404, detail="Exam not found") from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
     except RuntimeError as error:
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
@@ -303,9 +338,9 @@ def submit_course_exam(
 
 
 @app.post("/api/courses/{course_id}/chapters/{chapter_id}/practice")
-def create_practice(course_id: int, chapter_id: int, user: dict = Depends(current_user)):
+def create_practice(course_id: int, chapter_id: int, body: PracticeStart | None = None, user: dict = Depends(current_user)):
     try:
-        return start_practice(user["id"], course_id, chapter_id)
+        return start_practice(user["id"], course_id, chapter_id, body.passing_threshold if body else 0.8)
     except LookupError as error:
         detail = "Course not found" if str(error) == "Course not found" else "Chapter not found"
         raise HTTPException(status_code=404, detail=detail) from error
@@ -332,6 +367,21 @@ def course_practice(course_id: int, session_id: int, user: dict = Depends(curren
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
         raise HTTPException(status_code=502, detail="Could not start practice") from error
+
+
+@app.patch("/api/courses/{course_id}/practice/{session_id}/draft")
+def save_course_practice_draft(
+    course_id: int,
+    session_id: int,
+    body: PracticeAnswer,
+    user: dict = Depends(current_user),
+):
+    try:
+        return save_practice_draft(user["id"], course_id, session_id, body.question_id, body.response)
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail="Practice not found") from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
 
 
 @app.post("/api/courses/{course_id}/practice/{session_id}/answer")

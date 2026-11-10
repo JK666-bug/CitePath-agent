@@ -1,0 +1,10 @@
+# Lightweight dependencies for deterministic tests; real ingestion additionally
+# requires requirements.txt, Docker services, and the configured model key.
+fastapi==0.136.1
+python-multipart==0.0.22
+pymysql==1.1.2
+langchain-openai==1.1.7
+langchain-core==1.2.7
+openai==2.54.0
+python-dotenv==1.2.4
+httpx==0.28.1

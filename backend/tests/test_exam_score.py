@@ -1,10 +1,41 @@
 import unittest
+from copy import deepcopy
 
 from agent.exam import questions_from_reply
 from grading.score import choice_correct, exam_pass, percent, points_pass
 
 
 class ExamQuestionTest(unittest.TestCase):
+    def valid_payload(self):
+        source = {"document_id": 1, "page_number": 2}
+        chapter = {
+            "concepts": [{"id": 3, "name": "Binary tree"}],
+            "pages": [{**source, "filename": "notes.pdf", "body": "A tree has one root."}],
+        }
+        payload = {"questions": [
+            {"concept": "Binary tree", "kind": "mcq", "prompt": "Which has one root?",
+             "options": ["A graph", "A tree", "A queue", "A heap"], "answer": "B", "pages": [source]},
+            {"concept": "Binary tree", "kind": "short", "prompt": "Describe a binary tree.",
+             "rubric": ["One root", "At most two children", "Connected nodes"],
+             "answer": "A connected tree with a root and at most two children per node.", "pages": [source]},
+        ]}
+        return chapter, payload
+
+    def test_invalid_options_cannot_be_removed_and_shift_the_answer_key(self):
+        chapter, payload = self.valid_payload()
+        for options in (["", "A graph", "A tree", "A queue", "A heap"],
+                        ["A", "A tree", "A queue", "A heap"],
+                        ["A tree", "A TREE", "A queue", "A heap"]):
+            invalid = deepcopy(payload)
+            invalid["questions"][0]["options"] = options
+            with self.subTest(options=options):
+                self.assertEqual(questions_from_reply(invalid, chapter), [])
+
+    def test_duplicate_rubric_points_are_not_weighted_more_than_once(self):
+        chapter, payload = self.valid_payload()
+        payload["questions"][1]["rubric"] = ["One root", " one ROOT ", "Connected nodes"]
+        self.assertEqual(questions_from_reply(payload, chapter), [])
+
     def test_keeps_one_choice_and_one_short_question_per_concept(self):
         chapter = {
             "concepts": [{"id": 3, "name": "Binary tree"}],

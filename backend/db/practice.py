@@ -1,4 +1,5 @@
 import json
+from contextlib import contextmanager
 
 from db.connection import connect
 from db.courses import get_course
@@ -6,13 +7,45 @@ from db.courses import get_course
 _ready = False
 
 
+@contextmanager
+def practice_lock(user_id: int, course_id: int, chapter_id: int):
+    """Serialize starts, grading, drafts and recovery across API workers.
+
+    A connection-scoped MySQL lock spans model calls as well as the short
+    persistence transactions. A disconnected worker automatically releases it.
+    """
+    ensure_practice_storage()
+    connection = connect()
+    name = f"citepath:practice:{user_id}:{course_id}:{chapter_id}"
+    acquired = False
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT GET_LOCK(%s, 30) AS acquired", (name,))
+            acquired = cursor.fetchone()["acquired"] == 1
+        if not acquired:
+            raise RuntimeError("This practice session is busy. Retry shortly.")
+        yield
+    finally:
+        try:
+            if acquired:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT RELEASE_LOCK(%s)", (name,))
+        finally:
+            connection.close()
+
+
 def ensure_practice_storage() -> None:
     global _ready
     if _ready:
         return
     connection = connect()
+    schema_locked = False
     try:
         with connection.cursor() as cursor:
+            cursor.execute("SELECT GET_LOCK('citepath:practice:schema', 30) AS acquired")
+            schema_locked = cursor.fetchone()["acquired"] == 1
+            if not schema_locked:
+                raise RuntimeError("Practice storage is being initialized. Retry shortly.")
             cursor.execute(
                 """
                 CREATE TABLE IF NOT EXISTS concept_progress (
@@ -94,13 +127,112 @@ def ensure_practice_storage() -> None:
             )
             if int(cursor.fetchone()["column_count"]) == 0:
                 cursor.execute("ALTER TABLE practice_sessions ADD COLUMN report_json JSON NULL")
+            # Additive migration: existing sessions retain their original question sets
+            # and are explicitly identified as the legacy, unbounded workflow.
+            for name, definition in (
+                ("workflow_version", "INT NOT NULL DEFAULT 1"),
+                ("passing_threshold", "VARCHAR(64) NOT NULL DEFAULT '0.8'"),
+                ("round_results_json", "JSON NULL"),
+                ("draft_json", "JSON NULL"),
+            ):
+                cursor.execute(
+                    """SELECT COUNT(*) AS column_count FROM information_schema.COLUMNS
+                       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'practice_sessions'
+                         AND COLUMN_NAME = %s""", (name,),
+                )
+                if int(cursor.fetchone()["column_count"]) == 0:
+                    cursor.execute(f"ALTER TABLE practice_sessions ADD COLUMN {name} {definition}")
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        try:
+            if schema_locked:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT RELEASE_LOCK('citepath:practice:schema')")
+        finally:
+            connection.close()
+    _ready = True
+
+
+def store_round(session_id: int, round_number: int, questions: list[dict]) -> None:
+    """Publish a whole question set atomically; never replace saved questions."""
+    if round_number not in (1, 2) or not questions:
+        raise ValueError("A practice round must contain questions and be Round 1 or 2")
+    connection = connect()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id FROM practice_sessions WHERE id = %s AND status = 'open' FOR UPDATE", (session_id,))
+            if cursor.fetchone() is None:
+                raise ValueError("This practice session is closed")
+            cursor.execute("SELECT COUNT(*) AS total FROM practice_questions WHERE session_id = %s AND review_round = %s", (session_id, round_number))
+            if int(cursor.fetchone()["total"]):
+                return
+            cursor.execute("SELECT COALESCE(MAX(position), 0) AS last_position FROM practice_questions WHERE session_id = %s", (session_id,))
+            position = int(cursor.fetchone()["last_position"])
+            for index, question in enumerate(questions, start=1):
+                cursor.execute(
+                    """INSERT INTO practice_questions (
+                      session_id, position, concept_id, concept_name, phase, review_round,
+                      kind, prompt, options_json, answer, rubric_json, sources_json
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                    (session_id, position + index, question["concept_id"], question["concept_name"],
+                     "learn" if round_number == 1 else "review", round_number, question["kind"],
+                     question["prompt"], json.dumps(question["options"], ensure_ascii=False),
+                     question["answer"], json.dumps(question["rubric"], ensure_ascii=False),
+                     json.dumps(question["sources"], ensure_ascii=False)),
+                )
+            cursor.execute(
+                "UPDATE practice_sessions SET phase = %s, review_round = %s WHERE id = %s",
+                ("learn" if round_number == 1 else "review", round_number, session_id),
+            )
         connection.commit()
     except Exception:
         connection.rollback()
         raise
     finally:
         connection.close()
-    _ready = True
+
+
+def round_question_count(session_id: int, round_number: int) -> int:
+    connection = connect()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT COUNT(*) AS total FROM practice_questions WHERE session_id = %s AND review_round = %s", (session_id, round_number))
+            return int(cursor.fetchone()["total"])
+    finally:
+        connection.close()
+
+
+def save_round_results(session_id: int, results: list[dict]) -> None:
+    connection = connect()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("UPDATE practice_sessions SET round_results_json = %s WHERE id = %s", (json.dumps(results, ensure_ascii=False), session_id))
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
+def save_draft(session_id: int, question_id: int, response: str) -> None:
+    connection = connect()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT draft_json FROM practice_sessions WHERE id = %s FOR UPDATE", (session_id,))
+            row = cursor.fetchone()
+            drafts = _json_object(_json_value(row["draft_json"])) or {}
+            drafts[str(question_id)] = response
+            cursor.execute("UPDATE practice_sessions SET draft_json = %s WHERE id = %s", (json.dumps(drafts, ensure_ascii=False), session_id))
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
 
 
 def delete_chapter_sessions(cursor, chapter_ids: list[int]) -> None:
@@ -209,7 +341,7 @@ def open_session_id(user_id: int, course_id: int, chapter_id: int) -> int | None
     return int(row["id"]) if row else None
 
 
-def create_session(user_id: int, course_id: int, chapter: dict) -> int:
+def create_session(user_id: int, course_id: int, chapter: dict, passing_threshold=0.8) -> int:
     ensure_practice_storage()
     connection = connect()
     try:
@@ -217,11 +349,12 @@ def create_session(user_id: int, course_id: int, chapter: dict) -> int:
             cursor.execute(
                 """
                 INSERT INTO practice_sessions (
-                  course_id, user_id, chapter_id, chapter_title, status, phase, review_round, review_queue_json
+                  course_id, user_id, chapter_id, chapter_title, status, phase, review_round, review_queue_json,
+                  workflow_version, passing_threshold, round_results_json, draft_json
                 )
-                VALUES (%s, %s, %s, %s, 'open', 'learn', 0, %s)
+                VALUES (%s, %s, %s, %s, 'open', 'learn', 1, %s, 2, %s, '[]', '{}')
                 """,
-                (course_id, user_id, chapter["id"], chapter["title"], "[]"),
+                (course_id, user_id, chapter["id"], chapter["title"], "[]", str(passing_threshold)),
             )
             session_id = int(cursor.lastrowid)
         connection.commit()
@@ -241,7 +374,8 @@ def get_owned_session(user_id: int, course_id: int, session_id: int) -> dict:
             cursor.execute(
                 """
                 SELECT id, course_id, user_id, chapter_id, chapter_title, status, phase,
-                       review_round, review_queue_json, report_json, created_at, finished_at
+                       review_round, review_queue_json, report_json, created_at, finished_at,
+                       workflow_version, passing_threshold, round_results_json, draft_json
                 FROM practice_sessions
                 WHERE id = %s AND course_id = %s AND user_id = %s
                 """,
@@ -258,6 +392,8 @@ def get_owned_session(user_id: int, course_id: int, session_id: int) -> dict:
         if isinstance(item, dict) and item.get("kind") in {"mcq", "short"}
     ]
     row["report"] = _json_object(_json_value(row["report_json"]))
+    row["round_results"] = _json_list(_json_value(row["round_results_json"]))
+    row["drafts"] = _json_object(_json_value(row["draft_json"])) or {}
     return row
 
 
@@ -456,9 +592,9 @@ def load_session_attempts(session_id: int) -> list[dict]:
         with connection.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT q.id, q.concept_id, q.concept_name, q.kind, q.phase, q.prompt,
+                SELECT q.id, q.concept_id, q.concept_name, q.kind, q.phase, q.review_round, q.prompt,
                        q.answer, q.options_json, q.sources_json,
-                       a.response, a.correct, a.explanation
+                       a.response, a.correct, a.explanation, a.points_hit, a.points_total
                 FROM practice_questions q
                 JOIN practice_answers a ON a.question_id = q.id
                 WHERE q.session_id = %s
@@ -479,10 +615,13 @@ def _attempt(row: dict) -> dict:
         "concept_name": row["concept_name"],
         "kind": row["kind"],
         "phase": row["phase"],
+        "round_number": int(row["review_round"]),
         "prompt": row["prompt"],
         "response": row["response"],
         "options": _json_list(_json_value(row["options_json"])),
         "correct": bool(row["correct"]),
+        "points_hit": int(row["points_hit"]),
+        "points_total": int(row["points_total"]),
         "answer": _display_answer(row),
         "explanation": row["explanation"] or "",
         "sources": _json_list(_json_value(row["sources_json"])),
@@ -509,10 +648,15 @@ def mark_session_finished(session_id: int, user_id: int) -> None:
         connection.close()
 
 
-def publish_session_report(session_id: int, report: dict) -> None:
+def publish_session_report(session_id: int, report: dict, closing: bool = False) -> None:
     connection = connect()
     try:
         with connection.cursor() as cursor:
+            if closing:
+                cursor.execute(
+                    """UPDATE practice_sessions SET status = 'finished', review_queue_json = '[]',
+                       finished_at = CURRENT_TIMESTAMP WHERE id = %s AND status = 'open'""", (session_id,),
+                )
             cursor.execute(
                 "SELECT created_at, finished_at FROM practice_sessions WHERE id = %s",
                 (session_id,),
@@ -559,14 +703,14 @@ def list_chapter_reports(user_id: int, course_id: int, chapter_id: int) -> dict:
                 raise LookupError("Chapter not found")
             cursor.execute(
                 """
-                SELECT s.id, s.created_at, s.finished_at,
+                SELECT s.id, s.created_at, s.finished_at, s.report_json,
                        COUNT(a.id) AS question_count,
                        COALESCE(SUM(a.correct), 0) AS correct_count
                 FROM practice_sessions s
                 LEFT JOIN practice_questions q ON q.session_id = s.id
                 LEFT JOIN practice_answers a ON a.question_id = q.id
                 WHERE s.user_id = %s AND s.course_id = %s AND s.chapter_id = %s AND s.status = 'finished'
-                GROUP BY s.id, s.created_at, s.finished_at
+                GROUP BY s.id, s.created_at, s.finished_at, s.report_json
                 ORDER BY s.finished_at DESC, s.id DESC
                 """,
                 (user_id, course_id, chapter_id),
@@ -586,6 +730,7 @@ def list_chapter_reports(user_id: int, course_id: int, chapter_id: int) -> dict:
         connection.close()
     practice = []
     for row in practice_rows:
+        saved_report = _json_object(_json_value(row["report_json"])) or {}
         question_count = int(row["question_count"] or 0)
         correct_count = int(row["correct_count"] or 0)
         practice.append(
@@ -596,6 +741,9 @@ def list_chapter_reports(user_id: int, course_id: int, chapter_id: int) -> dict:
                 "question_count": question_count,
                 "correct_count": correct_count,
                 "wrong_count": question_count - correct_count,
+                "passed": saved_report.get("passed"),
+                "outcome": saved_report.get("outcome", "legacy"),
+                "rounds": saved_report.get("rounds", []),
             }
         )
     exams = []
@@ -664,7 +812,7 @@ def present_session(user_id: int, course_id: int, session_id: int, concepts: lis
             current = cursor.fetchone()
             cursor.execute(
                 """
-                SELECT q.concept_name, q.kind, q.answer, q.options_json, a.correct, a.explanation
+                SELECT q.concept_name, q.kind, q.answer, q.options_json, q.sources_json, a.correct, a.explanation
                 FROM practice_answers a
                 JOIN practice_questions q ON q.id = a.question_id
                 WHERE q.session_id = %s
@@ -674,6 +822,13 @@ def present_session(user_id: int, course_id: int, session_id: int, concepts: lis
                 (session_id,),
             )
             feedback = cursor.fetchone()
+            cursor.execute(
+                """SELECT COUNT(q.id) AS total, COUNT(a.id) AS answered
+                   FROM practice_questions q LEFT JOIN practice_answers a ON a.question_id = q.id
+                   WHERE q.session_id = %s AND q.review_round = %s""",
+                (session_id, session["review_round"]),
+            )
+            counts = cursor.fetchone()
     finally:
         connection.close()
     question = None
@@ -685,6 +840,7 @@ def present_session(user_id: int, course_id: int, session_id: int, concepts: lis
             "prompt": current["prompt"],
             "options": _json_list(_json_value(current["options_json"])),
             "sources": _json_list(_json_value(current["sources_json"])),
+            "response": session["drafts"].get(str(current["id"]), ""),
         }
     last = None
     if feedback is not None:
@@ -693,6 +849,7 @@ def present_session(user_id: int, course_id: int, session_id: int, concepts: lis
             "correct": bool(feedback["correct"]),
             "explanation": feedback["explanation"] or "",
             "answer": _display_answer(feedback),
+            "sources": _json_list(_json_value(feedback["sources_json"])),
         }
     return {
         "id": int(session["id"]),
@@ -701,6 +858,12 @@ def present_session(user_id: int, course_id: int, session_id: int, concepts: lis
         "chapter_title": session["chapter_title"],
         "status": session["status"],
         "phase": session["phase"],
+        "round_number": int(session["review_round"]),
+        "passing_threshold": float(session["passing_threshold"]),
+        "round_results": session["round_results"],
+        "answered_count": int(counts["answered"]),
+        "round_question_count": int(counts["total"]),
+        "migration_notice": "This saved session used the previous practice workflow; its history is preserved. Start a new session for two-round grading." if int(session["workflow_version"]) < 2 else "",
         "question": question,
         "feedback": None if session["status"] == "finished" else last,
         "report": session["report"] if session["status"] == "finished" else None,

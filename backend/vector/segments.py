@@ -1,14 +1,11 @@
+from __future__ import annotations
+
 import os
 import re
+from typing import TYPE_CHECKING
 
-from pymilvus import (
-    AnnSearchRequest,
-    DataType,
-    Function,
-    FunctionType,
-    MilvusClient,
-    RRFRanker,
-)
+if TYPE_CHECKING:
+    from pymilvus import MilvusClient
 
 COLLECTION = "lecture_segments"
 MAX_CHARS = 60000
@@ -68,6 +65,8 @@ def has_segments(document_id: int) -> bool:
 
 
 def search(document_ids: list[int], query: str, limit: int = SEARCH_LIMIT) -> list[dict]:
+    from pymilvus import AnnSearchRequest, RRFRanker
+
     ids = [int(item) for item in document_ids]
     text = query.strip()
     if not ids or not text:
@@ -462,6 +461,8 @@ def _embedder():
 
 
 def _client() -> MilvusClient:
+    from pymilvus import MilvusClient
+
     return MilvusClient(uri=os.environ.get("MILVUS_URI", "http://127.0.0.1:19530"))
 
 
@@ -486,6 +487,8 @@ def _hybrid_ready(client: MilvusClient) -> bool:
 
 
 def _ensure_collection(client: MilvusClient, dimension: int) -> None:
+    from pymilvus import DataType, Function, FunctionType
+
     if client.has_collection(COLLECTION):
         if _hybrid_ready(client):
             return

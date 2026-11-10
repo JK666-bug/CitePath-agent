@@ -2,7 +2,7 @@ import json
 
 from db.connection import connect
 from db.courses import get_course
-from db.uploads import ensure_document_numbers
+from db.uploads import ensure_document_numbers, require_ingested_documents
 
 _column_ready = False
 
@@ -84,9 +84,15 @@ def ensure_plan_storage() -> None:
 
 
 def load_usable_pages(course_id: int) -> list[dict]:
+    ensure_document_numbers()
     connection = connect()
     try:
         with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT id, filename, ingest_status, ingest_error FROM documents WHERE course_id = %s",
+                (course_id,),
+            )
+            require_ingested_documents(list(cursor.fetchall()))
             cursor.execute(
                 """
                 SELECT d.id AS document_id, d.filename,
@@ -141,6 +147,10 @@ def save_generated_plan(course_id: int, plan: dict) -> dict:
     connection = connect()
     try:
         with connection.cursor() as cursor:
+            cursor.execute("SELECT plan_json FROM study_plans WHERE course_id = %s FOR UPDATE", (course_id,))
+            existing = cursor.fetchone()
+            if existing and _plan_or_none(existing["plan_json"]):
+                raise ValueError("A study plan already exists. Reschedule it to preserve learning history.")
             _delete_chapters(cursor, course_id)
             id_map = {}
             for position, chapter in enumerate(plan["chapters"], start=1):
@@ -190,6 +200,76 @@ def save_generated_plan(course_id: int, plan: dict) -> dict:
     return stored
 
 
+def load_plan_feedback(user_id: int, course_id: int) -> dict[str, list[str]]:
+    from db.practice import ensure_practice_storage
+
+    ensure_practice_storage()
+    connection = connect()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT chapter_id, report_json FROM practice_sessions
+                WHERE user_id = %s AND course_id = %s AND status = 'finished'
+                  AND report_json IS NOT NULL
+                ORDER BY finished_at DESC, id DESC
+                """,
+                (user_id, course_id),
+            )
+            return feedback_from_reports(list(cursor.fetchall()))
+    finally:
+        connection.close()
+
+
+def feedback_from_reports(rows: list[dict]) -> dict[str, list[str]]:
+    feedback = {}
+    for row in rows:
+        chapter_id = str(row["chapter_id"])
+        if chapter_id in feedback:
+            continue
+        report = row["report_json"]
+        if isinstance(report, (bytes, bytearray)):
+            report = report.decode()
+        if isinstance(report, str):
+            try:
+                report = json.loads(report)
+            except json.JSONDecodeError:
+                report = None
+        if not isinstance(report, dict):
+            report = {}
+        weak = report.get("remaining_weak_concepts")
+        if weak is None:
+            weak = [item.get("concept_name") for item in report.get("wrong") or [] if isinstance(item, dict)]
+        feedback[chapter_id] = [str(item) for item in weak if isinstance(item, str) and item.strip()] if isinstance(weak, list) else []
+    return feedback
+
+
+def save_rescheduled_plan(course_id: int, plan: dict) -> dict:
+    """Publish a schedule without replacing chapters or losing a concurrent completion."""
+    connection = connect()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT plan_json FROM study_plans WHERE course_id = %s FOR UPDATE", (course_id,))
+            row = cursor.fetchone()
+            current = _plan_or_none(row["plan_json"]) if row else None
+            if not current:
+                raise ValueError("The existing study plan could not be loaded")
+            if {str(item["id"]) for item in current["chapters"]} != {str(item["id"]) for item in plan["chapters"]}:
+                raise ValueError("The study chapters changed. Reload the plan and retry.")
+            completed = {task["id"]: task for task in current["tasks"] if task.get("status") == "Completed"}
+            stored = json.loads(json.dumps(plan))
+            stored["tasks"] = [completed.get(task["id"], task) for task in stored["tasks"]]
+            stored["version"] = int(current.get("version") or 1) + 1
+            _write_plan_json(cursor, course_id, stored)
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+    return stored
+
+
 def save_plan(course_id: int, plan: dict) -> None:
     ensure_plan_storage()
     connection = connect()
@@ -205,20 +285,29 @@ def save_plan(course_id: int, plan: dict) -> None:
 
 
 def complete_task(user_id: int, course_id: int, task_id: str) -> dict:
-    current = get_plan(user_id, course_id)
-    plan = current["plan"]
-    if not plan:
-        raise LookupError("Task not found")
-    found = False
-    for task in plan["tasks"]:
-        if task.get("id") != task_id:
-            continue
-        found = True
-        task["status"] = "Completed"
-        break
-    if not found:
-        raise LookupError("Task not found")
-    save_plan(course_id, plan)
+    if get_course(user_id, course_id) is None:
+        raise LookupError("Course not found")
+    ensure_plan_storage()
+    connection = connect()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT plan_json FROM study_plans WHERE course_id = %s FOR UPDATE", (course_id,))
+            row = cursor.fetchone()
+            plan = _plan_or_none(row["plan_json"]) if row else None
+            if not plan:
+                raise LookupError("Task not found")
+            task = next((item for item in plan["tasks"] if item.get("id") == task_id), None)
+            if task is None:
+                raise LookupError("Task not found")
+            task["status"] = "Completed"
+            _write_plan_json(cursor, course_id, plan)
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+    _stamp_document_numbers(plan, course_id)
     return {"status": "ready", "plan": plan}
 
 

@@ -152,7 +152,7 @@ export default function ExamReportPage({
               {expectedAnswer(item)}
             </p>
             {item.explanation && <p>{item.explanation}</p>}
-            <Sources sources={item.sources} />
+            <Sources sources={item.sources} courseId={courseId} />
           </article>
         ))}
       </section>

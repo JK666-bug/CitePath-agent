@@ -181,6 +181,17 @@ function ProtectedPages() {
   )
 
   if (practice) {
+    if (practice[1] !== 'demo') {
+      return practice[3] ? (
+        <ReportsPage
+          key={`${practice[1]}-${practice[2]}`}
+          courseId={practice[1]}
+          chapterId={practice[2]}
+        />
+      ) : (
+        <Redirect to={`/practice?course=${practice[1]}`} />
+      )
+    }
     return practice[3] ? (
       <ChapterReportPage
         courseId={practice[1]}

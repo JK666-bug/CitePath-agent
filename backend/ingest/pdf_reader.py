@@ -1,7 +1,5 @@
 import io
 
-import fitz
-
 from ingest.clean import strip_page_furniture
 
 _converter = None
@@ -42,6 +40,8 @@ def read_pdf(data: bytes) -> list[dict]:
 
 
 def _page_count(data: bytes) -> int:
+    import fitz
+
     document = fitz.open(stream=data, filetype="pdf")
     try:
         return document.page_count

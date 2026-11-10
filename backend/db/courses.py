@@ -132,13 +132,13 @@ def get_course(user_id: int, course_id: int) -> dict | None:
                 return None
             cursor.execute(
                 """
-                SELECT d.id, d.position, d.filename, d.ingest_status,
+                SELECT d.id, d.position, d.filename, d.ingest_status, d.ingest_error,
                        COUNT(p.id) AS page_count,
                        SUM(CASE WHEN p.usable = 1 THEN 1 ELSE 0 END) AS usable_page_count
                 FROM documents d
                 LEFT JOIN pages p ON p.document_id = d.id
                 WHERE d.course_id = %s
-                GROUP BY d.id, d.position, d.filename, d.ingest_status
+                GROUP BY d.id, d.position, d.filename, d.ingest_status, d.ingest_error
                 ORDER BY d.position, d.id
                 """,
                 (course_id,),
@@ -157,6 +157,7 @@ def get_course(user_id: int, course_id: int) -> dict | None:
                 "position": int(row["position"]),
                 "filename": row["filename"],
                 "ingest_status": row["ingest_status"],
+                "ingest_error": row["ingest_error"],
                 "page_count": int(row["page_count"] or 0),
                 "usable_page_count": int(row["usable_page_count"] or 0),
             }

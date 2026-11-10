@@ -1,5 +1,3 @@
-from fastembed.rerank.cross_encoder import TextCrossEncoder
-
 MODEL_NAME = "Xenova/ms-marco-MiniLM-L-6-v2"
 _model = None
 
@@ -17,7 +15,9 @@ def rerank(query: str, hits: list[dict]) -> list[dict]:
     return ranked
 
 
-def _encoder() -> TextCrossEncoder:
+def _encoder():
+    from fastembed.rerank.cross_encoder import TextCrossEncoder
+
     global _model
     if _model is None:
         _model = TextCrossEncoder(model_name=MODEL_NAME)

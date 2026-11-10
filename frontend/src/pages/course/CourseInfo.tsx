@@ -259,11 +259,15 @@ export default function CourseInfo({
 
                   <div>
                     <strong>
-                      {material.filename}
+                      {demo ? material.filename : (
+                        <a href={`/api/courses/${courseId}/documents/${material.id}/file`} target="_blank" rel="noreferrer">
+                          {material.filename}
+                        </a>
+                      )}
                     </strong>
 
                     <p>
-                      Doc {material.position}
+                      Doc {material.id}
                       {' · '}
                       {material.page_count}
                       {' '}pages
@@ -271,6 +275,12 @@ export default function CourseInfo({
                       {material.usable_page_count}
                       {' '}usable pages
                     </p>
+                    {material.ingest_error && (
+                      <p className="field-error">{material.ingest_error}</p>
+                    )}
+                    {material.ingest_status === 'failed' && (
+                      <p>Upload the same PDF again to retry processing.</p>
+                    )}
                   </div>
 
                   <span className="badge">

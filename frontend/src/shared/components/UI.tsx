@@ -197,8 +197,10 @@ export function Modal({
 
 export function Sources({
   sources,
+  courseId,
 }: {
   sources: Source[]
+  courseId?: string | number
 }) {
   const [selected, setSelected] =
     useState<Source | null>(null)
@@ -219,7 +221,7 @@ export function Sources({
             }
           >
             <FileText size={12} />
-            Doc {source.position ?? source.document_id}
+            Doc {source.document_id}
             {' · '}
             p. {source.page_number}
           </button>
@@ -238,17 +240,23 @@ export function Sources({
             </strong>
 
             <p>
-              Document {selected.position ?? selected.document_id}
+              Document {selected.document_id}
               {' · '}
-              PDF page {selected.page_number}
+              Original PDF page {selected.page_number}
             </p>
 
-            <p className="muted">
-              This reference identifies the
-              source page. The current backend
-              does not provide a PDF viewer or
-              file download endpoint.
-            </p>
+            {courseId && courseId !== 'demo' ? (
+              <a
+                className="button secondary"
+                href={`/api/courses/${courseId}/documents/${selected.document_id}/file#page=${selected.page_number}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open original PDF at this page
+              </a>
+            ) : (
+              <p className="muted">This reference identifies the original document and PDF page.</p>
+            )}
           </div>
         )}
       </Modal>

@@ -63,6 +63,7 @@ export default function TaskDetails({
             </strong>
 
             <Sources
+              courseId={courseId}
               sources={task.sources}
             />
           </div>

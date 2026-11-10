@@ -146,7 +146,7 @@ def _choose_and_answer(
 
     @tool
     def chapter_mastery(chapter: str) -> str:
-        """Read whether each chapter's concepts are all mastered."""
+        """Read chapter pass outcomes, separate round scores and whether its concepts are all mastered."""
         state["study"] = True
         return _study_json(chapter_report, user_id, course_id, chapter, state)
 

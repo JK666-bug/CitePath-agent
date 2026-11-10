@@ -67,7 +67,7 @@ export default function ReportsPage({
       <PageHeader
         eyebrow="Review"
         title={reports.chapter_title}
-        subtitle="Finished practice rounds and every exam for this chapter."
+        subtitle="Finished chapter sessions and exams. Open a practice report to see each round’s result."
       />
 
       <section className="stack">
@@ -75,7 +75,7 @@ export default function ReportsPage({
         {reports.practice.length > 0 && (
           <p className="muted">
             {reports.practice.length} finished
-            {reports.practice.length === 1 ? ' round' : ' rounds'}.
+            {reports.practice.length === 1 ? ' session' : ' sessions'}.
             {' '}
             {practiceCorrect} correct. {practiceWrong} wrong.
           </p>
@@ -87,7 +87,7 @@ export default function ReportsPage({
           <article className="panel" key={item.id}>
             <div className="actions spread">
               <p className="question-concept">
-                Round {reports.practice.length - index}
+                Session {reports.practice.length - index}
               </p>
               <span className="badge">
                 {item.correct_count} correct · {item.wrong_count} wrong

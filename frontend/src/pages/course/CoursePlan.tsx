@@ -180,8 +180,7 @@ export default function CoursePlan({
 
       {entry?.generating && (
         <Notice>
-          Creating a new plan from your note
-          and lecture pages…
+          Rescheduling unfinished tasks from your note and study results…
         </Notice>
       )}
 
@@ -239,11 +238,8 @@ export default function CoursePlan({
           <h2>Plan dates</h2>
 
           <p className="muted small">
-            Chapters are spread from the
-            start date through the end date.
-            The study brief is saved on this
-            course. Regenerating replaces this
-            plan.
+            Updates unfinished tasks; completed work and chapter boundaries are preserved.
+            Your study brief is saved on this course.
           </p>
 
           <PlanDates
@@ -254,22 +250,11 @@ export default function CoursePlan({
             busy={Boolean(entry?.generating)}
             label={
               entry?.generating
-                ? 'Creating your plan…'
-                : 'Regenerate plan'
+                ? 'Rescheduling…'
+                : 'Reschedule plan'
             }
             onGenerate={(start, end, note) => {
-              if (
-                window.confirm(
-                  'Save this study brief and generate a new plan? Completed tasks in this plan will be reset.',
-                )
-              ) {
-                void generateCoursePlan(
-                  numericId,
-                  start,
-                  end,
-                  note,
-                )
-              }
+              void generateCoursePlan(numericId, start, end, note)
             }}
           />
         </section>
@@ -315,6 +300,7 @@ export default function CoursePlan({
               </div>
 
               <Sources
+                courseId={courseId}
                 sources={chapter.sources}
               />
             </header>

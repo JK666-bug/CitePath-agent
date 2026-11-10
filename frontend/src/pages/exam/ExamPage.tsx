@@ -39,6 +39,12 @@ export default function ExamPage({
   const [busy, setBusy] = useState(false)
   const [saved, setSaved] = useState('')
   const skipSave = useRef(true)
+  const draftQueue = useRef<Promise<void>>(Promise.resolve())
+  const latestAnswers = useRef<Record<number, string>>({})
+
+  useEffect(() => {
+    latestAnswers.current = answers
+  }, [answers])
 
   useEffect(() => {
     let active = true
@@ -69,25 +75,34 @@ export default function ExamPage({
   }, [courseId, examId])
 
   useEffect(() => {
-    if (!exam || exam.status === 'finished') return
+    if (!exam || exam.status === 'finished' || busy) return
     if (skipSave.current) {
       skipSave.current = false
       return
     }
     const handle = window.setTimeout(() => {
-      void saveExamDraft(
+      const request = draftQueue.current.then(() => saveExamDraft(
         Number(courseId),
         exam.id,
         exam.questions.map((question) => ({
           question_id: question.id,
           response: answers[question.id] || '',
         })),
-      )
-        .then(() => setSaved('Saved'))
-        .catch(() => setSaved(''))
+      ))
+      draftQueue.current = request.then(() => undefined, () => undefined)
+      request.then(() => {
+        if (latestAnswers.current === answers) setSaved('Draft saved to your account')
+      }).catch(() => {
+        if (latestAnswers.current === answers) setSaved('Draft not saved. Retry before leaving this page.')
+      })
     }, 500)
     return () => window.clearTimeout(handle)
-  }, [answers, courseId, exam])
+  }, [answers, busy, courseId, exam])
+
+  function changeAnswer(questionId: number, value: string) {
+    setSaved('Saving draft…')
+    setAnswers((current) => ({ ...current, [questionId]: value }))
+  }
 
   async function onSubmit(
     event: FormEvent<HTMLFormElement>,
@@ -105,6 +120,7 @@ export default function ExamPage({
     setBusy(true)
     setError('')
     try {
+      await draftQueue.current
       await submitExam(
         Number(courseId),
         exam.id,
@@ -152,6 +168,7 @@ export default function ExamPage({
         <fieldset
           className="panel question-card"
           key={question.id}
+          disabled={busy}
         >
           <div className="actions spread">
             <span className="eyebrow">
@@ -186,12 +203,7 @@ export default function ExamPage({
                       name={`question-${question.id}`}
                       checked={answers[question.id] === letter}
                       value={letter}
-                      onChange={() =>
-                        setAnswers((current) => ({
-                          ...current,
-                          [question.id]: letter,
-                        }))
-                      }
+                      onChange={() => changeAnswer(question.id, letter)}
                     />
                     <span className="option-letter">
                       {letter}
@@ -210,17 +222,12 @@ export default function ExamPage({
                 rows={4}
                 maxLength={5000}
                 value={answers[question.id] || ''}
-                onChange={(event) =>
-                  setAnswers((current) => ({
-                    ...current,
-                    [question.id]: event.target.value,
-                  }))
-                }
+                onChange={(event) => changeAnswer(question.id, event.target.value)}
               />
             </label>
           )}
 
-          <Sources sources={question.sources} />
+          <Sources sources={question.sources} courseId={courseId} />
         </fieldset>
       ))}
 
