@@ -1,0 +1,2326 @@
+{
+  "status": "blank-template-not-observed-runs",
+  "dataset_sha256": "50cc18c869ca285cab91637fb10912f0bd3faf61bda7199d809db26b29a0b6c9",
+  "records": [
+    {
+      "item_id": "WF-01",
+      "variant": "baseline",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-01",
+      "variant": "full",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-02",
+      "variant": "baseline",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-02",
+      "variant": "full",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-03",
+      "variant": "baseline",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-03",
+      "variant": "full",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-04",
+      "variant": "baseline",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-04",
+      "variant": "full",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-05",
+      "variant": "baseline",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-05",
+      "variant": "full",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-06",
+      "variant": "baseline",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-06",
+      "variant": "full",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-07",
+      "variant": "baseline",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-07",
+      "variant": "full",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-08",
+      "variant": "baseline",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-08",
+      "variant": "full",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-09",
+      "variant": "baseline",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-09",
+      "variant": "full",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-10",
+      "variant": "baseline",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-10",
+      "variant": "full",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-11",
+      "variant": "baseline",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-11",
+      "variant": "full",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-12",
+      "variant": "baseline",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-12",
+      "variant": "full",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-13",
+      "variant": "baseline",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-13",
+      "variant": "full",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-14",
+      "variant": "baseline",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-14",
+      "variant": "full",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-15",
+      "variant": "baseline",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-15",
+      "variant": "full",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-16",
+      "variant": "baseline",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-16",
+      "variant": "full",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-17",
+      "variant": "baseline",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-17",
+      "variant": "full",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-18",
+      "variant": "baseline",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-18",
+      "variant": "full",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-19",
+      "variant": "baseline",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-19",
+      "variant": "full",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-20",
+      "variant": "baseline",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    },
+    {
+      "item_id": "WF-20",
+      "variant": "full",
+      "prediction": {
+        "collected_at": null,
+        "configuration_sha256": "d82aac89f21fb409facebf7e08ef7e6ab28bca1bfe5fcd2f3ff2e1fec3761e1e",
+        "model": "gpt-4.1-mini",
+        "runs": [
+          {
+            "repeat": 1,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 2,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          },
+          {
+            "repeat": 3,
+            "actions": [],
+            "transitions": [],
+            "final_state": null,
+            "round_count": null,
+            "third_round": null,
+            "duplicate_scoring": null,
+            "qa_score_changed": null,
+            "grading_feedback_latency_ms": null,
+            "model_calls": null,
+            "input_tokens": null,
+            "output_tokens": null,
+            "estimated_cost": null
+          }
+        ],
+        "provider": "hku",
+        "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6"
+      }
+    }
+  ]
+}

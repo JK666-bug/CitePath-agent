@@ -99,7 +99,9 @@ or prepare an explicitly reviewed one-lecture fixture. Never silently substitute
 the dynamic theme count for the proposal's evaluation chapter count. The blank
 preparation cohorts contain no observed runtime mapping and cannot certify that
 protocol step. The old `evaluation_assets/final` preparation snapshot is retained
-for provenance; later code/provider changes require a new named cohort.
+for provenance; later code/provider changes require a new named cohort. The updated
+preparation batch is `evaluation_assets/cohorts/upstream-20261112`; its labels,
+predictions, workflow observations and chapter mapping remain unfilled.
 
 ## Dataset schema
 

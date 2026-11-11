@@ -1,0 +1,28 @@
+{
+  "status": "not_observed_requires_review_before_formal_collection",
+  "dataset_sha256": "50cc18c869ca285cab91637fb10912f0bd3faf61bda7199d809db26b29a0b6c9",
+  "evaluation_unit_policy": "One lecture is one proposal evaluation unit; application teaching themes must be explicitly mapped and ordered.",
+  "units": [
+    {
+      "lecture": 4,
+      "document_id": "mit6006-l04",
+      "application_chapter_ids": [],
+      "execution_order": [],
+      "reviewed_by": null
+    },
+    {
+      "lecture": 6,
+      "document_id": "mit6006-l06",
+      "application_chapter_ids": [],
+      "execution_order": [],
+      "reviewed_by": null
+    },
+    {
+      "lecture": 8,
+      "document_id": "mit6006-l08",
+      "application_chapter_ids": [],
+      "execution_order": [],
+      "reviewed_by": null
+    }
+  ]
+}
