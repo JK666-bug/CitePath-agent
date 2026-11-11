@@ -1,5 +1,6 @@
 import json
 import unittest
+from unittest.mock import patch
 
 from agent.plan import (
     assemble_plan,
@@ -7,6 +8,7 @@ from agent.plan import (
     parse_brief,
     schedule_tasks,
     study_window,
+    _split_pages,
 )
 from db.courses import brief_with_note
 
@@ -160,6 +162,14 @@ class PlanBuildTest(unittest.TestCase):
         self.assertEqual(chapters[0]["title"], "First")
         self.assertNotIn("Again", [item["title"] for item in chapters])
 
+    def test_accepts_more_than_twelve_chapters_without_losing_pages(self):
+        pages = [_page(1, number, "Topic") for number in range(1, 18)]
+        payload = _proposal(pages)
+        chapters, _, complete = chapters_from_reply(payload, pages)
+        self.assertTrue(complete)
+        self.assertEqual(len(chapters), 17)
+        self.assertEqual(chapters[-1]["sources"][0]["page_number"], 17)
+
     def test_schedule_places_chapters_on_dates_only(self):
         chapters = [
             {
@@ -206,3 +216,53 @@ class PlanBuildTest(unittest.TestCase):
             schedule_tasks(chapters, "2026-11-08", "2026-11-10")[0]["date"],
             "2026-11-08",
         )
+
+
+def _proposal(pages):
+    return {
+        "reason": "Follow the document's learning objectives.",
+        "chapters": [
+            {
+                "title": f"Topic {page['document_id']}-{page['page_number']}",
+                "concepts": ["Definition", "Application"],
+                "pages": [{"document_id": page["document_id"], "page_number": page["page_number"]}],
+            }
+            for page in pages
+        ],
+    }
+
+
+class DocumentDivisionTest(unittest.TestCase):
+    @patch("agent.plan._ask_model")
+    def test_divides_documents_in_isolation_and_schedules_every_chapter(self, ask):
+        first = [_page(1, number, "First") for number in range(1, 10)]
+        second = [_page(2, number, "Second", "other.pdf") for number in range(1, 9)]
+        ask.side_effect = lambda brief, pages, start, end, remind: _proposal(pages)
+        args = ({"note": "Beginner"}, "2026-11-11", "2026-12-09")
+        alone, _ = _split_pages(args[0], first, *args[1:])
+        ask.reset_mock()
+        combined, _ = _split_pages(args[0], first + second, *args[1:])
+        self.assertEqual(combined[:len(alone)], alone)
+        self.assertEqual([call.args[1] for call in ask.call_args_list], [first, second])
+        self.assertEqual([chapter["id"] for chapter in combined], [f"c{i}" for i in range(1, 18)])
+        plan = assemble_plan(combined, *args[1:], "Per-document division", 1)
+        self.assertEqual(len({task["id"] for task in plan["tasks"]}), 51)
+
+    @patch("agent.plan._ask_model")
+    def test_retries_only_the_incomplete_document(self, ask):
+        first = [_page(1, 1, "First")]
+        second = [_page(2, 1, "Second", "other.pdf")]
+        # A reference to another document cannot satisfy this document's coverage.
+        ask.side_effect = [_proposal(first), _proposal(first), _proposal(second)]
+        chapters, _ = _split_pages({"note": "Learn"}, first + second, "2026-11-11", "2026-12-09")
+        self.assertEqual(len(chapters), 2)
+        self.assertEqual([call.args[1] for call in ask.call_args_list], [first, second, second])
+        self.assertEqual([call.kwargs["remind"] for call in ask.call_args_list], [False, False, True])
+
+    @patch("agent.plan._ask_model")
+    def test_does_not_return_a_partial_course_when_a_document_fails(self, ask):
+        first = [_page(1, 1, "First")]
+        second = [_page(2, 1, "Second", "other.pdf")]
+        ask.side_effect = [_proposal(first), None, None]
+        with self.assertRaisesRegex(ValueError, "Could not divide"):
+            _split_pages({"note": "Learn"}, first + second, "2026-11-11", "2026-12-09")
