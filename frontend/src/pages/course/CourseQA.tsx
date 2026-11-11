@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
+import { ArrowUpRight, Check, History, MessageSquare } from 'lucide-react'
 
 import type {
   CourseDetail,
@@ -44,6 +45,18 @@ export default function CourseQA({
 
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [selectedId, setSelectedId] =
+    useState<number | null>(null)
+
+  const historyRecords = [...records].sort(
+    (a, b) => b.response.qa_id - a.response.qa_id,
+  )
+  const selectedRecord =
+    historyRecords.find(
+      (record) => record.response.qa_id === selectedId,
+    ) ?? historyRecords[0] ?? null
+  const displayedRecords =
+    !demo && selectedRecord ? [selectedRecord] : []
 
   useEffect(() => {
     if (demo) return
@@ -101,6 +114,7 @@ export default function CourseQA({
         },
         ...current,
       ])
+      setSelectedId(response.qa_id)
 
       setQuestion('')
     } catch (reason) {
@@ -112,7 +126,7 @@ export default function CourseQA({
 
   return (
     <div className="qa-page stack">
-      <section className="panel">
+      <section className="panel qa-question">
         <h2>Ask your course materials</h2>
 
         <p className="muted">
@@ -193,6 +207,86 @@ export default function CourseQA({
         </form>
       </section>
 
+      <aside
+        className="panel qa-history"
+        aria-labelledby="qa-history-title"
+      >
+        <header className="qa-history-header">
+          <div className="qa-history-heading">
+            <span className="qa-history-heading-icon" aria-hidden="true">
+              <History size={18} strokeWidth={1.7} />
+            </span>
+            <h2 id="qa-history-title">Q&A history</h2>
+            {!demo && (
+              <span className="qa-history-count">
+                {historyRecords.length}
+              </span>
+            )}
+          </div>
+          <p className="qa-history-description">
+            Your questions, newest first.
+          </p>
+        </header>
+
+        {demo ? (
+          <div className="qa-history-empty">
+            <MessageSquare size={24} strokeWidth={1.5} aria-hidden="true" />
+            <p>History is available in real courses.</p>
+          </div>
+        ) : historyRecords.length === 0 ? (
+          <div className="qa-history-empty">
+            <MessageSquare size={24} strokeWidth={1.5} aria-hidden="true" />
+            <strong>A place for your questions</strong>
+            <p>Ask your first question to start your history.</p>
+          </div>
+        ) : (
+          <ul className="qa-history-list">
+            {historyRecords.map((record, index) => {
+              const id = record.response.qa_id
+              const selected =
+                selectedRecord?.response.qa_id === id
+
+              return (
+                <li key={id}>
+                  <button
+                    type="button"
+                    className={
+                      `qa-history-item${selected ? ' is-selected' : ''}`
+                    }
+                    aria-pressed={selected}
+                    aria-controls="qa-answer-panel"
+                    onClick={() => setSelectedId(id)}
+                  >
+                    <span className="qa-history-item-heading">
+                      <span className="qa-history-item-label">
+                        {index === 0 ? 'Latest question' : 'Earlier question'}
+                      </span>
+                      {selected && (
+                        <span className="qa-history-selected-icon" aria-hidden="true">
+                          <Check size={12} strokeWidth={2.5} />
+                        </span>
+                      )}
+                    </span>
+                    <span className="qa-history-question">
+                      {record.question || 'Untitled question'}
+                    </span>
+                    <span className="qa-history-preview">
+                      {record.response.answer}
+                    </span>
+                    <span className="qa-history-meta">
+                      <span>
+                        {selected ? 'Currently viewing' : 'View answer'}
+                      </span>
+                      <ArrowUpRight size={14} aria-hidden="true" />
+                    </span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </aside>
+
       {demo && (
         <section className="panel qa-answer">
           <span className="badge">
@@ -221,12 +315,22 @@ export default function CourseQA({
         </section>
       )}
 
-      {records.map((record, index) => (
+      {!demo && !selectedRecord && (
+        <section id="qa-answer-panel" className="panel qa-empty">
+          <h3>Your answer will appear here</h3>
+          <p className="muted">
+            Ask a question above, or select a saved question
+            from the history to view its answer.
+          </p>
+        </section>
+      )}
+
+      {displayedRecords.map((record) => (
         <section
+          id="qa-answer-panel"
           className="panel qa-answer"
-          key={
-            `${record.response.qa_id}-${index}`
-          }
+          key={record.response.qa_id}
+          aria-label="Selected question and answer"
         >
           <p className="eyebrow">
             Your question
