@@ -1,6 +1,6 @@
 # CitePath 前后端对接说明
 
-核对日期：2026-11-11。当前 React 前端已经连接真实规划、练习、考试、报告与问答 API；界面演示仍是独立的固定样例。接口实现不等于已完成真实数据库、向量库和模型的端到端验收，完整状态见 [功能核对](../docs/STATUS.zh-CN.md)。
+核对日期：2026-11-12。已兼容最新上游的模型配置、规划和问答历史变化。当前 React 前端连接规划、练习、考试、报告与问答 API；界面演示仍是独立的固定样例。接口实现不等于已完成真实数据库、向量库和模型的端到端验收，完整状态见 [功能核对](../docs/STATUS.zh-CN.md)。
 
 ## 调用与登录
 
@@ -16,6 +16,9 @@
 | GET | `/api/courses/{course_id}/documents/{document_id}/file` | 有所有权检查的原始 PDF 查看/下载 |
 | DELETE | `/api/courses/{course_id}/documents/{document_id}` | 删除资料 |
 | GET / POST | `/api/courses/{course_id}/plan` | 读取计划、首次生成或重新排期 |
+| GET / POST | `/api/courses/{course_id}/plan/requirements` | 读取或核对规划输入，缺项返回补充问题 |
+| GET | `/api/courses/{course_id}/plan/versions` | 只读版本列表 |
+| GET | `/api/courses/{course_id}/plan/versions/{version}` | 查看不可修改的历史快照 |
 | POST | `/api/courses/{course_id}/plan/tasks/{task_id}/complete` | 完成任务 |
 | POST | `/api/courses/{course_id}/chapters/{chapter_id}/practice` | 开始或恢复章节练习 |
 | GET | `/api/courses/{course_id}/practice/{session_id}` | 恢复原题组、当前题、草稿、成绩和状态 |
@@ -45,14 +48,20 @@
 `POST /plan` 请求：
 
 ```json
-{"start":"2026-11-11","end":"2026-12-01","note":"Focus on graph search"}
+{"start":"2026-11-12","end":"2026-12-01","note":"Focus on graph search","profile":{"goal":"Prepare for the exam","prior_knowledge":"Beginner","daily_minutes":60,"reading_words_per_minute":180}}
 ```
 
 首次请求读取已完成入库的讲义，以模型生成章节、概念、引用页和日期任务。返回 `{ "status": "ready", "plan": ... }`，计划包含 `version`、`start`、`end`、`reason`、`chapters`、`tasks`。任务拥有稳定 ID、章节 ID、类型、日期、完成状态和来源。
 
-已有计划再次请求会重新排期，保留章节边界与 ID、已完成任务、已存题目和报告，只调整未完成任务。最新正式练习报告中的薄弱章节优先，其后参考备注关键词；这一路径不重新调用模型或向量检索。并发完成任务采用行锁保护。现阶段新增 PDF 不会自动改变既有章节，需要后续的完整重新分析/计划版本管理功能。
+显式提供的 `profile` 缺少目标、先修知识或每日分钟数时，返回 HTTP 200 的 `status: needs_input`、`questions`、标准化 `profile` 和已有 `plan`，不调用规划模型。每日分钟数为 1–1440 的整数，阅读速度为 1–1200 的有限数值。旧客户端省略 `profile` 时采用保存值或明确记录的默认假设。
 
-预计学习时长尚未实现，当前日历依据任务日期展示，不应把演示数据中的时长当作真实估算。
+已有计划再次请求会重新排期，保留章节边界与 ID、已完成任务完整快照、已存题目和报告，只调整未完成任务。最新正式练习报告中的薄弱章节优先，其后参考备注关键词；普通重新排期不调用模型或向量检索。课程级命名锁覆盖规划过程，发布时再次校验版本和资料指纹，并发完成任务使用行锁保护。
+
+`GET /plan` 和成功发布返回 `material_update: {new_page_count,new_document_ids,missing_document_ids,can_update}`。新资料不会自动重建旧章节；明确发送 `update_materials: true` 和当前 `expected_version` 才增量解析尚未纳入的教学页。每份 PDF 独立划分主题；旧章节、概念、完成任务和报告保持。版本或资料变化返回 HTTP 409，前端重新加载最新计划，输入仍可修改后重试。
+
+计划包含 `planning_profile`、`estimated_total_minutes`、`estimated_remaining_minutes`、`estimate_basis` 和 `capacity`；章节及任务提供 `estimated_minutes`。估时根据实际教学文本、阅读速度和概念练习开销计算，界面标明启发式假设，展示每日预算及超额警告。旧的已完成任务不补写估时，缺失值不冒充零分钟实测结果。
+
+版本列表返回 `{versions:[{version,reason,created_at,change_type}],read_only:true}`；单版本返回 `{version,plan,saved_at,change_type,read_only:true}`。生成、排期、增量资料和首次完成任务均保存不可覆盖的版本，重复完成不增加版本；历史界面仅查看，不恢复或覆盖当前计划。
 
 ## 章节练习协议
 

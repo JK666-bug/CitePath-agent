@@ -94,8 +94,35 @@ def main(argv=None):
     collect = commands.add_parser("collect-grading", help="Run the actual grader once and reuse first-round grades for both variants")
     collect.add_argument("dataset", type=Path)
     collect.add_argument("--output", type=Path, required=True)
+    integration = commands.add_parser("live-integration", help="Observe a bounded live development API workflow, separate from formal evaluation")
+    integration.add_argument("--api-url", default="http://127.0.0.1:8000")
+    integration.add_argument("--corpus", type=Path)
+    integration.add_argument("--answers", type=Path)
+    integration.add_argument("--output", type=Path, required=True)
+    integration.add_argument("--allow-create-test-data", action="store_true")
+    integration.add_argument("--manage-api-process", action="store_true")
+    integration.add_argument("--include-new-materials", action="store_true")
+    integration.add_argument("--max-answers", type=int, default=64)
     args = parser.parse_args(argv)
     try:
+        if args.command == "live-integration":
+            from evaluation.integration import run_integration
+            try:
+                answers = read_json(args.answers) if args.answers else None
+                require(answers is None or isinstance(answers, dict), "Answer fixtures must be an object")
+                result = run_integration(args.api_url, allow_create=args.allow_create_test_data,
+                                         corpus_path=args.corpus, answers=answers,
+                                         include_new_materials=args.include_new_materials,
+                                         manage_api_process=args.manage_api_process,
+                                         max_answers=args.max_answers)
+            except (ValueError, OSError) as error:
+                result = {"schema": "citepath-live-integration-v1", "status": "failed", "mode": "live_http",
+                          "synthetic": False, "formal_evaluation_run": False, "official_accepted": None,
+                          "mutation_requests_sent": False, "mutations_performed": False,
+                          "failure": {"type": type(error).__name__, "code": "invalid_integration_input"}}
+            write_json(args.output, result)
+            print(json.dumps({"status": result["status"], "formal_evaluation_run": False, "output": str(args.output)}))
+            return 0 if result["status"] == "completed" else 2 if result["status"] in {"blocked", "not_run"} else 1
         if args.command == "preflight":
             from evaluation.live import preflight_report
             result = preflight_report(args.api_url)

@@ -16,6 +16,8 @@ In another terminal, from `frontend`:
 ```powershell
 node tests/practice-ui-smoke.cjs
 node tests/feedback-ui-smoke.cjs
+node tests/upstream-ui-smoke.cjs
+node tests/planning-ui-smoke.cjs
 ```
 
 Google Chrome must be installed. To use an installed Microsoft Edge instead,
@@ -49,4 +51,14 @@ npm run build
 $env:CITEPATH_UI_DIST = 'dist'
 node tests/practice-ui-smoke.cjs
 node tests/feedback-ui-smoke.cjs
+node tests/upstream-ui-smoke.cjs
+node tests/planning-ui-smoke.cjs
 ```
+
+The upstream smoke verifies Q&A history, stable document-ID/page links after display
+renumbering, saved answers after refresh, and Q&A isolation from practice mutations.
+The planning smoke verifies incomplete-profile questions, estimates and daily
+budgets, explicit incremental material updates, preserved completed tasks/reports,
+read-only version viewing, failure retry, version conflict recovery, plain-text
+legacy preferences and mobile layout. The four scripts currently cover 36 mocked
+browser checks; they do not establish actual API or model performance.

@@ -1,6 +1,7 @@
 import copy
 import json
 import unittest
+from contextlib import nullcontext
 from unittest.mock import MagicMock, patch
 
 from agent import plan as planner
@@ -59,11 +60,13 @@ class RescheduleTest(unittest.TestCase):
             planner, "save_course_note", return_value=brief
         ), patch.object(planner, "get_plan", return_value={"plan": sample_plan()}), patch.object(
             planner, "load_plan_feedback", return_value={"12": ["Search"]}
-        ), patch.object(planner, "save_rescheduled_plan", side_effect=lambda _, plan: plan) as save, patch.object(
+        ), patch.object(planner, "save_rescheduled_plan", side_effect=lambda _, plan, **kwargs: plan) as save, patch.object(
             planner, "_split_pages"
         ) as split, patch.object(planner, "load_usable_pages") as pages, patch.object(
             planner, "save_generated_plan"
-        ) as generate:
+        ) as generate, patch.object(planner, "planning_lock", return_value=nullcontext()), patch.object(
+            planner, "load_planning_materials", return_value={"documents": [], "pages": [], "fingerprint": "same"}
+        ):
             result = planner.generate_plan(1, 3, "2026-11-11", "2026-11-15", "Review graphs")
         split.assert_not_called()
         pages.assert_not_called()
@@ -128,7 +131,9 @@ class PlanPersistenceTest(unittest.TestCase):
         connection, cursor = self.connection(latest)
         with patch.object(plans, "get_course", return_value={"id": 3}), patch.object(
             plans, "ensure_plan_storage"
-        ), patch.object(plans, "connect", return_value=connection), patch.object(plans, "_stamp_document_numbers"):
+        ), patch.object(plans, "connect", return_value=connection), patch.object(plans, "_stamp_document_numbers"), patch.object(
+            plans, "load_planning_materials", return_value={"documents": [], "pages": []}
+        ):
             saved = plans.complete_task(1, 3, "reading-11")["plan"]
         self.assertEqual(saved["tasks"][0]["status"], "Completed")
         self.assertEqual(saved["tasks"][0]["date"], "2026-12-01")

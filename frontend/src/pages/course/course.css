@@ -461,6 +461,24 @@
   margin-bottom: 0;
 }
 
+.daily-workload-row,
+.plan-history-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.daily-workload-row { font-size: 12px; }
+.plan-history-row > div { flex: 1; min-width: 180px; }
+.plan-history-row p { margin: 6px 0 0; }
+.plan-material-update { margin: 18px 0; padding: 18px; border: 1px solid var(--line); border-radius: 12px; }
+.checkbox-field { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.saved-plan-chapter { padding: 16px 0; border-bottom: 1px solid var(--line); }
+
 .qa-answer > .badge {
   margin: 8px 0 10px;
 }

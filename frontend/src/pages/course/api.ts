@@ -3,6 +3,9 @@ import type {
   CourseDetail,
   QAResponse,
   StudyPlan,
+  PlanningProfile,
+  PlanQuestion,
+  MaterialUpdate,
 } from './types'
 
 export function deleteCourse(id: number) {
@@ -75,6 +78,38 @@ export function deleteMaterial(
 export type PlanResponse = {
   status: string
   plan: StudyPlan | null
+  questions?: PlanQuestion[]
+  profile?: Partial<PlanningProfile>
+  material_update?: MaterialUpdate
+}
+
+export type PlanOptions = {
+  profile?: Partial<PlanningProfile>
+  update_materials?: boolean
+  expected_version?: number
+}
+
+export type PlanVersion = {
+  version: number
+  reason: string
+  created_at: string
+  change_type: string
+}
+
+export type PlanSnapshot = {
+  version: number
+  plan: StudyPlan
+  saved_at: string
+  change_type: string
+  read_only: boolean
+}
+
+export function getPlanVersions(id: number) {
+  return request<{ versions: PlanVersion[] }>(`/api/courses/${id}/plan/versions`)
+}
+
+export function getPlanVersion(id: number, version: number) {
+  return request<PlanSnapshot>(`/api/courses/${id}/plan/versions/${version}`)
 }
 
 export function getPlan(id: number) {
@@ -88,6 +123,7 @@ export function createPlan(
   start: string,
   end: string,
   note: string,
+  options: PlanOptions = {},
 ) {
   return request<PlanResponse>(
     `/api/courses/${id}/plan`,
@@ -96,7 +132,7 @@ export function createPlan(
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ start, end, note }),
+      body: JSON.stringify({ start, end, note, ...options }),
     },
   )
 }

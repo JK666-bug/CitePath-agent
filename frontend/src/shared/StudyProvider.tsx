@@ -23,6 +23,7 @@ import {
   getCourse,
   getPlan,
 } from '../pages/course/api'
+import type { PlanOptions } from '../pages/course/api'
 
 import {
   createDemo,
@@ -37,9 +38,12 @@ import type {
   CourseDetail,
   DemoState,
   StudyPlan,
+  PlanningProfile,
+  PlanQuestion,
+  MaterialUpdate,
 } from '../pages/course/types'
 
-import { messageOf } from './request'
+import { ApiError, messageOf } from './request'
 
 type PlanEntry = {
   plan: StudyPlan | null
@@ -47,6 +51,9 @@ type PlanEntry = {
   loading: boolean
   error: string
   generating: boolean
+  questions?: PlanQuestion[]
+  profile?: Partial<PlanningProfile>
+  material_update?: MaterialUpdate
 }
 
 function loadDemo(key: string): DemoState {
@@ -186,6 +193,7 @@ function useStudyValue(userId: number) {
     setPlans((current) => ({
       ...current,
       [id]: {
+        ...current[id],
         plan: current[id]?.plan ?? null,
         loaded: current[id]?.loaded ?? false,
         loading: true,
@@ -209,6 +217,9 @@ function useStudyValue(userId: number) {
           loading: false,
           error: '',
           generating: false,
+          questions: result.questions,
+          profile: result.profile ?? result.plan?.planning_profile,
+          material_update: result.material_update,
         },
       }))
     } catch (error) {
@@ -219,6 +230,7 @@ function useStudyValue(userId: number) {
       setPlans((current) => ({
         ...current,
         [id]: {
+          ...current[id],
           plan: current[id]?.plan ?? null,
           loaded: true,
           loading: false,
@@ -230,22 +242,37 @@ function useStudyValue(userId: number) {
   }, [])
 
   const generateCoursePlan = useCallback(
-    async (id: number, start: string, end: string, note: string) => {
+    async (id: number, start: string, end: string, note: string, options: PlanOptions = {}) => {
       generatingIds.current.add(id)
 
       setPlans((current) => ({
         ...current,
         [id]: {
+          ...current[id],
           plan: current[id]?.plan ?? null,
           loaded: true,
           loading: false,
           error: '',
           generating: true,
+          material_update: current[id]?.material_update,
         },
       }))
 
       try {
-        const result = await createPlan(id, start, end, note)
+        const result = await createPlan(id, start, end, note, options)
+        if (result.status === 'needs_input') {
+          setPlans((current) => ({
+            ...current,
+            [id]: {
+              plan: result.plan ?? current[id]?.plan ?? null,
+              loaded: true, loading: false, error: '', generating: false,
+              questions: result.questions,
+              profile: result.profile,
+              material_update: result.material_update ?? current[id]?.material_update,
+            },
+          }))
+          return result
+        }
         const savedNote = note.trim()
 
         setDetails((current) => {
@@ -281,13 +308,18 @@ function useStudyValue(userId: number) {
         setPlans((current) => ({
           ...current,
           [id]: {
+            ...current[id],
             plan: result.plan,
             loaded: true,
             loading: false,
             error: '',
             generating: false,
+            questions: [],
+            profile: result.profile ?? result.plan?.planning_profile,
+            material_update: result.material_update,
           },
         }))
+        return result
       } catch (error) {
         setPlans((current) => ({
           ...current,
@@ -295,8 +327,13 @@ function useStudyValue(userId: number) {
             plan: current[id]?.plan ?? null,
             loaded: true,
             loading: false,
-            error: messageOf(error),
+            error: error instanceof ApiError && error.status === 409
+              ? 'Your study plan or materials changed. Reload the saved plan and review your details before updating again.'
+              : messageOf(error),
             generating: false,
+            questions: current[id]?.questions,
+            profile: current[id]?.profile,
+            material_update: current[id]?.material_update,
           },
         }))
       } finally {
@@ -317,18 +354,22 @@ function useStudyValue(userId: number) {
         setPlans((current) => ({
           ...current,
           [id]: {
+            ...current[id],
             plan: result.plan,
             loaded: true,
             loading: false,
             error: '',
             generating:
               current[id]?.generating ?? false,
+            profile: result.profile ?? result.plan?.planning_profile ?? current[id]?.profile,
+            material_update: result.material_update ?? current[id]?.material_update,
           },
         }))
       } catch (error) {
         setPlans((current) => ({
           ...current,
           [id]: {
+            ...current[id],
             plan: current[id]?.plan ?? null,
             loaded: true,
             loading: false,

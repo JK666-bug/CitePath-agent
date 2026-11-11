@@ -1,0 +1,6 @@
+# The host application control policy blocks the ujson 6.1 Windows wheel.
+# 5.11 satisfies pymilvus and was verified with `pip check` on this host.
+# The host also blocks grpcio 1.85.1's cygrpc; 1.74 imports pymilvus successfully.
+-r requirements.txt
+ujson==5.11.0; sys_platform == "win32"
+grpcio==1.74.0; sys_platform == "win32"

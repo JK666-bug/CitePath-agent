@@ -42,6 +42,7 @@ export type Task = {
     | 'Completed'
   sources: Source[]
   concepts: string[]
+  estimated_minutes?: number
 }
 
 export type Chapter = {
@@ -49,6 +50,29 @@ export type Chapter = {
   title: string
   concepts: string[]
   sources: Source[]
+  estimated_minutes?: number
+  estimate_basis?: string
+}
+
+export type PlanningProfile = {
+  goal: string
+  prior_knowledge: string
+  daily_minutes: number
+  reading_words_per_minute?: number
+  assumptions?: string[]
+}
+
+export type PlanQuestion = {
+  id: 'goal' | 'prior_knowledge' | 'daily_minutes'
+  prompt: string
+  required: boolean
+}
+
+export type MaterialUpdate = {
+  new_page_count: number
+  new_document_ids: number[]
+  missing_document_ids: number[]
+  can_update: boolean
 }
 
 export type StudyPlan = {
@@ -58,6 +82,11 @@ export type StudyPlan = {
   tasks: Task[]
   chapters: Chapter[]
   reason: string
+  planning_profile?: PlanningProfile
+  estimated_total_minutes?: number
+  estimated_remaining_minutes?: number
+  estimate_basis?: string
+  capacity?: { available_minutes: number; remaining_estimated_minutes: number; over_capacity: boolean }
 }
 
 export type CalendarTask = Task & {

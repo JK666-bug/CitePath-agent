@@ -118,7 +118,8 @@ class ProviderSwitchTest(unittest.TestCase):
     def test_preflight_accepts_selected_deepseek_key_without_invoking_a_model(self):
         with patch.dict(os.environ, {"LLM_PROVIDER": "deepseek", "DEEPSEEK_API_KEY": "private-api-secret"}), \
                 patch("evaluation.live.socket.create_connection", side_effect=OSError), \
-                patch("evaluation.live.urllib.request.urlopen", side_effect=OSError), \
+                patch("evaluation.live.runtime_imports", return_value=({}, "completed")), \
+                patch("evaluation.live.api_health", return_value=False), \
                 patch.object(llm, "ChatOpenAI") as chat, patch.object(llm, "AzureChatOpenAI") as azure:
             result = preflight_report()
         model_check = next(row for row in result["checks"] if row["name"] == "model_configuration")
@@ -132,7 +133,8 @@ class ProviderSwitchTest(unittest.TestCase):
     def test_preflight_unknown_provider_is_a_safe_blocked_result(self):
         with patch.dict(os.environ, {"LLM_PROVIDER": "unsupported-private-value"}), \
                 patch("evaluation.live.socket.create_connection", side_effect=OSError), \
-                patch("evaluation.live.urllib.request.urlopen", side_effect=OSError):
+                patch("evaluation.live.runtime_imports", return_value=({}, "completed")), \
+                patch("evaluation.live.api_health", return_value=False):
             result = preflight_report()
         model_check = next(row for row in result["checks"] if row["name"] == "model_configuration")
         self.assertFalse(model_check["ready"])

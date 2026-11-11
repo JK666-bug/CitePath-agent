@@ -20,7 +20,7 @@ FILES = sorted(set(FILES) | {
     str(path.relative_to(ROOT)).replace("\\", "/")
     for folder in ("agent", "db", "grading", "ingest", "vector", "evaluation")
     for path in (ROOT / folder).rglob("*.py")
-} | {"main.py", "db/schema.sql", "freeze_evaluation.py", "requirements-test.txt"})
+} | {"main.py", "db/schema.sql", "freeze_evaluation.py", "requirements-test.txt", "requirements-windows.txt"})
 
 
 def configuration_value(value):

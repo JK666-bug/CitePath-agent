@@ -25,7 +25,7 @@ export function decodeBrief(
 
       if (
         typeof item.deadline === 'string' &&
-        /^\d{4}-\d{2}-\d{2}$/.test(item.deadline) &&
+        (item.deadline === '' || /^\d{4}-\d{2}-\d{2}$/.test(item.deadline)) &&
         typeof item.earlyDays === 'number' &&
         item.earlyDays >= 0 &&
         typeof item.note === 'string'

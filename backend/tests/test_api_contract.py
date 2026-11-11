@@ -104,6 +104,52 @@ class PracticeApiTest(unittest.TestCase):
             self.assertEqual(response.status_code, 404)
             self.assertIn("Upload the same PDF", response.json()["detail"])
 
+    def test_incomplete_planning_profile_returns_questions_without_an_official_plan(self):
+        result = {"status": "needs_input", "questions": [{"id": "goal", "required": True}], "plan": None}
+        with patch("main.generate_plan", return_value=result) as generate:
+            response = self.client.post("/api/courses/2/plan", json={
+                "start": "2026-11-12", "end": "2026-12-01", "profile": {}})
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json(), result)
+            self.assertEqual(generate.call_args.kwargs["profile"], {})
+
+    def test_incremental_plan_update_has_version_guard_and_conflict_response(self):
+        profile = {"goal": "Exam", "prior_knowledge": "Beginner", "daily_minutes": 60}
+        body = {"start": "2026-11-12", "end": "2026-12-01", "profile": profile,
+                "update_materials": True, "expected_version": 3}
+        with patch("main.generate_plan", side_effect=main.PlanConflict("Plan changed; reload")) as generate:
+            response = self.client.post("/api/courses/2/plan", json=body)
+            self.assertEqual(response.status_code, 409)
+            self.assertTrue(generate.call_args.kwargs["update_materials"])
+            self.assertEqual(generate.call_args.kwargs["expected_version"], 3)
+        for value in (True, 0, 1.5):
+            with patch("main.generate_plan") as generate:
+                response = self.client.post("/api/courses/2/plan", json={**body, "expected_version": value})
+                self.assertEqual(response.status_code, 422)
+                generate.assert_not_called()
+
+    def test_plan_history_is_owned_read_only_and_missing_versions_are_404(self):
+        with patch("main.get_plan_versions", return_value={"versions": [], "read_only": True}) as versions, \
+                patch("main.get_plan_version", side_effect=LookupError("other user's plan")), \
+                patch("main.generate_plan") as mutate:
+            response = self.client.get("/api/courses/2/plan/versions")
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(response.json()["read_only"])
+            versions.assert_called_once_with(11, 2)
+            response = self.client.get("/api/courses/2/plan/versions/7")
+            self.assertEqual(response.status_code, 404)
+            self.assertNotIn("other user's", response.text)
+            self.assertEqual(self.client.post("/api/courses/2/plan/versions/7").status_code, 405)
+            mutate.assert_not_called()
+
+    def test_planning_requirements_pass_profile_without_starting_generation(self):
+        with patch("main.planning_requirements", return_value={"status": "needs_input"}) as requirements, \
+                patch("main.generate_plan") as generate:
+            response = self.client.post("/api/courses/2/plan/requirements", json={"profile": {"daily_minutes": 30}})
+            self.assertEqual(response.status_code, 200)
+            requirements.assert_called_once_with(11, 2, {"daily_minutes": 30})
+            generate.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

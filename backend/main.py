@@ -11,7 +11,7 @@ from agent.exam import open_exam, save_exam_drafts, start_exam, submit_exam, ret
 from agent.practice import answer_practice, open_practice, save_practice_draft, start_practice, retry_practice_explanation
 from agent.telemetry import usage_context
 from agent.llm import ping
-from agent.plan import generate_plan
+from agent.plan import generate_plan, planning_requirements
 from agent.qa import answer_question, list_questions
 from db.auth import authenticate, close_session, open_session, register_user, user_from_token
 from db.courses import (
@@ -22,7 +22,7 @@ from db.courses import (
     list_courses,
     owns_document,
 )
-from db.plans import complete_task, ensure_plan_storage, get_plan
+from db.plans import complete_task, ensure_plan_storage, get_plan, get_plan_versions, get_plan_version, PlanConflict
 from db.document_files import original_pdf_path, delete_original_pdf
 from db.practice import list_chapter_reports
 from db.uploads import existing_upload, save_document
@@ -60,6 +60,13 @@ class PlanWindow(BaseModel):
     start: str = Field(max_length=10)
     end: str = Field(max_length=10)
     note: str = Field(default="", max_length=9000)
+    profile: dict | None = None
+    update_materials: bool = False
+    expected_version: int | None = Field(default=None, gt=0, strict=True)
+
+
+class PlanRequirementsBody(BaseModel):
+    profile: dict | None = None
 
 
 class ExamAnswer(BaseModel):
@@ -249,15 +256,60 @@ def course_plan(course_id: int, user: dict = Depends(current_user)):
 @app.post("/api/courses/{course_id}/plan")
 def create_plan(course_id: int, body: PlanWindow, user: dict = Depends(current_user)):
     try:
-        return generate_plan(user["id"], course_id, body.start, body.end, body.note)
+        with usage_context(operation="plan.update" if body.update_materials else "plan.generate",
+                           user_id=user["id"], course_id=course_id):
+            return generate_plan(user["id"], course_id, body.start, body.end, body.note,
+                                 profile=body.profile, update_materials=body.update_materials,
+                                 expected_version=body.expected_version)
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail="Course not found") from error
+    except PlanConflict as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+    except Exception as error:
+        raise HTTPException(status_code=502, detail="Could not create a study plan") from error
+
+
+@app.get("/api/courses/{course_id}/plan/requirements")
+def get_planning_requirements(course_id: int, user: dict = Depends(current_user)):
+    try:
+        return planning_requirements(user["id"], course_id)
     except LookupError as error:
         raise HTTPException(status_code=404, detail="Course not found") from error
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
-    except RuntimeError as error:
-        raise HTTPException(status_code=500, detail=str(error)) from error
-    except Exception as error:
-        raise HTTPException(status_code=502, detail="Could not create a study plan") from error
+
+
+@app.post("/api/courses/{course_id}/plan/requirements")
+def check_planning_requirements(course_id: int, body: PlanRequirementsBody,
+                                user: dict = Depends(current_user)):
+    try:
+        return planning_requirements(user["id"], course_id, body.profile)
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail="Course not found") from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
+@app.get("/api/courses/{course_id}/plan/versions")
+def plan_versions(course_id: int, user: dict = Depends(current_user)):
+    try:
+        return get_plan_versions(user["id"], course_id)
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail="Course not found") from error
+
+
+@app.get("/api/courses/{course_id}/plan/versions/{version}")
+def plan_version(course_id: int, version: int, user: dict = Depends(current_user)):
+    try:
+        return get_plan_version(user["id"], course_id, version)
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail="Plan version not found") from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
 
 
 @app.post("/api/courses/{course_id}/plan/tasks/{task_id}/complete")

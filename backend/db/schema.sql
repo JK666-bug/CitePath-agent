@@ -60,6 +60,17 @@ CREATE TABLE IF NOT EXISTS study_plans (
   CONSTRAINT fk_plans_course FOREIGN KEY (course_id) REFERENCES courses (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS plan_versions (
+  course_id INT NOT NULL,
+  version INT NOT NULL,
+  reason TEXT NOT NULL,
+  change_type VARCHAR(32) NOT NULL,
+  plan_json JSON NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (course_id, version),
+  CONSTRAINT fk_plan_versions_course FOREIGN KEY (course_id) REFERENCES courses (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS plan_chapters (
   id INT PRIMARY KEY AUTO_INCREMENT,
   course_id INT NOT NULL,

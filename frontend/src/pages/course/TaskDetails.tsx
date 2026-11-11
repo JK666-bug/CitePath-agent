@@ -47,6 +47,7 @@ export default function TaskDetails({
             {prettyDate(task.date, true)}
             {' · '}
             {task.status}
+            {typeof task.estimated_minutes === 'number' && ` · ${task.estimated_minutes} estimated min`}
           </p>
 
           <div>

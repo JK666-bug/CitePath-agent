@@ -59,10 +59,14 @@ The following commands run from `backend`, using that checkout's Python environm
 .venv/Scripts/python -m evaluation preflight --output logs/live-preflight.json
 ```
 
-Preflight checks whether a key is configured, native modules are present, database
+Preflight checks whether a key is configured, native modules can import, database
 TCP listeners respond and `/api/health` responds. It invokes no model. A listener
 does not prove authentication or persistence. `blocked` lists missing prerequisites
 and keeps `formal_evaluation_run: false`.
+
+The bounded live runner, its retained test data, safe process ownership and exit
+codes are documented in [LIVE-INTEGRATION.md](LIVE-INTEGRATION.md). It uses only
+development Lectures 2/3 and is not the 120-run final comparison collector.
 
 For live integration, create a dedicated test account/course, upload development
 lectures, and verify ingestion, generation, first-round success/failure, targeted
@@ -83,9 +87,19 @@ Commit the application, then capture its configuration:
 
 The manifest records source hashes, settings and package versions without keys.
 Record its SHA-256, commit, timezone-aware creation time and model deployment/version
-in `dataset.freeze`. Retain the limitation when a provider exposes no immutable model
+in `dataset.freeze`, including `provider` and `base_url_sha256` from the manifest.
+Retain the limitation when a provider exposes no immutable model
 snapshot. Debug only on Lectures 2/3. Freeze questions, model, prompts, retrieval and
 rules before final runs on 4/6/8. Any configuration change starts a new named cohort.
+
+The upstream planner now splits each PDF into major teaching themes. The proposal's
+evaluation chapter unit remains one lecture. Before formal runs, record the stable
+application chapter IDs belonging to each lecture and the exact action sequence,
+or prepare an explicitly reviewed one-lecture fixture. Never silently substitute
+the dynamic theme count for the proposal's evaluation chapter count. The blank
+preparation cohorts contain no observed runtime mapping and cannot certify that
+protocol step. The old `evaluation_assets/final` preparation snapshot is retained
+for provenance; later code/provider changes require a new named cohort.
 
 ## Dataset schema
 
@@ -99,7 +113,9 @@ rules before final runs on 4/6/8. Any configuration change starts a new named co
     "manifest_sha256": "64 lowercase hexadecimal characters",
     "created_at": "2026-11-11T10:00:00+08:00",
     "git_commit": "40 lowercase hexadecimal characters",
-    "model": "the frozen deployment/version"
+    "model": "the frozen deployment/version",
+    "provider": "hku",
+    "base_url_sha256": "64 lowercase hexadecimal characters"
   },
   "documents": [{
     "id": "mit6006-l04", "lecture": 4, "sha256": "original PDF SHA-256",

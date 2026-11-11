@@ -5,11 +5,17 @@ from datetime import date, timedelta
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from agent.llm import chat_model
+from agent.planning_support import estimate_plan, material_update, page_keys, planning_profile
 from db.courses import get_course, save_course_note
 from db.plans import (
     get_plan,
+    PlanConflict,
+    load_planning_materials,
     load_plan_feedback,
     load_usable_pages,
+    plan_response,
+    planning_lock,
+    save_appended_plan,
     save_generated_plan,
     save_rescheduled_plan,
 )
@@ -73,25 +79,79 @@ pages is an array of {"document_id": number, "page_number": number} copied from 
 Place every supplied page in exactly one chapter."""
 
 
-def generate_plan(user_id: int, course_id: int, start: str, end: str, note: str) -> dict:
+def planning_requirements(user_id: int, course_id: int, profile=None) -> dict:
+    if get_course(user_id, course_id) is None:
+        raise LookupError("Course not found")
+    previous = get_plan(user_id, course_id)["plan"]
+    saved = (previous or {}).get("planning_profile")
+    normalized, questions = planning_profile(saved if profile is None else profile, saved=saved, strict=True)
+    if profile is None and saved:
+        normalized["assumptions"] = list(saved.get("assumptions") or [])
+    return {"status": "needs_input" if questions else "ready", "questions": questions,
+            "profile": normalized, "plan": previous}
+
+
+def generate_plan(user_id: int, course_id: int, start: str, end: str, note: str,
+                  profile=None, update_materials: bool = False, expected_version=None) -> dict:
     course = get_course(user_id, course_id)
     if course is None:
         raise LookupError("Course not found")
     start, end = study_window(start, end)
-    brief = parse_brief(save_course_note(user_id, course_id, note))
-    previous = get_plan(user_id, course_id)["plan"]
-    if previous:
-        feedback = load_plan_feedback(user_id, course_id)
-        plan = reschedule_plan(previous, start, end, note, feedback)
-        stored = save_rescheduled_plan(course_id, plan)
-        return {"status": "ready", "plan": stored}
-    pages = load_usable_pages(course_id)
-    if not pages:
-        raise ValueError("Upload a readable PDF before generating a plan")
-    chapters, reason = _split_pages(brief, pages, start, end)
-    plan = assemble_plan(chapters, start, end, reason, 1)
-    stored = save_generated_plan(course_id, plan)
-    return {"status": "ready", "plan": stored}
+    if type(update_materials) is not bool:
+        raise ValueError("update_materials must be true or false")
+    if expected_version is not None and (type(expected_version) is not int or expected_version < 0):
+        raise ValueError("expected_version must be a non-negative integer")
+    with planning_lock(user_id, course_id):
+        previous = get_plan(user_id, course_id)["plan"]
+        base_version = int((previous or {}).get("version") or (1 if previous else 0))
+        if expected_version is not None and expected_version != base_version:
+            raise PlanConflict("The study plan changed. Reload the latest version and retry.")
+        normalized, questions = planning_profile(
+            profile, note=note, saved=(previous or {}).get("planning_profile"), strict=profile is not None,
+        )
+        if questions:
+            return {"status": "needs_input", "questions": questions, "profile": normalized, "plan": previous}
+        materials = load_planning_materials(course_id)
+        brief = parse_brief(save_course_note(user_id, course_id, note))
+        brief["note"] = (
+            f"Goal: {normalized['goal']}\nPrior knowledge: {normalized['prior_knowledge']}\n"
+            f"Daily study budget: {normalized['daily_minutes']} minutes\nStudent note: {brief['note']}"
+        )
+        kwargs = {"expected_version": base_version, "material_fingerprint": materials["fingerprint"]}
+        if previous:
+            feedback = load_plan_feedback(user_id, course_id)
+            if update_materials:
+                update = material_update(previous, materials["pages"], materials["documents"])
+                if not update["new_page_count"]:
+                    raise ValueError("No new readable pages are available to add to this plan")
+                pages = load_usable_pages(course_id)
+                known = page_keys(previous)
+                new_pages = [page for page in pages if (int(page["document_id"]), int(page["page_number"])) not in known]
+                if not new_pages:
+                    raise PlanConflict("Course material changed. Reload the plan and retry.")
+                chapters, reason = _split_pages(brief, new_pages, start, end)
+                # Temporary identifiers cannot collide with the stored numeric chapter IDs.
+                for index, chapter in enumerate(chapters, start=1):
+                    chapter["id"] = f"new-c{index}"
+                combined = json.loads(json.dumps(previous))
+                combined["chapters"].extend(chapters)
+                combined["tasks"].extend(schedule_tasks(chapters, start, end))
+                plan = reschedule_plan(combined, start, end, note, feedback)
+                plan["reason"] = "Added new course pages while preserving existing chapters and learning history. " + reason
+                plan = estimate_plan(plan, materials["pages"], normalized)
+                stored = save_appended_plan(course_id, plan, [chapter["id"] for chapter in chapters], **kwargs)
+            else:
+                plan = reschedule_plan(previous, start, end, note, feedback)
+                plan = estimate_plan(plan, materials["pages"], normalized)
+                stored = save_rescheduled_plan(course_id, plan, **kwargs)
+        else:
+            pages = load_usable_pages(course_id)
+            if not pages:
+                raise ValueError("Upload a readable PDF before generating a plan")
+            chapters, reason = _split_pages(brief, pages, start, end)
+            plan = estimate_plan(assemble_plan(chapters, start, end, reason, 1), materials["pages"], normalized)
+            stored = save_generated_plan(course_id, plan, **kwargs)
+        return plan_response(stored, materials)
 
 
 def parse_brief(text: str) -> dict:
@@ -377,6 +437,7 @@ def _chapter(index: int, title, concepts, pages: list[dict]) -> dict | None:
                 "document_id": int(page["document_id"]),
                 "filename": page["filename"],
                 "page_number": int(page["page_number"]),
+                **({"position": int(page["position"])} if page.get("position") is not None else {}),
             }
             for page in pages
         ],
