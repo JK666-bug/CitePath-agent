@@ -1,0 +1,37 @@
+{
+  "checked_at": "2026-11-11T08:39:58.334985+00:00",
+  "status": "blocked",
+  "checks": [
+    {
+      "name": "model_configuration",
+      "ready": false,
+      "detail": "Set HKU_API_KEY locally in backend/.env; never put it in labels or logs"
+    },
+    {
+      "name": "full_runtime_dependencies",
+      "ready": false,
+      "detail": "Install backend/requirements.txt; missing modules: pymilvus, fitz, docling, fastembed"
+    },
+    {
+      "name": "mysql_listener",
+      "ready": false,
+      "detail": "Required database listener is unavailable; start Docker Compose"
+    },
+    {
+      "name": "milvus_listener",
+      "ready": false,
+      "detail": "Required database listener is unavailable; start Docker Compose"
+    },
+    {
+      "name": "api_health",
+      "ready": false,
+      "detail": "Start the configured FastAPI service before running live workflows"
+    }
+  ],
+  "model_invoked": false,
+  "formal_evaluation_run": false,
+  "limits": [
+    "A listening port does not establish database authentication or persistence correctness.",
+    "Human labels and live workflow observations remain separate required evidence."
+  ]
+}

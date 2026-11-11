@@ -1,0 +1,803 @@
+{
+  "schema": "citepath-evaluation-v1",
+  "evaluation_id": "mit6006-final-draft-v1",
+  "dataset_sha256": "65b149a5b2a1464f6cc258204ec1d0d37fe3dcf81b7dd92cc40a230f0679ffd6",
+  "split": "final",
+  "synthetic": false,
+  "item_counts": {
+    "mcq": 20,
+    "short": 40,
+    "evidence": 40,
+    "workflow": 20
+  },
+  "status": "pending",
+  "official_accepted": null,
+  "prohibited_errors": [],
+  "pending_reasons": [
+    "Two independent human annotation attestations are required",
+    "Final evidence set needs 30 supported and 10 unsupported questions after human adjudication",
+    "baseline: model runs or human labels are incomplete",
+    "baseline: generated-question audits are incomplete",
+    "baseline: descriptive answer/refusal judgments are incomplete",
+    "baseline: answer correctness or citation relevance audits are incomplete",
+    "baseline: three workflow repeats per scenario are required",
+    "full: model runs or human labels are incomplete",
+    "full: generated-question audits are incomplete",
+    "full: descriptive answer/refusal judgments are incomplete",
+    "full: answer correctness or citation relevance audits are incomplete",
+    "full: three workflow repeats per scenario are required",
+    "Final model runs, human judgments or workflow observations are incomplete"
+  ],
+  "annotation_disagreements": 0,
+  "unresolved_disagreements": [],
+  "variants": {
+    "baseline": {
+      "mcq_agreement": {
+        "matched": 0,
+        "total": 20,
+        "pending": 20,
+        "value": null,
+        "target": 1.0,
+        "target_met": null
+      },
+      "short_agreement": {
+        "matched": 0,
+        "total": 40,
+        "pending": 40,
+        "value": null,
+        "target": 0.8,
+        "target_met": null,
+        "false_passes": 0,
+        "false_failures": 0
+      },
+      "citation_support": {
+        "matched": 0,
+        "total": 0,
+        "pending": 40,
+        "value": null,
+        "target": 0.85,
+        "target_met": null,
+        "missing_citation_claims": 0,
+        "invalid_citation_claims": 0,
+        "irrelevant_citations_observed": 0,
+        "irrelevant_citation_audits_pending": 0
+      },
+      "answer_correctness": {
+        "matched": 0,
+        "total": 40,
+        "pending": 40,
+        "value": null,
+        "target": null,
+        "target_met": null
+      },
+      "reference_answer_point_coverage": {
+        "matched": 0,
+        "total": 0,
+        "pending": 0,
+        "value": null,
+        "target": null,
+        "target_met": null
+      },
+      "unsupported_refusal": {
+        "matched": 0,
+        "total": 0,
+        "pending": 40,
+        "value": null,
+        "target": null,
+        "target_met": null,
+        "supported_questions_refused": 0,
+        "supported_questions": 0,
+        "answer_failures": 0
+      },
+      "generated_question_audit": {
+        "clear": {
+          "passed": 0,
+          "failed": 0,
+          "pending": 60
+        },
+        "source_supported": {
+          "passed": 0,
+          "failed": 0,
+          "pending": 60
+        },
+        "answer_key_correct": {
+          "passed": 0,
+          "failed": 0,
+          "pending": 60
+        },
+        "not_repeated": {
+          "passed": 0,
+          "failed": 0,
+          "pending": 60
+        }
+      },
+      "workflow": {
+        "repeats": [
+          {
+            "repeat": 1,
+            "passed": 0,
+            "total": 20,
+            "pending": 20,
+            "failed": 0
+          },
+          {
+            "repeat": 2,
+            "passed": 0,
+            "total": 20,
+            "pending": 20,
+            "failed": 0
+          },
+          {
+            "repeat": 3,
+            "passed": 0,
+            "total": 20,
+            "pending": 20,
+            "failed": 0
+          }
+        ],
+        "scenario_results": [
+          {
+            "item_id": "WF-01",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-02",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-03",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-04",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-05",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-06",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-07",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-08",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-09",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-10",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-11",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-12",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-13",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-14",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-15",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-16",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-17",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-18",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-19",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-20",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          }
+        ],
+        "scenarios_passed": 0,
+        "scenarios_failed": 0,
+        "scenarios_pending": 20,
+        "target": "at least 18 of 20 scenarios pass all three repeats; zero prohibited errors",
+        "target_met": null,
+        "prohibited_errors": [],
+        "runs_completed": 0,
+        "runs_failed": 0,
+        "unclassified_round_count_runs": 60,
+        "usage_by_round_count": {
+          "1": {
+            "records": 0,
+            "latency_ms": {
+              "observations": 0,
+              "unknown": 0,
+              "median": null,
+              "p95": null
+            },
+            "successful_calls": 0,
+            "failed_calls": 0,
+            "model_calls": {
+              "known_subtotal": 0,
+              "unknown_records": 0,
+              "total": null
+            },
+            "input_tokens": {
+              "known_subtotal": 0,
+              "unknown_records": 0,
+              "total": null
+            },
+            "output_tokens": {
+              "known_subtotal": 0,
+              "unknown_records": 0,
+              "total": null
+            },
+            "estimated_cost": {
+              "known_subtotal": 0,
+              "unknown_records": 0,
+              "total": null
+            },
+            "cost_currency": null
+          },
+          "2": {
+            "records": 0,
+            "latency_ms": {
+              "observations": 0,
+              "unknown": 0,
+              "median": null,
+              "p95": null
+            },
+            "successful_calls": 0,
+            "failed_calls": 0,
+            "model_calls": {
+              "known_subtotal": 0,
+              "unknown_records": 0,
+              "total": null
+            },
+            "input_tokens": {
+              "known_subtotal": 0,
+              "unknown_records": 0,
+              "total": null
+            },
+            "output_tokens": {
+              "known_subtotal": 0,
+              "unknown_records": 0,
+              "total": null
+            },
+            "estimated_cost": {
+              "known_subtotal": 0,
+              "unknown_records": 0,
+              "total": null
+            },
+            "cost_currency": null
+          }
+        },
+        "grading_feedback_latency_ms": {
+          "1": {
+            "observations": 0,
+            "unknown": 0,
+            "median": null,
+            "p95": null
+          },
+          "2": {
+            "observations": 0,
+            "unknown": 0,
+            "median": null,
+            "p95": null
+          }
+        }
+      },
+      "usage": {
+        "records": 0,
+        "latency_ms": {
+          "observations": 0,
+          "unknown": 0,
+          "median": null,
+          "p95": null
+        },
+        "successful_calls": 0,
+        "failed_calls": 0,
+        "model_calls": {
+          "known_subtotal": 0,
+          "unknown_records": 0,
+          "total": null
+        },
+        "input_tokens": {
+          "known_subtotal": 0,
+          "unknown_records": 0,
+          "total": null
+        },
+        "output_tokens": {
+          "known_subtotal": 0,
+          "unknown_records": 0,
+          "total": null
+        },
+        "estimated_cost": {
+          "known_subtotal": 0,
+          "unknown_records": 0,
+          "total": null
+        },
+        "cost_currency": null
+      }
+    },
+    "full": {
+      "mcq_agreement": {
+        "matched": 0,
+        "total": 20,
+        "pending": 20,
+        "value": null,
+        "target": 1.0,
+        "target_met": null
+      },
+      "short_agreement": {
+        "matched": 0,
+        "total": 40,
+        "pending": 40,
+        "value": null,
+        "target": 0.8,
+        "target_met": null,
+        "false_passes": 0,
+        "false_failures": 0
+      },
+      "citation_support": {
+        "matched": 0,
+        "total": 0,
+        "pending": 40,
+        "value": null,
+        "target": 0.85,
+        "target_met": null,
+        "missing_citation_claims": 0,
+        "invalid_citation_claims": 0,
+        "irrelevant_citations_observed": 0,
+        "irrelevant_citation_audits_pending": 0
+      },
+      "answer_correctness": {
+        "matched": 0,
+        "total": 40,
+        "pending": 40,
+        "value": null,
+        "target": null,
+        "target_met": null
+      },
+      "reference_answer_point_coverage": {
+        "matched": 0,
+        "total": 0,
+        "pending": 0,
+        "value": null,
+        "target": null,
+        "target_met": null
+      },
+      "unsupported_refusal": {
+        "matched": 0,
+        "total": 0,
+        "pending": 40,
+        "value": null,
+        "target": null,
+        "target_met": null,
+        "supported_questions_refused": 0,
+        "supported_questions": 0,
+        "answer_failures": 0
+      },
+      "generated_question_audit": {
+        "clear": {
+          "passed": 0,
+          "failed": 0,
+          "pending": 60
+        },
+        "source_supported": {
+          "passed": 0,
+          "failed": 0,
+          "pending": 60
+        },
+        "answer_key_correct": {
+          "passed": 0,
+          "failed": 0,
+          "pending": 60
+        },
+        "not_repeated": {
+          "passed": 0,
+          "failed": 0,
+          "pending": 60
+        }
+      },
+      "workflow": {
+        "repeats": [
+          {
+            "repeat": 1,
+            "passed": 0,
+            "total": 20,
+            "pending": 20,
+            "failed": 0
+          },
+          {
+            "repeat": 2,
+            "passed": 0,
+            "total": 20,
+            "pending": 20,
+            "failed": 0
+          },
+          {
+            "repeat": 3,
+            "passed": 0,
+            "total": 20,
+            "pending": 20,
+            "failed": 0
+          }
+        ],
+        "scenario_results": [
+          {
+            "item_id": "WF-01",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-02",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-03",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-04",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-05",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-06",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-07",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-08",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-09",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-10",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-11",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-12",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-13",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-14",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-15",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-16",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-17",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-18",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-19",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          },
+          {
+            "item_id": "WF-20",
+            "status": "pending",
+            "repeats_observed": 0,
+            "repeats_expected": 3
+          }
+        ],
+        "scenarios_passed": 0,
+        "scenarios_failed": 0,
+        "scenarios_pending": 20,
+        "target": "at least 18 of 20 scenarios pass all three repeats; zero prohibited errors",
+        "target_met": null,
+        "prohibited_errors": [],
+        "runs_completed": 0,
+        "runs_failed": 0,
+        "unclassified_round_count_runs": 60,
+        "usage_by_round_count": {
+          "1": {
+            "records": 0,
+            "latency_ms": {
+              "observations": 0,
+              "unknown": 0,
+              "median": null,
+              "p95": null
+            },
+            "successful_calls": 0,
+            "failed_calls": 0,
+            "model_calls": {
+              "known_subtotal": 0,
+              "unknown_records": 0,
+              "total": null
+            },
+            "input_tokens": {
+              "known_subtotal": 0,
+              "unknown_records": 0,
+              "total": null
+            },
+            "output_tokens": {
+              "known_subtotal": 0,
+              "unknown_records": 0,
+              "total": null
+            },
+            "estimated_cost": {
+              "known_subtotal": 0,
+              "unknown_records": 0,
+              "total": null
+            },
+            "cost_currency": null
+          },
+          "2": {
+            "records": 0,
+            "latency_ms": {
+              "observations": 0,
+              "unknown": 0,
+              "median": null,
+              "p95": null
+            },
+            "successful_calls": 0,
+            "failed_calls": 0,
+            "model_calls": {
+              "known_subtotal": 0,
+              "unknown_records": 0,
+              "total": null
+            },
+            "input_tokens": {
+              "known_subtotal": 0,
+              "unknown_records": 0,
+              "total": null
+            },
+            "output_tokens": {
+              "known_subtotal": 0,
+              "unknown_records": 0,
+              "total": null
+            },
+            "estimated_cost": {
+              "known_subtotal": 0,
+              "unknown_records": 0,
+              "total": null
+            },
+            "cost_currency": null
+          }
+        },
+        "grading_feedback_latency_ms": {
+          "1": {
+            "observations": 0,
+            "unknown": 0,
+            "median": null,
+            "p95": null
+          },
+          "2": {
+            "observations": 0,
+            "unknown": 0,
+            "median": null,
+            "p95": null
+          }
+        }
+      },
+      "usage": {
+        "records": 0,
+        "latency_ms": {
+          "observations": 0,
+          "unknown": 0,
+          "median": null,
+          "p95": null
+        },
+        "successful_calls": 0,
+        "failed_calls": 0,
+        "model_calls": {
+          "known_subtotal": 0,
+          "unknown_records": 0,
+          "total": null
+        },
+        "input_tokens": {
+          "known_subtotal": 0,
+          "unknown_records": 0,
+          "total": null
+        },
+        "output_tokens": {
+          "known_subtotal": 0,
+          "unknown_records": 0,
+          "total": null
+        },
+        "estimated_cost": {
+          "known_subtotal": 0,
+          "unknown_records": 0,
+          "total": null
+        },
+        "cost_currency": null
+      }
+    }
+  },
+  "comparison": {
+    "mcq_agreement": {
+      "baseline": null,
+      "full": null,
+      "difference": null
+    },
+    "short_agreement": {
+      "baseline": null,
+      "full": null,
+      "difference": null
+    },
+    "citation_support": {
+      "baseline": null,
+      "full": null,
+      "difference": null
+    },
+    "answer_correctness": {
+      "baseline": null,
+      "full": null,
+      "difference": null
+    },
+    "reference_answer_point_coverage": {
+      "baseline": null,
+      "full": null,
+      "difference": null
+    },
+    "unsupported_refusal": {
+      "baseline": null,
+      "full": null,
+      "difference": null
+    }
+  },
+  "shared_first_round_usage": {
+    "records": 0,
+    "latency_ms": {
+      "observations": 0,
+      "unknown": 0,
+      "median": null,
+      "p95": null
+    },
+    "successful_calls": 0,
+    "failed_calls": 0,
+    "model_calls": {
+      "known_subtotal": 0,
+      "unknown_records": 0,
+      "total": null
+    },
+    "input_tokens": {
+      "known_subtotal": 0,
+      "unknown_records": 0,
+      "total": null
+    },
+    "output_tokens": {
+      "known_subtotal": 0,
+      "unknown_records": 0,
+      "total": null
+    },
+    "estimated_cost": {
+      "known_subtotal": 0,
+      "unknown_records": 0,
+      "total": null
+    },
+    "cost_currency": null
+  },
+  "unscoped_usage_records": 0,
+  "limits": [
+    "Human independence is attested, not technically provable.",
+    "Model-invocation counts do not enumerate internal SDK retries.",
+    "Metrics without a proposal threshold are descriptive only; unknown evidence is not zero."
+  ]
+}

@@ -4,7 +4,13 @@
   "split": "final",
   "synthetic": false,
   "status": "assistant-authored-draft-awaiting-independent-human-review",
-  "freeze": null,
+  "freeze": {
+    "manifest_sha256": "2093f826fa5bc9290b0ca4f29da7ae19f3344ee7a588cda447dbb296970421f1",
+    "created_at": "2026-11-11T08:39:31.825095+00:00",
+    "git_commit": "6f55f1e603b437a0155e4e100b620d50251fb56a",
+    "model": "gpt-4.1-mini",
+    "preparation_snapshot": true
+  },
   "documents": [
     {
       "id": "mit6006-l04",
@@ -4133,6 +4139,7 @@
     "human_annotations_completed": false,
     "system_predictions_collected": false,
     "evaluation_questions_indexed": false,
-    "note": "Synthetic student responses are authored test inputs, not real student data. No model outputs or human judgments are fabricated."
+    "note": "Synthetic student responses are authored test inputs, not real student data. No model outputs or human judgments are fabricated.",
+    "runtime_note": "This is a preparation snapshot without provider verification; re-freeze the complete real inference environment before official collection."
   }
 }
