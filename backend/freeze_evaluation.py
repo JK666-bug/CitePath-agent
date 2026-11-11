@@ -37,6 +37,8 @@ def configuration_value(value):
 
 def manifest():
     settings = {**dotenv_values(ROOT / ".env"), **os.environ}
+    from agent.llm import model_configuration
+    model = model_configuration(settings)
     constants = {}
     hashes = {}
     for name in FILES:
@@ -64,9 +66,11 @@ def manifest():
         "created_at": datetime.now(timezone.utc).isoformat(),
         "git_commit": commit, "working_tree_dirty": dirty,
         "python": platform.python_version(), "platform": platform.platform(),
-        "deployment": settings.get("HKU_DEPLOYMENT") or constants["agent/llm.py"]["DEFAULT_DEPLOYMENT"],
-        "api_version": settings.get("HKU_API_VERSION") or constants["agent/llm.py"]["DEFAULT_API_VERSION"],
-        "model_temperature": 0, "model_timeout_seconds": 60, "model_max_retries": 1,
+        "provider": model["provider"], "model": model["model"],
+        "deployment": model["model"], "api_version": model["api_version"],
+        "base_url_sha256": model["base_url_sha256"],
+        "model_key_name": model["key_name"], "model_key_configured": model["key_configured"],
+        "model_temperature": 0, "model_timeout_seconds": model["timeout"], "model_max_retries": 1,
         "source_sha256": hashes, "source_hash_encoding": "UTF-8 source bytes with CRLF normalized to LF",
         "constants": constants, "installed_packages": packages,
         "development_lectures": [2, 3], "held_out_lectures": [4, 6, 8],
