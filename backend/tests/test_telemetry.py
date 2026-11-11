@@ -6,10 +6,30 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from agent.telemetry import UsageLog
+from agent.telemetry import UsageLog, usage_context
 
 
 class UsageLogTest(unittest.TestCase):
+    def test_business_context_is_captured_at_start_and_error_is_redacted(self):
+        with tempfile.TemporaryDirectory() as temp:
+            model_path, op_path = Path(temp) / "models.jsonl", Path(temp) / "operations.jsonl"
+            with patch.dict(os.environ, {"MODEL_USAGE_LOG": str(model_path), "OPERATION_LOG": str(op_path)}):
+                log = UsageLog("model")
+                with self.assertRaises(TimeoutError):
+                    with usage_context(operation="practice.grade", session_id=8, question_id=3,
+                                       api_key="secret", response="private answer"):
+                        log.on_chat_model_start({}, [], run_id="run")
+                        raise TimeoutError("private API secret")
+                # Some callback implementations finish after the surrounding context exits.
+                log.on_llm_error(TimeoutError("private API secret"), run_id="run")
+            model, operation = json.loads(model_path.read_text()), json.loads(op_path.read_text())
+            self.assertEqual(model["context"]["session_id"], 8)
+            self.assertEqual(model["context"]["question_id"], 3)
+            self.assertEqual(model["context"]["operation_id"], operation["context"]["operation_id"])
+            self.assertEqual(operation["status"], "error")
+            self.assertNotIn("private", model_path.read_text() + op_path.read_text())
+            self.assertNotIn("secret", model_path.read_text() + op_path.read_text())
+
     def test_records_usage_and_configured_cost_without_prompt_content(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "usage.jsonl"

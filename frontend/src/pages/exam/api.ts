@@ -1,7 +1,8 @@
 import { request } from '../../shared/request'
 import type { Source } from '../course/types'
+import type { ExplanationFields, MarkingFields, ReportNarrative } from '../../shared/feedback'
 
-export type ExamQuestion = {
+export type ExamQuestion = ExplanationFields & MarkingFields & {
   id: number
   position: number
   concept_name: string
@@ -18,7 +19,7 @@ export type ExamQuestion = {
   points_total?: number
 }
 
-export type ExamWrong = {
+export type ExamWrong = ExplanationFields & MarkingFields & {
   question_id: number
   concept_name: string
   kind: string
@@ -37,7 +38,7 @@ export type ExamRecord = {
   status: 'open' | 'finished'
   score: number | null
   passed: boolean | null
-  report: {
+  report: ReportNarrative & {
     score: number
     passed: boolean
     correct_count: number
@@ -98,5 +99,12 @@ export function submitExam(
       },
       body: JSON.stringify({ answers }),
     },
+  )
+}
+
+export function retryExamExplanation(courseId: number, examId: number, questionId: number) {
+  return request<ExamRecord>(
+    `/api/courses/${courseId}/exams/${examId}/questions/${questionId}/explanation/retry`,
+    { method: 'POST' },
   )
 }

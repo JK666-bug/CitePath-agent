@@ -3,6 +3,7 @@ from contextlib import contextmanager
 
 from db.connection import connect
 from db.courses import get_course
+from db.feedback import ensure_feedback_columns, feedback_fields
 
 _ready = False
 
@@ -142,6 +143,7 @@ def ensure_practice_storage() -> None:
                 )
                 if int(cursor.fetchone()["column_count"]) == 0:
                     cursor.execute(f"ALTER TABLE practice_sessions ADD COLUMN {name} {definition}")
+            ensure_feedback_columns(cursor, "practice_answers")
         connection.commit()
     except Exception:
         connection.rollback()
@@ -392,6 +394,9 @@ def get_owned_session(user_id: int, course_id: int, session_id: int) -> dict:
         if isinstance(item, dict) and item.get("kind") in {"mcq", "short"}
     ]
     row["report"] = _json_object(_json_value(row["report_json"]))
+    if row["report"] is not None:
+        from agent.report_text import enrich_report
+        row["report"] = enrich_report(row["report"])
     row["round_results"] = _json_list(_json_value(row["round_results_json"]))
     row["drafts"] = _json_object(_json_value(row["draft_json"])) or {}
     return row
@@ -430,6 +435,23 @@ def question_in_session(session_id: int, question_id: int) -> dict | None:
                 WHERE q.session_id = %s AND q.id = %s
                 """,
                 (session_id, question_id),
+            )
+            return cursor.fetchone()
+    finally:
+        connection.close()
+
+
+def explanation_question(session_id: int, question_id: int) -> dict | None:
+    connection = connect()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """SELECT q.id, q.concept_name, q.kind, q.prompt, q.answer, q.options_json,
+                          q.rubric_json, q.sources_json, a.id AS answer_id, a.response,
+                          a.correct, a.explanation, a.explanation_status,
+                          a.explanation_error, a.explanation_attempts
+                   FROM practice_questions q LEFT JOIN practice_answers a ON a.question_id = q.id
+                   WHERE q.session_id = %s AND q.id = %s""", (session_id, question_id),
             )
             return cursor.fetchone()
     finally:
@@ -476,16 +498,17 @@ def insert_question(session_id: int, phase: str, review_round: int, question: di
         connection.close()
 
 
-def save_answer(question_id: int, response: str, correct: bool, points_hit: int, points_total: int, explanation: str) -> None:
+def save_answer(question_id: int, response: str, correct: bool, points_hit: int, points_total: int, explanation: str, rubric_hits=None) -> None:
     connection = connect()
     try:
         with connection.cursor() as cursor:
             cursor.execute(
                 """
-                INSERT INTO practice_answers (question_id, response, correct, points_hit, points_total, explanation)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                INSERT INTO practice_answers (question_id, response, correct, points_hit, points_total, explanation, explanation_status, rubric_hits_json)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 """,
-                (question_id, response, int(correct), points_hit, points_total, explanation),
+                (question_id, response, int(correct), points_hit, points_total, explanation,
+                 "not_required" if correct else "pending", json.dumps(rubric_hits) if rubric_hits is not None else None),
             )
         connection.commit()
     except Exception:
@@ -593,8 +616,9 @@ def load_session_attempts(session_id: int) -> list[dict]:
             cursor.execute(
                 """
                 SELECT q.id, q.concept_id, q.concept_name, q.kind, q.phase, q.review_round, q.prompt,
-                       q.answer, q.options_json, q.sources_json,
-                       a.response, a.correct, a.explanation, a.points_hit, a.points_total
+                       q.answer, q.options_json, q.sources_json, q.rubric_json,
+                       a.response, a.correct, a.explanation, a.points_hit, a.points_total,
+                       a.explanation_status, a.explanation_error, a.explanation_attempts, a.rubric_hits_json
                 FROM practice_questions q
                 JOIN practice_answers a ON a.question_id = q.id
                 WHERE q.session_id = %s
@@ -622,8 +646,10 @@ def _attempt(row: dict) -> dict:
         "correct": bool(row["correct"]),
         "points_hit": int(row["points_hit"]),
         "points_total": int(row["points_total"]),
+        "rubric": _json_list(_json_value(row.get("rubric_json"))),
+        "rubric_hits": _json_list(_json_value(row["rubric_hits_json"])) if row.get("rubric_hits_json") is not None else None,
         "answer": _display_answer(row),
-        "explanation": row["explanation"] or "",
+        **feedback_fields(row),
         "sources": _json_list(_json_value(row["sources_json"])),
     }
 
@@ -794,6 +820,9 @@ def present_session(user_id: int, course_id: int, session_id: int, concepts: lis
     if get_course(user_id, course_id) is None:
         raise LookupError("Course not found")
     session = get_owned_session(user_id, course_id, session_id)
+    if isinstance(session.get("report"), dict):
+        from agent.report_text import enrich_report
+        session["report"] = enrich_report(session["report"])
     progress = progress_map(user_id, [int(item["id"]) for item in concepts])
     connection = connect()
     try:
@@ -812,7 +841,9 @@ def present_session(user_id: int, course_id: int, session_id: int, concepts: lis
             current = cursor.fetchone()
             cursor.execute(
                 """
-                SELECT q.concept_name, q.kind, q.answer, q.options_json, q.sources_json, a.correct, a.explanation
+                SELECT q.id AS question_id, q.concept_name, q.kind, q.answer, q.options_json, q.sources_json, q.rubric_json,
+                       a.correct, a.explanation, a.explanation_status, a.explanation_error, a.explanation_attempts,
+                       a.points_hit, a.points_total, a.rubric_hits_json
                 FROM practice_answers a
                 JOIN practice_questions q ON q.id = a.question_id
                 WHERE q.session_id = %s
@@ -845,9 +876,15 @@ def present_session(user_id: int, course_id: int, session_id: int, concepts: lis
     last = None
     if feedback is not None:
         last = {
+            "question_id": int(feedback["question_id"]),
             "concept_name": feedback["concept_name"],
             "correct": bool(feedback["correct"]),
-            "explanation": feedback["explanation"] or "",
+            "kind": feedback["kind"],
+            "rubric": _json_list(_json_value(feedback.get("rubric_json"))),
+            "rubric_hits": _json_list(_json_value(feedback["rubric_hits_json"])) if feedback.get("rubric_hits_json") is not None else None,
+            "points_hit": feedback.get("points_hit"),
+            "points_total": feedback.get("points_total"),
+            **feedback_fields(feedback),
             "answer": _display_answer(feedback),
             "sources": _json_list(_json_value(feedback["sources_json"])),
         }

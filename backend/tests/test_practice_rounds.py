@@ -64,7 +64,7 @@ class PracticeMemory:
         self.session["review_round"] = round_number
         self.session["phase"] = "learn" if round_number == 1 else "review"
 
-    def save(self, question_id, response, correct, hit, total, explanation):
+    def save(self, question_id, response, correct, hit, total, explanation, rubric_hits=None):
         if question_id in self.answers:
             raise AssertionError("Duplicate scoring")
         question = next(q for q in self.questions if q["id"] == question_id)
@@ -73,10 +73,22 @@ class PracticeMemory:
             "round_number": question["review_round"], "response": response,
             "correct": correct, "points_hit": hit, "points_total": total,
             "explanation": explanation,
+            "rubric_hits": rubric_hits,
         }
 
     def draft(self, session_id, question_id, response):
         self.session["drafts"][str(question_id)] = response
+
+    def begin_feedback(self, kind, question_id):
+        answer = self.answers[question_id]
+        answer["explanation_status"] = "pending"
+        answer["explanation_attempts"] = answer.get("explanation_attempts", 0) + 1
+
+    def complete_feedback(self, kind, session_id, question_id, text):
+        answer = self.answers[question_id]
+        answer["explanation"] = text or ""
+        answer["explanation_status"] = "ready" if text else "failed"
+        answer["explanation_error"] = None if text else "Retry the explanation"
 
     def publish(self, session_id, report, closing=False):
         self.session["report"] = copy.deepcopy(report)
@@ -101,13 +113,15 @@ class PracticeMemory:
             "store_round": self.store,
             "save_answer": self.save,
             "save_draft": self.draft,
+            "begin_explanation_attempt": self.begin_feedback,
+            "complete_explanation_attempt": self.complete_feedback,
             "publish_session_report": self.publish,
             "progress_map": lambda *args: self.progress,
             "save_progress": lambda uid, cid, level, streak: self.progress.update({cid: {"level": level, "streak": streak}}),
             "question_in_session": self.question,
             "latest_miss": lambda *args: None,
             "_write_question": self.write,
-            "_grade_shorts": lambda items: {q["id"]: list(range(1, 6)) if response == "correct" else [] for q, response, rubric in items},
+            "_grade_shorts": lambda items: {q["id"]: list(range(5)) if response == "correct" else [] for q, response, rubric in items},
             "_explain": lambda questions, wrong: {q["id"]: "Review the cited fact on page 12." for q in questions},
         }
         return {name: stack.enter_context(patch.object(practice, name, side_effect=value)) for name, value in bindings.items()}

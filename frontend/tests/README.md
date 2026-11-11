@@ -15,6 +15,7 @@ In another terminal, from `frontend`:
 
 ```powershell
 node tests/practice-ui-smoke.cjs
+node tests/feedback-ui-smoke.cjs
 ```
 
 Google Chrome must be installed. To use an installed Microsoft Edge instead,
@@ -28,3 +29,24 @@ original PDF page links, incomplete model grading, retry after round-one scoring
 and round-two generation failure, the two-round limit and separate scores, the
 new-session pass mark, and an older exam draft finishing before the latest
 submission. Success prints `PASS`; failed checks exit with a nonzero code.
+
+The feedback smoke test additionally covers a saved grade whose explanation is
+unavailable, a retry returning HTTP 200 with another failed explanation, successful
+recovery and refresh, unchanged next-question drafts, fixed round results and exam
+grades, legacy placeholder feedback, report prose, and actual versus unknown rubric
+point matches. Correct answers never offer a remedial explanation retry. These
+checks verify UI behavior using mocked responses; they do not measure model quality.
+
+`CITEPATH_FEEDBACK_SCREENSHOT` optionally saves the completed practice report
+from the feedback smoke test. Both scripts use the same server and browser settings.
+
+To test the production build without opening a local HTTP server, run the build
+and set `CITEPATH_UI_DIST` to its directory. Playwright serves these files directly
+from disk and continues to mock the API; it makes no application network requests:
+
+```powershell
+npm run build
+$env:CITEPATH_UI_DIST = 'dist'
+node tests/practice-ui-smoke.cjs
+node tests/feedback-ui-smoke.cjs
+```

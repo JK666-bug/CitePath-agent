@@ -129,6 +129,10 @@ CREATE TABLE IF NOT EXISTS exam_answers (
   points_hit INT NOT NULL,
   points_total INT NOT NULL,
   explanation TEXT NULL,
+  explanation_status VARCHAR(16) NOT NULL DEFAULT 'pending',
+  explanation_error VARCHAR(255) NULL,
+  explanation_attempts INT NOT NULL DEFAULT 0,
+  rubric_hits_json JSON NULL,
   UNIQUE KEY uq_exam_answer_question (question_id),
   CONSTRAINT fk_exam_answers_question FOREIGN KEY (question_id) REFERENCES exam_questions (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -198,6 +202,10 @@ CREATE TABLE IF NOT EXISTS practice_answers (
   points_hit INT NOT NULL,
   points_total INT NOT NULL,
   explanation TEXT NULL,
+  explanation_status VARCHAR(16) NOT NULL DEFAULT 'pending',
+  explanation_error VARCHAR(255) NULL,
+  explanation_attempts INT NOT NULL DEFAULT 0,
+  rubric_hits_json JSON NULL,
   UNIQUE KEY uq_practice_answer_question (question_id),
   CONSTRAINT fk_practice_answers_question FOREIGN KEY (question_id) REFERENCES practice_questions (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

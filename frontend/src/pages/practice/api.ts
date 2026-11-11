@@ -1,5 +1,6 @@
 import { request } from '../../shared/request'
 import type { Source } from '../course/types'
+import type { ExplanationFields, MarkingFields, ReportNarrative } from '../../shared/feedback'
 
 export type PracticeQuestion = {
   id: number
@@ -11,7 +12,8 @@ export type PracticeQuestion = {
   response?: string
 }
 
-export type PracticeFeedback = {
+export type PracticeFeedback = ExplanationFields & MarkingFields & {
+  question_id?: number
   concept_name: string
   correct: boolean
   explanation: string
@@ -43,7 +45,7 @@ export type PracticeConcept = {
   streak: number
 }
 
-export type PracticeReport = {
+export type PracticeReport = ReportNarrative & {
   started_at: string
   finished_at: string
   question_count: number
@@ -62,7 +64,7 @@ export type PracticeReport = {
     correct: number
     level: number
   }[]
-  wrong: {
+  wrong: (ExplanationFields & MarkingFields & {
     question_id: number
     concept_name: string
     kind: string
@@ -74,8 +76,8 @@ export type PracticeReport = {
     explanation: string
     sources: Source[]
     correct?: boolean
-  }[]
-  questions?: {
+  })[]
+  questions?: (ExplanationFields & MarkingFields & {
     question_id: number
     concept_name: string
     kind: string
@@ -87,7 +89,7 @@ export type PracticeReport = {
     explanation: string
     sources: Source[]
     correct: boolean
-  }[]
+  })[]
 }
 
 export type PracticeSession = {
@@ -167,6 +169,13 @@ export function savePracticeDraft(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ question_id: questionId, response }),
     },
+  )
+}
+
+export function retryPracticeExplanation(courseId: number, sessionId: number, questionId: number) {
+  return request<PracticeSession>(
+    `/api/courses/${courseId}/practice/${sessionId}/questions/${questionId}/explanation/retry`,
+    { method: 'POST' },
   )
 }
 

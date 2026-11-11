@@ -3,6 +3,7 @@ from contextlib import contextmanager
 
 from db.connection import connect
 from db.courses import get_course
+from db.feedback import ensure_feedback_columns, feedback_fields
 
 _ready = False
 
@@ -35,8 +36,13 @@ def ensure_exam_storage() -> None:
     if _ready:
         return
     connection = connect()
+    schema_locked = False
     try:
         with connection.cursor() as cursor:
+            cursor.execute("SELECT GET_LOCK('citepath:exam:schema', 30) AS acquired")
+            schema_locked = cursor.fetchone()["acquired"] == 1
+            if not schema_locked:
+                raise RuntimeError("Exam storage is being initialized. Retry shortly.")
             cursor.execute(
                 """
                 CREATE TABLE IF NOT EXISTS exams (
@@ -100,12 +106,18 @@ def ensure_exam_storage() -> None:
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
                 """
             )
+            ensure_feedback_columns(cursor, "exam_answers")
         connection.commit()
     except Exception:
         connection.rollback()
         raise
     finally:
-        connection.close()
+        try:
+            if schema_locked:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT RELEASE_LOCK('citepath:exam:schema')")
+        finally:
+            connection.close()
     _ready = True
 
 
@@ -250,6 +262,7 @@ def get_owned_exam(user_id: int, course_id: int, exam_id: int) -> dict:
                 SELECT q.id, q.position, q.concept_name, q.kind, q.prompt,
                        q.options_json, q.answer, q.rubric_json, q.sources_json,
                        a.response, a.correct, a.points_hit, a.points_total, a.explanation,
+                       a.explanation_status, a.explanation_error, a.explanation_attempts, a.rubric_hits_json,
                        d.response AS draft_response
                 FROM exam_questions q
                 LEFT JOIN exam_answers a ON a.question_id = q.id
@@ -295,9 +308,10 @@ def finish_exam(user_id: int, course_id: int, exam_id: int, report: dict, graded
             cursor.executemany(
                 """
                 INSERT INTO exam_answers (
-                  question_id, response, correct, points_hit, points_total, explanation
+                  question_id, response, correct, points_hit, points_total, explanation,
+                  explanation_status, rubric_hits_json
                 )
-                VALUES (%s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 [
                     (
@@ -307,6 +321,8 @@ def finish_exam(user_id: int, course_id: int, exam_id: int, report: dict, graded
                         item["points_hit"],
                         item["points_total"],
                         item.get("explanation") or None,
+                        "not_required" if item["correct"] else "pending",
+                        json.dumps(item["rubric_hits"]) if item.get("rubric_hits") is not None else None,
                     )
                     for item in graded
                 ],
@@ -349,6 +365,9 @@ def finish_exam(user_id: int, course_id: int, exam_id: int, report: dict, graded
 def public_exam(exam: dict) -> dict:
     finished = exam["status"] == "finished"
     report = _json(exam.get("report_json")) if finished else None
+    if isinstance(report, dict):
+        from agent.report_text import enrich_report
+        report = enrich_report(report)
     questions = []
     for question in exam["questions"]:
         item = {
@@ -365,9 +384,10 @@ def public_exam(exam: dict) -> dict:
             item["correct"] = bool(question.get("correct"))
             item["answer"] = question["answer"]
             item["rubric"] = _json(question["rubric_json"]) or []
-            item["explanation"] = question.get("explanation") or ""
+            item.update(feedback_fields(question))
             item["points_hit"] = int(question.get("points_hit") or 0)
             item["points_total"] = int(question.get("points_total") or 0)
+            item["rubric_hits"] = _json(question.get("rubric_hits_json"))
         elif question.get("draft_response"):
             item["response"] = question["draft_response"]
         questions.append(item)

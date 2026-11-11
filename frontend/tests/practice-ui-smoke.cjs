@@ -1,10 +1,12 @@
 const assert = require('node:assert/strict')
-const baseUrl = process.env.CITEPATH_UI_URL || 'http://127.0.0.1:5174'
+const baseUrl = process.env.CITEPATH_UI_URL || (process.env.CITEPATH_UI_DIST ? 'http://citepath.test' : 'http://127.0.0.1:5174')
+const { serveBuilt } = require('./serve-built.cjs')
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright')
 
 async function run() {
   const browser = await chromium.launch({ headless: true, channel: process.env.CITEPATH_BROWSER || 'chrome' })
   const page = await browser.newPage({ viewport: { width: 1280, height: 1000 } })
+  await serveBuilt(page, process.env.CITEPATH_UI_DIST, baseUrl)
   const source = { document_id: 42, position: 1, filename: 'lecture.pdf', page_number: 7 }
   const round1 = { round_number: 1, correct_count: 0, total: 1, accuracy: 0, score: 0, passed: false, weak_concepts: ['Hashing'] }
   const round2 = { ...round1, round_number: 2 }

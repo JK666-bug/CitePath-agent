@@ -1,0 +1,535 @@
+{
+  "status": "provisional-AI-hints-not-independent-human-labels",
+  "items": [
+    {
+      "item_id": "SA-01-1",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-01-2",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-01-3",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-01-4",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-02-1",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-02-2",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-02-3",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-02-4",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-03-1",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-03-2",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-03-3",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-03-4",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-04-1",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-04-2",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-04-3",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-04-4",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-05-1",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-05-2",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-05-3",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-05-4",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-06-1",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-06-2",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-06-3",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-06-4",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-07-1",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-07-2",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-07-3",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-07-4",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-08-1",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-08-2",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-08-3",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-08-4",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-09-1",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-09-2",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-09-3",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-09-4",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-10-1",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-10-2",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-10-3",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [
+        0,
+        1,
+        2
+      ],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "SA-10-4",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_hits": [],
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "MC-01",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_answer_key": "A",
+      "candidate_correct": true,
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "MC-02",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_answer_key": "B",
+      "candidate_correct": true,
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "MC-03",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_answer_key": "C",
+      "candidate_correct": true,
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "MC-04",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_answer_key": "D",
+      "candidate_correct": true,
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "MC-05",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_answer_key": "A",
+      "candidate_correct": true,
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "MC-06",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_answer_key": "B",
+      "candidate_correct": true,
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "MC-07",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_answer_key": "C",
+      "candidate_correct": true,
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "MC-08",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_answer_key": "D",
+      "candidate_correct": true,
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "MC-09",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_answer_key": "A",
+      "candidate_correct": true,
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "MC-10",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_answer_key": "B",
+      "candidate_correct": true,
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "MC-11",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_answer_key": "C",
+      "candidate_correct": false,
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "MC-12",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_answer_key": "D",
+      "candidate_correct": false,
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "MC-13",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_answer_key": "A",
+      "candidate_correct": false,
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "MC-14",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_answer_key": "B",
+      "candidate_correct": false,
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "MC-15",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_answer_key": "C",
+      "candidate_correct": false,
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "MC-16",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_answer_key": "D",
+      "candidate_correct": false,
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "MC-17",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_answer_key": "A",
+      "candidate_correct": false,
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "MC-18",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_answer_key": "B",
+      "candidate_correct": false,
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "MC-19",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_answer_key": "C",
+      "candidate_correct": false,
+      "requires_independent_review": true
+    },
+    {
+      "item_id": "MC-20",
+      "provenance": "assistant-draft-not-human-judgment",
+      "candidate_answer_key": "D",
+      "candidate_correct": false,
+      "requires_independent_review": true
+    }
+  ]
+}

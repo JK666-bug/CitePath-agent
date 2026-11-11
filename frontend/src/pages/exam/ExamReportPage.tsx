@@ -13,8 +13,11 @@ import {
   Sources,
 } from '../../shared/components/UI'
 
-import { createExam, getExam } from './api'
+import { createExam, getExam, retryExamExplanation } from './api'
 import type { ExamQuestion, ExamRecord } from './api'
+import ExplanationFeedback from '../../shared/components/ExplanationFeedback'
+import ReportNarrative from '../../shared/components/ReportNarrative'
+import MarkingPoints from '../../shared/components/MarkingPoints'
 
 import '../practice/practice.css'
 
@@ -30,6 +33,20 @@ export default function ExamReportPage({
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [wrongOnly, setWrongOnly] = useState(false)
+  const [retryingQuestion, setRetryingQuestion] = useState<number | null>(null)
+
+  async function retryExplanation(questionId: number) {
+    if (!exam || busy || retryingQuestion !== null) return
+    setRetryingQuestion(questionId)
+    setError('')
+    try {
+      setExam(await retryExamExplanation(Number(courseId), exam.id, questionId))
+    } catch (reason) {
+      setError(`Could not retry the explanation. ${messageOf(reason)}`)
+    } finally {
+      setRetryingQuestion(null)
+    }
+  }
 
   useEffect(() => {
     let active = true
@@ -103,6 +120,8 @@ export default function ExamReportPage({
         </p>
       </section>
 
+      <ReportNarrative report={report} courseId={courseId} />
+
       <section className="stack">
         <div className="actions spread">
           <h2>Questions</h2>
@@ -151,7 +170,16 @@ export default function ExamReportPage({
               <strong>Expected. </strong>
               {expectedAnswer(item)}
             </p>
-            {item.explanation && <p>{item.explanation}</p>}
+            {item.kind === 'short' && <MarkingPoints {...item} />}
+            {!item.correct && (
+              <ExplanationFeedback
+                {...item}
+                explanation={item.explanation ?? ''}
+                busy={retryingQuestion === item.id}
+                disabled={busy || retryingQuestion !== null}
+                onRetry={() => { void retryExplanation(item.id) }}
+              />
+            )}
             <Sources sources={item.sources} courseId={courseId} />
           </article>
         ))}
@@ -162,7 +190,7 @@ export default function ExamReportPage({
       <div className="actions">
         <button
           className="button"
-          disabled={busy}
+          disabled={busy || retryingQuestion !== null}
           onClick={() => {
             setBusy(true)
             setError('')

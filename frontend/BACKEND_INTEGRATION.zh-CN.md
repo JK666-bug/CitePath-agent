@@ -85,6 +85,15 @@
 
 最终报告还包含 `remaining_weak_concepts`、`remaining_sources` 和错题详情。正确题不请求补救解释。前端以服务端状态为准；独立章节考试是另一条功能路径，不承担练习的两轮流转。
 
+## 错题解释恢复与报告说明
+
+`POST /practice/{session_id}/questions/{question_id}/explanation/retry` 和
+`POST /exams/{exam_id}/questions/{question_id}/explanation/retry` 分别返回更新后的完整练习/考试记录，不需要请求体。接口验证当前登录用户的所有权及题目归属，仅为已提交的错题补生成解释。
+
+解释字段为 `explanation_status`（`not_required/pending/failed/ready`）、`explanation_error` 和 `explanation_attempts`。有效分数先保存；解释失败不会重新判分，重试只更新解释及对应报告文字，不改变轮次、通过结果、原题或完成时间。正确题和已成功解释的题目不会再次调用模型。
+
+简答报告包含 `rubric`、`rubric_hits`、`points_hit` 和 `points_total`。旧记录没有逐点命中索引时返回 `null`，界面不从总分猜测命中了哪些点。报告增加 `summary`、`round_summaries`、`review_guidance` 和 `feedback_pending_count`；这些文字仅来自已保存的成绩、概念与来源。
+
 ## 独立问答
 
 `POST /questions` 接收 `{ "question": "..." }`；`GET /questions` 读取历史记录。讲义问题先检索本课程资料；讲义证据不足时可补充网页来源，回答与界面区分 `cited_pages` 和 `web_sources`，不把外部网页包装为讲义页。学习记录问题只读取当前用户的真实练习/考试数据；官方章节通过与概念掌握是不同字段。

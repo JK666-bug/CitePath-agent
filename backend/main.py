@@ -7,8 +7,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
-from agent.exam import open_exam, save_exam_drafts, start_exam, submit_exam
-from agent.practice import answer_practice, open_practice, save_practice_draft, start_practice
+from agent.exam import open_exam, save_exam_drafts, start_exam, submit_exam, retry_exam_explanation
+from agent.practice import answer_practice, open_practice, save_practice_draft, start_practice, retry_practice_explanation
+from agent.telemetry import usage_context
 from agent.llm import ping
 from agent.plan import generate_plan
 from agent.qa import answer_question, list_questions
@@ -273,7 +274,8 @@ def finish_task(course_id: int, task_id: str, user: dict = Depends(current_user)
 @app.post("/api/courses/{course_id}/chapters/{chapter_id}/exams")
 def create_exam(course_id: int, chapter_id: int, user: dict = Depends(current_user)):
     try:
-        return start_exam(user["id"], course_id, chapter_id)
+        with usage_context(operation="exam.start", user_id=user["id"], course_id=course_id, chapter_id=chapter_id):
+            return start_exam(user["id"], course_id, chapter_id)
     except LookupError as error:
         detail = "Course not found" if str(error) == "Course not found" else "Chapter not found"
         raise HTTPException(status_code=404, detail=detail) from error
@@ -321,12 +323,8 @@ def submit_course_exam(
     user: dict = Depends(current_user),
 ):
     try:
-        return submit_exam(
-            user["id"],
-            course_id,
-            exam_id,
-            [item.model_dump() for item in body.answers],
-        )
+        with usage_context(operation="exam.submit", user_id=user["id"], course_id=course_id, exam_id=exam_id):
+            return submit_exam(user["id"], course_id, exam_id, [item.model_dump() for item in body.answers])
     except LookupError as error:
         raise HTTPException(status_code=404, detail="Exam not found") from error
     except ValueError as error:
@@ -340,7 +338,8 @@ def submit_course_exam(
 @app.post("/api/courses/{course_id}/chapters/{chapter_id}/practice")
 def create_practice(course_id: int, chapter_id: int, body: PracticeStart | None = None, user: dict = Depends(current_user)):
     try:
-        return start_practice(user["id"], course_id, chapter_id, body.passing_threshold if body else 0.8)
+        with usage_context(operation="practice.start", user_id=user["id"], course_id=course_id, chapter_id=chapter_id):
+            return start_practice(user["id"], course_id, chapter_id, body.passing_threshold if body else 0.8)
     except LookupError as error:
         detail = "Course not found" if str(error) == "Course not found" else "Chapter not found"
         raise HTTPException(status_code=404, detail=detail) from error
@@ -382,6 +381,8 @@ def save_course_practice_draft(
         raise HTTPException(status_code=404, detail="Practice not found") from error
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
 
 
 @app.post("/api/courses/{course_id}/practice/{session_id}/answer")
@@ -392,13 +393,9 @@ def answer_course_practice(
     user: dict = Depends(current_user),
 ):
     try:
-        return answer_practice(
-            user["id"],
-            course_id,
-            session_id,
-            body.question_id,
-            body.response,
-        )
+        with usage_context(operation="practice.answer", user_id=user["id"], course_id=course_id,
+                           session_id=session_id, question_id=body.question_id):
+            return answer_practice(user["id"], course_id, session_id, body.question_id, body.response)
     except LookupError as error:
         raise HTTPException(status_code=404, detail="Practice not found") from error
     except ValueError as error:
@@ -407,6 +404,40 @@ def answer_course_practice(
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
         raise HTTPException(status_code=502, detail="Could not grade this practice question") from error
+
+
+@app.post("/api/courses/{course_id}/practice/{session_id}/questions/{question_id}/explanation/retry")
+def retry_practice_feedback(course_id: int, session_id: int, question_id: int,
+                            user: dict = Depends(current_user)):
+    try:
+        with usage_context(operation="practice.feedback_retry", user_id=user["id"], course_id=course_id,
+                           session_id=session_id, question_id=question_id):
+            return retry_practice_explanation(user["id"], course_id, session_id, question_id)
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail="Saved answer not found") from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+    except Exception as error:
+        raise HTTPException(status_code=502, detail="Could not retry this explanation. Your grade is saved.") from error
+
+
+@app.post("/api/courses/{course_id}/exams/{exam_id}/questions/{question_id}/explanation/retry")
+def retry_exam_feedback(course_id: int, exam_id: int, question_id: int,
+                       user: dict = Depends(current_user)):
+    try:
+        with usage_context(operation="exam.feedback_retry", user_id=user["id"], course_id=course_id,
+                           exam_id=exam_id, question_id=question_id):
+            return retry_exam_explanation(user["id"], course_id, exam_id, question_id)
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail="Saved answer not found") from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+    except Exception as error:
+        raise HTTPException(status_code=502, detail="Could not retry this explanation. Your grade is saved.") from error
 
 
 @app.get("/api/courses/{course_id}/chapters/{chapter_id}/reports")
@@ -433,7 +464,8 @@ def create_question(
     user: dict = Depends(current_user),
 ):
     try:
-        return answer_question(user["id"], course_id, body.question)
+        with usage_context(operation="qa.answer", user_id=user["id"], course_id=course_id):
+            return answer_question(user["id"], course_id, body.question)
     except LookupError as error:
         raise HTTPException(status_code=404, detail="Course not found") from error
     except ValueError as error:

@@ -60,6 +60,35 @@ class PracticeApiTest(unittest.TestCase):
             self.assertEqual(response.status_code, 404)
             path.assert_not_called()
 
+    def test_practice_explanation_retry_returns_saved_state_without_answer_submission(self):
+        saved = {"id": 9, "round_number": 2, "round_results": [{"score": 60}, {"score": 100}],
+                 "report": {"passed": True, "outcome": "passed_round_2"},
+                 "feedback": {"question_id": 4, "explanation_status": "failed"}}
+        with patch("main.retry_practice_explanation", return_value=saved) as retry, \
+                patch("main.answer_practice") as grade, patch("main.start_practice") as generate:
+            response = self.client.post("/api/courses/2/practice/9/questions/4/explanation/retry")
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json(), saved)
+            retry.assert_called_once_with(11, 2, 9, 4)
+            grade.assert_not_called()
+            generate.assert_not_called()
+
+    def test_explanation_retry_does_not_reveal_foreign_session(self):
+        for path, helper in (("practice/9", "retry_practice_explanation"), ("exams/9", "retry_exam_explanation")):
+            with self.subTest(path=path), patch("main." + helper, side_effect=LookupError("foreign session")):
+                response = self.client.post(f"/api/courses/2/{path}/questions/4/explanation/retry")
+                self.assertEqual(response.status_code, 404)
+                self.assertNotIn("foreign", response.text)
+
+    def test_exam_explanation_retry_preserves_official_result(self):
+        record = {"id": 9, "status": "finished", "score": 80, "passed": True,
+                  "report": {"score": 80, "wrong": [{"question_id": 4, "explanation_status": "ready"}]}}
+        with patch("main.retry_exam_explanation", return_value=record) as retry, patch("main.submit_exam") as grade:
+            response = self.client.post("/api/courses/2/exams/9/questions/4/explanation/retry")
+            self.assertEqual(response.json(), record)
+            retry.assert_called_once_with(11, 2, 9, 4)
+            grade.assert_not_called()
+
     def test_source_pdf_serves_original_bytes_and_legacy_missing_is_actionable(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "6.pdf"

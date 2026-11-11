@@ -27,6 +27,21 @@ def strip_page_furniture(text: str) -> str:
     return cleaned.strip()
 
 
+def is_attribution_page(text: str) -> bool:
+    """Recognize the standalone MIT OCW credit sheet, retaining original PDF pages."""
+    compact = re.sub(r"\s+", " ", text).strip().casefold()
+    if not ("mit opencourseware" in compact and "ocw.mit.edu" in compact
+            and "terms" in compact and "6.006" in compact):
+        return False
+    # The credit sheet has these few lines, without teaching material. A page
+    # merely mentioning MIT/its license must not be removed.
+    without_links = re.sub(r"https?://\S+", "", compact)
+    for expected in ("mit opencourseware", "6.006 introduction to algorithms", "spring 2020",
+                     "for information about citing these materials or our terms of use, visit:"):
+        without_links = without_links.replace(expected, "")
+    return not re.sub(r"[\s#*<>\[\]().,:/\\-]+", "", without_links)
+
+
 def _drop_line(line: str) -> bool:
     stripped = line.strip()
     if not stripped or "|" in stripped:

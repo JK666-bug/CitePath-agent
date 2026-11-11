@@ -19,10 +19,14 @@ import {
   createPractice,
   getPractice,
   practiceOutcome,
+  retryPracticeExplanation,
   savePracticeDraft,
 } from './api'
 import type { PracticeSession } from './api'
 import RoundSummary, { PassThreshold } from './RoundSummary'
+import ExplanationFeedback from '../../shared/components/ExplanationFeedback'
+import ReportNarrative from '../../shared/components/ReportNarrative'
+import MarkingPoints from '../../shared/components/MarkingPoints'
 
 import './practice.css'
 
@@ -43,6 +47,8 @@ export default function PracticeLivePage({
   const [savedResponse, setSavedResponse] = useState('')
   const [saveError, setSaveError] = useState('')
   const [newThreshold, setNewThreshold] = useState(0.8)
+  const [retryingQuestion, setRetryingQuestion] = useState<number | null>(null)
+  const [feedbackError, setFeedbackError] = useState('')
   const draftQueue = useRef<Promise<void>>(Promise.resolve())
   const currentQuestionId = useRef(0)
 
@@ -71,7 +77,7 @@ export default function PracticeLivePage({
     return () => { currentQuestionId.current = 0 }
   }, [questionId])
   useEffect(() => {
-    if (!questionId || busy || response === savedResponse) return
+    if (!questionId || busy || retryingQuestion !== null || response === savedResponse) return
     const timer = window.setTimeout(() => {
       const request = draftQueue.current.then(() =>
         savePracticeDraft(Number(courseId), Number(sessionId), questionId, response),
@@ -89,7 +95,27 @@ export default function PracticeLivePage({
       })
     }, 600)
     return () => window.clearTimeout(timer)
-  }, [busy, courseId, questionId, response, savedResponse, sessionId])
+  }, [busy, courseId, questionId, response, retryingQuestion, savedResponse, sessionId])
+
+  async function retryExplanation(questionId: number) {
+    if (!session || busy || retryingQuestion !== null) return
+    setRetryingQuestion(questionId)
+    setFeedbackError('')
+    try {
+      await draftQueue.current
+      const next = await retryPracticeExplanation(Number(courseId), session.id, questionId)
+      setSession(next)
+      // A feedback retry must not overwrite a draft being written for the next question.
+      if (next.question?.id !== session.question?.id) {
+        setResponse(next.question?.response ?? '')
+        setSavedResponse(next.question?.response ?? '')
+      }
+    } catch (reason) {
+      setFeedbackError(`Could not retry the explanation. ${messageOf(reason)}`)
+    } finally {
+      setRetryingQuestion(null)
+    }
+  }
 
   async function saveCurrentDraft() {
     if (!session?.question) return
@@ -103,7 +129,7 @@ export default function PracticeLivePage({
     event: FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault()
-    if (!session?.question || busy) return
+    if (!session?.question || busy || retryingQuestion !== null) return
     if (!response.trim()) {
       setError('Write an answer before continuing.')
       return
@@ -177,6 +203,9 @@ export default function PracticeLivePage({
         </Notice>
 
         {rounds.length > 0 && <RoundSummary rounds={rounds} threshold={threshold} />}
+
+        <ReportNarrative report={report} courseId={courseId} />
+        {feedbackError && <Notice tone="error">{feedbackError}</Notice>}
 
         <section className="panel">
           <p className="chapter-score">
@@ -266,7 +295,15 @@ export default function PracticeLivePage({
                 <strong>Expected. </strong>
                 {item.answer}
               </p>
-              {!item.correct && item.explanation && <p>{item.explanation}</p>}
+              {item.kind === 'short' && <MarkingPoints {...item} />}
+              {!item.correct && (
+                <ExplanationFeedback
+                  {...item}
+                  busy={retryingQuestion === item.question_id}
+                  disabled={retryingQuestion !== null || starting}
+                  onRetry={() => { void retryExplanation(item.question_id) }}
+                />
+              )}
               <Sources sources={item.sources} courseId={courseId} />
             </article>
           ))}
@@ -284,7 +321,7 @@ export default function PracticeLivePage({
           <button
             className="button"
             type="button"
-            disabled={starting}
+            disabled={starting || retryingQuestion !== null}
             onClick={() => {
               setError('')
               setStarting(true)
@@ -328,6 +365,7 @@ export default function PracticeLivePage({
       {error && <Notice tone="error">{error}</Notice>}
       {session.migration_notice && <Notice>{session.migration_notice}</Notice>}
       {saveError && <Notice tone="error">{saveError}</Notice>}
+      {feedbackError && <Notice tone="error">{feedbackError}</Notice>}
 
       {rounds.length > 0 && <RoundSummary rounds={rounds} threshold={threshold} />}
 
@@ -344,9 +382,20 @@ export default function PracticeLivePage({
           <strong>{session.feedback.concept_name}</strong>
           {session.feedback.correct
             ? ' is correct.'
-            : ` needs another look. ${session.feedback.explanation} Expected: ${session.feedback.answer}`}
+            : ` needs another look. Expected: ${session.feedback.answer}`}
         </Notice>
+        {!session.feedback.correct && (
+          <ExplanationFeedback
+            {...session.feedback}
+            busy={retryingQuestion === session.feedback.question_id}
+            disabled={busy || retryingQuestion !== null}
+            onRetry={session.feedback.question_id === undefined ? undefined : () => {
+              void retryExplanation(session.feedback!.question_id!)
+            }}
+          />
+        )}
         {!session.feedback.correct && <Sources sources={session.feedback.sources ?? []} courseId={courseId} />}
+        <MarkingPoints {...session.feedback} />
         </div>
       )}
 
@@ -369,7 +418,7 @@ export default function PracticeLivePage({
       </ul>
 
       {question ? (
-        <fieldset className="panel question-card" disabled={busy}>
+        <fieldset className="panel question-card" disabled={busy || retryingQuestion !== null}>
           <div className="actions spread">
             <p className="question-concept">
               Concept: {question.concept_name}
@@ -427,7 +476,7 @@ export default function PracticeLivePage({
 
       <div className="actions">
         {question && (
-          <button className="button" disabled={busy}>
+          <button className="button" disabled={busy || retryingQuestion !== null}>
             {busy ? 'Checking…' : 'Submit answer'}
           </button>
         )}
@@ -435,7 +484,7 @@ export default function PracticeLivePage({
           <button
             type="button"
             className="button secondary"
-            disabled={busy || response === savedResponse}
+            disabled={busy || retryingQuestion !== null || response === savedResponse}
             onClick={() => {
               setBusy(true)
               void saveCurrentDraft()

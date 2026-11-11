@@ -1,6 +1,6 @@
 import io
 
-from ingest.clean import strip_page_furniture
+from ingest.clean import strip_page_furniture, is_attribution_page
 
 _converter = None
 
@@ -29,6 +29,8 @@ def read_pdf(data: bytes) -> list[dict]:
         if tails:
             exported = "\n\n".join([*tails, exported])
         body = strip_page_furniture(exported)
+        if is_attribution_page(body):
+            body = ""
         pages.append(
             {
                 "page_number": number,

@@ -1,0 +1,111 @@
+{
+  "course": "MIT 6.006 Introduction to Algorithms, Spring 2020",
+  "instructors": [
+    "Erik Demaine",
+    "Jason Ku",
+    "Justin Solomon"
+  ],
+  "source_page": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/pages/lecture-notes/",
+  "terms": "https://ocw.mit.edu/terms/",
+  "documents": [
+    {
+      "id": "mit6006-l02",
+      "lecture": 2,
+      "title": "Data Structures",
+      "split": "development",
+      "pdf_path": "lecture-02.pdf",
+      "sha256": "8a4659725b3f91ace2590603449a656fdc7b66bd344f1aaaf8004f8be550cb50",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/79a07dc1cb47d76dae2ffedc701e3d2b_MIT6_006S20_lec2.pdf",
+      "page_count": 5,
+      "teaching_pages": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "attribution_pages": [
+        5
+      ]
+    },
+    {
+      "id": "mit6006-l03",
+      "lecture": 3,
+      "title": "Sorting",
+      "split": "development",
+      "pdf_path": "lecture-03.pdf",
+      "sha256": "d1286329a3781b909c8ed481a5527a12c5f6cc3de76f303fe64d858aa1c91e40",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/6d1ae5278d02bbecb5c4428928b24194_MIT6_006S20_lec3.pdf",
+      "page_count": 6,
+      "teaching_pages": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "attribution_pages": [
+        6
+      ]
+    },
+    {
+      "id": "mit6006-l04",
+      "lecture": 4,
+      "title": "Hashing",
+      "split": "final",
+      "pdf_path": "lecture-04.pdf",
+      "sha256": "cbc9a669f00c7554520c667853f4bc95f041348fea7ce76fd8a37246c94dc564",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/ce9e94705b914598ce78a00a70a1f734_MIT6_006S20_lec4.pdf",
+      "page_count": 5,
+      "teaching_pages": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "attribution_pages": [
+        5
+      ]
+    },
+    {
+      "id": "mit6006-l06",
+      "lecture": 6,
+      "title": "Binary Trees, Part 1",
+      "split": "final",
+      "pdf_path": "lecture-06.pdf",
+      "sha256": "b296cb999a106c0de56f2fda725162c8adf12bce06ae849d97842f87c272ad2d",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/376714cc85c6c784d90eec9c575ec027_MIT6_006S20_lec6.pdf",
+      "page_count": 6,
+      "teaching_pages": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "attribution_pages": [
+        6
+      ]
+    },
+    {
+      "id": "mit6006-l08",
+      "lecture": 8,
+      "title": "Binary Heaps",
+      "split": "final",
+      "pdf_path": "lecture-08.pdf",
+      "sha256": "e9a6cdd3ec699a757c4d2c0973cef38dfa3a2aa5da0404dcfdf910197cb92fa3",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/40d4851e550507ca14dc778b9b2266cc_MIT6_006S20_lec8.pdf",
+      "page_count": 7,
+      "teaching_pages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "attribution_pages": [
+        7
+      ]
+    }
+  ]
+}

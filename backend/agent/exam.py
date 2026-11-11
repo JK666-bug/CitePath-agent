@@ -4,7 +4,9 @@ import re
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from agent.llm import chat_model
+from agent.telemetry import usage_context
 from db.exams import _save_drafts, exam_lock, finish_exam, load_chapter, public_exam, save_exam
+from db.feedback import begin_explanation_attempt, complete_explanation_attempt, feedback_fields
 from grading.score import choice_correct, exam_pass, percent, points_pass
 
 EXAM_SYSTEM = """You write one CitePath exam for a single study chapter.
@@ -49,6 +51,21 @@ def save_exam_drafts(user_id: int, course_id: int, exam_id: int, answers: list[d
     return save_drafts(user_id, course_id, exam_id, answers)
 
 
+def retry_exam_explanation(user_id: int, course_id: int, exam_id: int, question_id: int) -> dict:
+    from db.exams import get_owned_exam
+    with exam_lock(user_id, course_id, exam_id):
+        exam = get_owned_exam(user_id, course_id, exam_id)
+        question = next((q for q in exam["questions"] if int(q["id"]) == question_id), None)
+        if question is None:
+            raise LookupError("Question not found in this exam")
+        if exam["status"] != "finished":
+            raise ValueError("Submit this exam before requesting an explanation")
+        if feedback_fields(question)["explanation_status"] not in {"ready", "not_required"}:
+            with usage_context(user_id=user_id, course_id=course_id):
+                _attempt_exam_explanations(exam_id, [question], [{"question_id": question_id, "response": question.get("response") or ""}])
+        return public_exam(get_owned_exam(user_id, course_id, exam_id))
+
+
 def submit_exam(user_id: int, course_id: int, exam_id: int, answers: list[dict]) -> dict:
     with exam_lock(user_id, course_id, exam_id):
         return _submit_exam(user_id, course_id, exam_id, answers)
@@ -87,7 +104,9 @@ def _submit_exam(user_id: int, course_id: int, exam_id: int, answers: list[dict]
             shorts.append((question, response, rubric))
     hits = _grade_shorts(shorts)
     for question, response, rubric in shorts:
-        matched = hits.get(int(question["id"]), [])
+        if int(question["id"]) not in hits:
+            raise RuntimeError("The answers are saved, but grading is incomplete. Retry grading.")
+        matched = hits[int(question["id"])]
         correct = points_pass(len(matched), len(rubric))
         graded.append(
             {
@@ -96,18 +115,36 @@ def _submit_exam(user_id: int, course_id: int, exam_id: int, answers: list[dict]
                 "correct": correct,
                 "points_hit": len(matched),
                 "points_total": len(rubric),
+                "rubric_hits": matched,
                 "explanation": "",
             }
         )
     wrong = [item for item in graded if not item["correct"]]
-    explanations = _explain(exam["questions"], wrong)
-    for item in graded:
-        if not item["correct"]:
-            item["explanation"] = explanations.get(item["question_id"], "Review the cited page.")
     correct_count = sum(1 for item in graded if item["correct"])
     total = len(graded)
     report = _report(exam, graded, correct_count, total)
-    return finish_exam(user_id, course_id, exam_id, report, graded)
+    saved = finish_exam(user_id, course_id, exam_id, report, graded)
+    if wrong:
+        _attempt_exam_explanations(exam_id, exam["questions"], wrong)
+        return open_exam(user_id, course_id, exam_id)
+    return saved
+
+
+def _attempt_exam_explanations(exam_id: int, questions: list[dict], wrong: list[dict]) -> None:
+    for item in wrong:
+        begin_explanation_attempt("exam", int(item["question_id"]))
+    try:
+        with usage_context(operation="exam.explanation", exam_id=exam_id,
+                           question_id=int(wrong[0]["question_id"]) if len(wrong) == 1 else None):
+            explanations = _explain(questions, wrong)
+            if set(explanations) != {int(item["question_id"]) for item in wrong}:
+                # Preserve useful partial results while logging an incomplete operation.
+                raise RuntimeError("The explanation model returned incomplete feedback")
+    except Exception:
+        explanations = locals().get("explanations") or {}
+    for item in wrong:
+        question_id = int(item["question_id"])
+        complete_explanation_attempt("exam", exam_id, question_id, explanations.get(question_id))
 
 
 def questions_from_reply(payload: dict | None, chapter: dict) -> list[dict]:
@@ -258,10 +295,17 @@ def _explain(questions: list[dict], wrong: list[dict]) -> dict[int, str]:
     if not wrong:
         return {}
     by_id = {int(question["id"]): question for question in questions}
-    bodies = _page_bodies(questions)
+    wrong_ids = {int(item["question_id"]) for item in wrong}
+    if len(wrong_ids) != len(wrong) or not wrong_ids <= set(by_id):
+        raise ValueError("Feedback must reference distinct submitted wrong questions")
+    selected = [by_id[question_id] for question_id in wrong_ids]
+    bodies = _page_bodies(selected)
     blocks = []
     for item in wrong:
         question = by_id[item["question_id"]]
+        sources = _json_list(question.get("sources_json"))
+        if not sources or any(not str(bodies.get((int(source.get("document_id") or 0), int(source.get("page_number") or 0)), "")).strip() for source in sources):
+            raise RuntimeError("The cited source pages are unavailable; retry the explanation when restored")
         blocks.append(
             "\n".join(
                 [
@@ -273,13 +317,17 @@ def _explain(questions: list[dict], wrong: list[dict]) -> dict[int, str]:
                 ]
             )
         )
-    parsed = _ask(EXPLAIN_SYSTEM, "\n\n".join(blocks)) or {}
+    parsed = _ask(EXPLAIN_SYSTEM, "\n\n".join(blocks))
+    if not isinstance(parsed, dict) or not isinstance(parsed.get("explanations"), list):
+        return {}
     explanations = {}
-    for item in parsed.get("explanations") or []:
-        if isinstance(item, dict):
-            text = str(item.get("explanation") or "").strip()
-            if text:
-                explanations[int(item.get("id") or 0)] = text[:1000]
+    for item in parsed["explanations"]:
+        if not isinstance(item, dict) or type(item.get("id")) is not int or item["id"] not in wrong_ids or item["id"] in explanations:
+            return {}
+        text = item.get("explanation")
+        if not isinstance(text, str) or not text.strip():
+            continue
+        explanations[item["id"]] = text.strip()[:1000]
     return explanations
 
 
@@ -304,11 +352,15 @@ def _report(exam: dict, graded: list[dict], correct_count: int, total: int) -> d
                 "prompt": question["prompt"],
                 "response": item["response"],
                 "answer": answer,
-                "explanation": item["explanation"],
+                "rubric": _json_list(question.get("rubric_json")),
+                "rubric_hits": item.get("rubric_hits"),
+                "points_hit": item.get("points_hit"),
+                "points_total": item.get("points_total"),
+                **feedback_fields(item),
                 "sources": _json_list(question["sources_json"]),
             }
         )
-    return {
+    report = {
         "score": percent(correct_count, total),
         "passed": exam_pass(correct_count, total),
         "correct_count": correct_count,
@@ -316,6 +368,8 @@ def _report(exam: dict, graded: list[dict], correct_count: int, total: int) -> d
         "wrong_count": len(wrong),
         "wrong": wrong,
     }
+    from agent.report_text import enrich_report
+    return enrich_report(report)
 
 
 def _chapter_prompt(chapter: dict) -> str:

@@ -16,6 +16,23 @@ ROOT = Path(__file__).resolve().parent
 FILES = ["agent/llm.py", "agent/exam.py", "agent/practice.py", "agent/plan.py",
          "agent/qa.py", "agent/skills/qa/SKILL.md", "grading/score.py",
          "vector/segments.py", "vector/rerank.py", "requirements.txt"]
+FILES = sorted(set(FILES) | {
+    str(path.relative_to(ROOT)).replace("\\", "/")
+    for folder in ("agent", "db", "grading", "ingest", "vector", "evaluation")
+    for path in (ROOT / folder).rglob("*.py")
+} | {"main.py", "db/schema.sql", "freeze_evaluation.py", "requirements-test.txt"})
+
+
+def configuration_value(value):
+    if isinstance(value, dict):
+        return {str(key): configuration_value(item) for key, item in value.items()}
+    if isinstance(value, (set, frozenset)):
+        return [configuration_value(item) for item in sorted(value, key=repr)]
+    if isinstance(value, (tuple, list)):
+        return [configuration_value(item) for item in value]
+    if value is None or type(value) in (str, bool, int, float):
+        return value
+    raise ValueError("Not a JSON configuration literal")
 
 
 def manifest():
@@ -24,7 +41,7 @@ def manifest():
     hashes = {}
     for name in FILES:
         data = (ROOT / name).read_bytes()
-        hashes[name] = hashlib.sha256(data).hexdigest()
+        hashes[name] = hashlib.sha256(data.replace(b"\r\n", b"\n")).hexdigest()
         if name.endswith(".py"):
             public = {}
             for node in ast.parse(data).body:
@@ -32,14 +49,15 @@ def manifest():
                     for target in node.targets:
                         if isinstance(target, ast.Name) and target.id.isupper() and not target.id.endswith("SYSTEM"):
                             try:
-                                public[target.id] = ast.literal_eval(node.value)
+                                public[target.id] = configuration_value(ast.literal_eval(node.value))
                             except (ValueError, TypeError):
                                 pass
             constants[name] = public
     packages = {dist.metadata["Name"]: dist.version for dist in importlib.metadata.distributions()}
     try:
-        commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
-        dirty = bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True).strip())
+        git = ["git", "-c", f"safe.directory={ROOT.parent.as_posix()}"]
+        commit = subprocess.check_output([*git, "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
+        dirty = bool(subprocess.check_output([*git, "status", "--porcelain"], cwd=ROOT, text=True).strip())
     except (OSError, subprocess.CalledProcessError):
         commit, dirty = None, None
     return {
@@ -49,7 +67,8 @@ def manifest():
         "deployment": settings.get("HKU_DEPLOYMENT") or constants["agent/llm.py"]["DEFAULT_DEPLOYMENT"],
         "api_version": settings.get("HKU_API_VERSION") or constants["agent/llm.py"]["DEFAULT_API_VERSION"],
         "model_temperature": 0, "model_timeout_seconds": 60, "model_max_retries": 1,
-        "source_sha256": hashes, "constants": constants, "installed_packages": packages,
+        "source_sha256": hashes, "source_hash_encoding": "UTF-8 source bytes with CRLF normalized to LF",
+        "constants": constants, "installed_packages": packages,
         "development_lectures": [2, 3], "held_out_lectures": [4, 6, 8],
         "evaluation_status": "not_run",
     }

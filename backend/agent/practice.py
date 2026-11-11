@@ -1,9 +1,12 @@
 import json
 
 from agent.exam import _ask, _explain, _grade_shorts, _option_text, _real_option
+from agent.telemetry import usage_context
 from db.exams import load_chapter
+from db.feedback import begin_explanation_attempt, complete_explanation_attempt, feedback_fields
 from db.practice import (
     create_session,
+    explanation_question,
     get_owned_session,
     latest_miss,
     load_session_attempts,
@@ -97,6 +100,23 @@ def save_practice_draft(user_id: int, course_id: int, session_id: int, question_
     return {"saved": True, "question_id": question_id}
 
 
+def retry_practice_explanation(user_id: int, course_id: int, session_id: int, question_id: int) -> dict:
+    session = get_owned_session(user_id, course_id, session_id)
+    with practice_lock(user_id, course_id, int(session["chapter_id"])):
+        session = get_owned_session(user_id, course_id, session_id)
+        question = explanation_question(session_id, question_id)
+        if question is None:
+            raise LookupError("Question not found in this practice session")
+        if question["answer_id"] is None:
+            raise ValueError("Submit this question before requesting an explanation")
+        fields = feedback_fields(question)
+        if fields["explanation_status"] not in {"ready", "not_required"}:
+            with usage_context(user_id=user_id, course_id=course_id, chapter_id=int(session["chapter_id"])):
+                _attempt_practice_explanation(session_id, question, question["response"])
+        chapter = load_chapter(user_id, course_id, int(session["chapter_id"]), require_ready=False)
+        return present_session(user_id, course_id, session_id, chapter["concepts"])
+
+
 def question_from_reply(payload: dict | None, concept: dict, pages: list[dict], kind: str) -> dict | None:
     if not isinstance(payload, dict) or kind not in {"mcq", "short"}:
         return None
@@ -138,8 +158,11 @@ def question_from_reply(payload: dict | None, concept: dict, pages: list[dict], 
     if kind == "mcq":
         if not isinstance(item.get("options"), list) or not all(isinstance(option, str) for option in item["options"]):
             return None
+        if len(item["options"]) != 4:
+            return None
         options = [_option_text(option) for option in item["options"]]
-        options = [option for option in options if _real_option(option)]
+        if not all(_real_option(option) for option in options):
+            return None
         answer = str(item.get("answer") or "").strip().upper()
         if len(options) != 4 or len({option.casefold() for option in options}) != 4 or answer not in {"A", "B", "C", "D"}:
             return None
@@ -267,7 +290,11 @@ def build_practice_report(concepts: list[dict], progress: dict[int, dict], attem
                 "response": item["response"],
                 "options": item.get("options") or [],
                 "answer": item["answer"],
-                "explanation": item["explanation"],
+                "rubric": item.get("rubric") or [],
+                "rubric_hits": item.get("rubric_hits"),
+                "points_hit": item.get("points_hit"),
+                "points_total": item.get("points_total"),
+                **feedback_fields(item),
                 "sources": item["sources"],
                 "correct": bool(item["correct"]),
             }
@@ -322,11 +349,20 @@ def _store_report(user_id: int, session_id: int, chapter: dict, closing: bool, s
         "remaining_weak_concepts": list(dict.fromkeys(item["concept_name"] for item in remaining)),
         "remaining_sources": sources,
     })
-    publish_session_report(session_id, report, closing=closing)
+    from agent.report_text import enrich_report
+    publish_session_report(session_id, enrich_report(report), closing=closing)
 
 
 def _grade_and_store(user_id: int, session: dict, question: dict, response: str) -> None:
+    with usage_context(operation="practice.grade", user_id=user_id,
+                       course_id=session.get("course_id"), session_id=int(session["id"]),
+                       question_id=int(question["id"])):
+        _grade_and_store_result(user_id, session, question, response)
+
+
+def _grade_and_store_result(user_id: int, session: dict, question: dict, response: str) -> None:
     rubric = _json_list(question["rubric_json"])
+    rubric_hits = None
     if question["kind"] == "mcq":
         if response.strip().upper() not in {"A", "B", "C", "D"}:
             raise ValueError("Choose one option: A, B, C, or D")
@@ -338,17 +374,30 @@ def _grade_and_store(user_id: int, session: dict, question: dict, response: str)
         if int(question["id"]) not in graded:
             raise RuntimeError("The answer is saved, but grading is incomplete. Retry to grade it.")
         matched = graded[int(question["id"])]
+        rubric_hits = matched
         points_hit = len(matched)
         points_total = len(rubric)
         correct = points_pass(points_hit, points_total)
-    explanation = ""
+    # The grade is durable before any explanation/model attempt. Explanation
+    # failure cannot require regrading or turn a valid answer into an error.
+    save_answer(int(question["id"]), response, correct, points_hit, points_total, "", rubric_hits)
     if not correct:
-        explanations = _explain(
-            [question],
-            [{"question_id": int(question["id"]), "response": response}],
-        )
-        explanation = explanations.get(int(question["id"]), "Review the cited page.")
-    save_answer(int(question["id"]), response, correct, points_hit, points_total, explanation)
+        _attempt_practice_explanation(int(session["id"]), question, response)
+
+
+def _attempt_practice_explanation(session_id: int, question: dict, response: str) -> None:
+    question_id = int(question["id"])
+    begin_explanation_attempt("practice", question_id)
+    try:
+        with usage_context(operation="practice.explanation", session_id=session_id, question_id=question_id):
+            explanations = _explain([question], [{"question_id": question_id, "response": response}])
+            text = explanations.get(question_id)
+            if not text:
+                raise RuntimeError("The explanation model returned incomplete feedback")
+    except Exception:
+        # Persist a safe retryable failure, never provider error text or keys.
+        text = None
+    complete_explanation_attempt("practice", session_id, question_id, text)
 
 
 def _sync_progress(user_id: int, attempts: list[dict]) -> None:
