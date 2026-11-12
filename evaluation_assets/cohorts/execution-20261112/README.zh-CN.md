@@ -9,3 +9,5 @@
 此处人工表绑定的是尚无输出的输入快照，只能用于准备和检查输入。实际输出合并后，必须针对新的 observed-dataset.json 重新生成独立盲标表，再由两人分别填写及裁决分歧。
 
 完整操作见 docs/FORMAL-COLLECTION.md、docs/EVALUATION.md 和 docs/LIVE-INTEGRATION.md。所有 pdf_path 从仓库根目录解析。开发仅用第 2、3 讲；最终保留第 4、6、8 讲。题目、候选答案、评分点与人工判断不得进入讲义检索库。
+
+后续 Windows 自建 API 进程重启修复使用新的准备快照 `../execution-20261112-r2`。本快照保留原配置和空白观察，不能冒用为修复后代码的正式运行。

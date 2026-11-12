@@ -1,0 +1,26 @@
+{
+  "status": "not_observed_requires_two_human_reviews",
+  "dataset_sha256": "ec2d2dcfb46c093f04876682510accd36c2d2dd94455c4b1d69b693a3ad0d70f",
+  "reviewed_by": [],
+  "evaluation_unit_policy": "One lecture is one proposal evaluation unit; map stable teaching-theme IDs and execution order explicitly. Each workflow fixture must cover all original teaching pages of its assigned lecture.",
+  "units": [
+    {
+      "lecture": 4,
+      "document_id": "mit6006-l04",
+      "application_chapter_ids": [],
+      "execution_order": []
+    },
+    {
+      "lecture": 6,
+      "document_id": "mit6006-l06",
+      "application_chapter_ids": [],
+      "execution_order": []
+    },
+    {
+      "lecture": 8,
+      "document_id": "mit6006-l08",
+      "application_chapter_ids": [],
+      "execution_order": []
+    }
+  ]
+}
