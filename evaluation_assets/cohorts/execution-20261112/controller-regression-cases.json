@@ -1,0 +1,1419 @@
+{
+  "schema": "citepath-controller-inputs-v1",
+  "synthetic": true,
+  "origin_evaluation_id": "mit6006-upstream-20261112-preparation-v2",
+  "observations": null,
+  "purpose": "Preserved injected-count inputs for deterministic controller checks; not importable real workflow observations.",
+  "items": [
+    {
+      "id": "WF-01",
+      "kind": "workflow",
+      "lecture": 4,
+      "question": "Run threshold_equal with a fixed 70% chapter threshold; verify every recorded transition and saved result.",
+      "sources": [],
+      "scenario": {
+        "name": "threshold_equal",
+        "passing_threshold": 0.7,
+        "round1": {
+          "correct": 7,
+          "total": 10
+        },
+        "round2": null,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": true,
+        "live_grading_note": "For actual-grader end-to-end runs, compute expected transitions from returned grades and record the frozen scenario instance; injected counts test the controller only."
+      },
+      "expected": {
+        "baseline": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "passed",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        },
+        "full": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "passed_round_1",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-02",
+      "kind": "workflow",
+      "lecture": 6,
+      "question": "Run threshold_above with a fixed 70% chapter threshold; verify every recorded transition and saved result.",
+      "sources": [],
+      "scenario": {
+        "name": "threshold_above",
+        "passing_threshold": 0.7,
+        "round1": {
+          "correct": 8,
+          "total": 10
+        },
+        "round2": null,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": true,
+        "live_grading_note": "For actual-grader end-to-end runs, compute expected transitions from returned grades and record the frozen scenario instance; injected counts test the controller only."
+      },
+      "expected": {
+        "baseline": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "passed",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        },
+        "full": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "passed_round_1",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-03",
+      "kind": "workflow",
+      "lecture": 8,
+      "question": "Run threshold_below with a fixed 70% chapter threshold; verify every recorded transition and saved result.",
+      "sources": [],
+      "scenario": {
+        "name": "threshold_below",
+        "passing_threshold": 0.7,
+        "round1": {
+          "correct": 6,
+          "total": 10
+        },
+        "round2": {
+          "result": "pass"
+        },
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": true,
+        "live_grading_note": "For actual-grader end-to-end runs, compute expected transitions from returned grades and record the frozen scenario instance; injected counts test the controller only."
+      },
+      "expected": {
+        "baseline": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "failed",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        },
+        "full": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "round2_generated",
+            "round2_submitted",
+            "round2_scored",
+            "finished"
+          ],
+          "final_state": "passed_round_2",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "verify_second_round_targets_only_weak_concepts",
+            "submit_second_round",
+            "assert_round_scores_separate",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-04",
+      "kind": "workflow",
+      "lecture": 4,
+      "question": "Run exact_eighty with a fixed 80% chapter threshold; verify every recorded transition and saved result.",
+      "sources": [],
+      "scenario": {
+        "name": "exact_eighty",
+        "passing_threshold": 0.8,
+        "round1": {
+          "correct": 4,
+          "total": 5
+        },
+        "round2": null,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": true,
+        "live_grading_note": "For actual-grader end-to-end runs, compute expected transitions from returned grades and record the frozen scenario instance; injected counts test the controller only."
+      },
+      "expected": {
+        "baseline": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "passed",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        },
+        "full": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "passed_round_1",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-05",
+      "kind": "workflow",
+      "lecture": 6,
+      "question": "Run first_round_pass with a fixed 80% chapter threshold; verify every recorded transition and saved result.",
+      "sources": [],
+      "scenario": {
+        "name": "first_round_pass",
+        "passing_threshold": 0.8,
+        "round1": {
+          "correct": 9,
+          "total": 10
+        },
+        "round2": null,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": true,
+        "live_grading_note": "For actual-grader end-to-end runs, compute expected transitions from returned grades and record the frozen scenario instance; injected counts test the controller only."
+      },
+      "expected": {
+        "baseline": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "passed",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        },
+        "full": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "passed_round_1",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-06",
+      "kind": "workflow",
+      "lecture": 8,
+      "question": "Run targeted_second_pass with a fixed 80% chapter threshold; verify every recorded transition and saved result.",
+      "sources": [],
+      "scenario": {
+        "name": "targeted_second_pass",
+        "passing_threshold": 0.8,
+        "round1": {
+          "correct": 7,
+          "total": 10
+        },
+        "round2": {
+          "result": "pass"
+        },
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": true,
+        "live_grading_note": "For actual-grader end-to-end runs, compute expected transitions from returned grades and record the frozen scenario instance; injected counts test the controller only."
+      },
+      "expected": {
+        "baseline": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "failed",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        },
+        "full": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "round2_generated",
+            "round2_submitted",
+            "round2_scored",
+            "finished"
+          ],
+          "final_state": "passed_round_2",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "verify_second_round_targets_only_weak_concepts",
+            "submit_second_round",
+            "assert_round_scores_separate",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-07",
+      "kind": "workflow",
+      "lecture": 4,
+      "question": "Run threshold_ninety_equal with a fixed 90% chapter threshold; verify every recorded transition and saved result.",
+      "sources": [],
+      "scenario": {
+        "name": "threshold_ninety_equal",
+        "passing_threshold": 0.9,
+        "round1": {
+          "correct": 9,
+          "total": 10
+        },
+        "round2": null,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": true,
+        "live_grading_note": "For actual-grader end-to-end runs, compute expected transitions from returned grades and record the frozen scenario instance; injected counts test the controller only."
+      },
+      "expected": {
+        "baseline": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "passed",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        },
+        "full": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "passed_round_1",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-08",
+      "kind": "workflow",
+      "lecture": 6,
+      "question": "Run perfect with a fixed 90% chapter threshold; verify every recorded transition and saved result.",
+      "sources": [],
+      "scenario": {
+        "name": "perfect",
+        "passing_threshold": 0.9,
+        "round1": {
+          "correct": 10,
+          "total": 10
+        },
+        "round2": null,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": true,
+        "live_grading_note": "For actual-grader end-to-end runs, compute expected transitions from returned grades and record the frozen scenario instance; injected counts test the controller only."
+      },
+      "expected": {
+        "baseline": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "passed",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        },
+        "full": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "passed_round_1",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-09",
+      "kind": "workflow",
+      "lecture": 8,
+      "question": "Run second_fail with a fixed 90% chapter threshold; verify every recorded transition and saved result.",
+      "sources": [],
+      "scenario": {
+        "name": "second_fail",
+        "passing_threshold": 0.9,
+        "round1": {
+          "correct": 8,
+          "total": 10
+        },
+        "round2": {
+          "result": "fail"
+        },
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": true,
+        "live_grading_note": "For actual-grader end-to-end runs, compute expected transitions from returned grades and record the frozen scenario instance; injected counts test the controller only."
+      },
+      "expected": {
+        "baseline": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "failed",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        },
+        "full": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "round2_generated",
+            "round2_submitted",
+            "round2_scored",
+            "finished"
+          ],
+          "final_state": "failed_after_2",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "verify_second_round_targets_only_weak_concepts",
+            "submit_second_round",
+            "assert_round_scores_separate",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-10",
+      "kind": "workflow",
+      "lecture": 4,
+      "question": "Run different_question_count with a fixed 80% chapter threshold; verify every recorded transition and saved result.",
+      "sources": [],
+      "scenario": {
+        "name": "different_question_count",
+        "passing_threshold": 0.8,
+        "round1": {
+          "correct": 3,
+          "total": 4
+        },
+        "round2": {
+          "result": "pass"
+        },
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": true,
+        "live_grading_note": "For actual-grader end-to-end runs, compute expected transitions from returned grades and record the frozen scenario instance; injected counts test the controller only."
+      },
+      "expected": {
+        "baseline": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "failed",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        },
+        "full": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "round2_generated",
+            "round2_submitted",
+            "round2_scored",
+            "finished"
+          ],
+          "final_state": "passed_round_2",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "verify_second_round_targets_only_weak_concepts",
+            "submit_second_round",
+            "assert_round_scores_separate",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-11",
+      "kind": "workflow",
+      "lecture": 6,
+      "question": "Run small_question_set with a fixed 70% chapter threshold; verify every recorded transition and saved result.",
+      "sources": [],
+      "scenario": {
+        "name": "small_question_set",
+        "passing_threshold": 0.7,
+        "round1": {
+          "correct": 2,
+          "total": 3
+        },
+        "round2": {
+          "result": "pass"
+        },
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": true,
+        "live_grading_note": "For actual-grader end-to-end runs, compute expected transitions from returned grades and record the frozen scenario instance; injected counts test the controller only."
+      },
+      "expected": {
+        "baseline": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "failed",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        },
+        "full": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "round2_generated",
+            "round2_submitted",
+            "round2_scored",
+            "finished"
+          ],
+          "final_state": "passed_round_2",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "verify_second_round_targets_only_weak_concepts",
+            "submit_second_round",
+            "assert_round_scores_separate",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-12",
+      "kind": "workflow",
+      "lecture": 8,
+      "question": "Run zero_correct with a fixed 80% chapter threshold; verify every recorded transition and saved result.",
+      "sources": [],
+      "scenario": {
+        "name": "zero_correct",
+        "passing_threshold": 0.8,
+        "round1": {
+          "correct": 0,
+          "total": 10
+        },
+        "round2": {
+          "result": "fail"
+        },
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": true,
+        "live_grading_note": "For actual-grader end-to-end runs, compute expected transitions from returned grades and record the frozen scenario instance; injected counts test the controller only."
+      },
+      "expected": {
+        "baseline": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "failed",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        },
+        "full": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "round2_generated",
+            "round2_submitted",
+            "round2_scored",
+            "finished"
+          ],
+          "final_state": "failed_after_2",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "verify_second_round_targets_only_weak_concepts",
+            "submit_second_round",
+            "assert_round_scores_separate",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-13",
+      "kind": "workflow",
+      "lecture": 4,
+      "question": "Run duplicate_submit with a fixed 80% chapter threshold; verify every recorded transition and saved result.",
+      "sources": [],
+      "scenario": {
+        "name": "duplicate_submit",
+        "passing_threshold": 0.8,
+        "round1": {
+          "correct": 6,
+          "total": 10
+        },
+        "round2": {
+          "result": "pass"
+        },
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": true,
+        "live_grading_note": "For actual-grader end-to-end runs, compute expected transitions from returned grades and record the frozen scenario instance; injected counts test the controller only."
+      },
+      "expected": {
+        "baseline": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "failed",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "repeat_processed_submission_with_changed_response",
+            "assert_original_grade_and_no_extra_grading_call",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        },
+        "full": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "round2_generated",
+            "round2_submitted",
+            "round2_scored",
+            "finished"
+          ],
+          "final_state": "passed_round_2",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "repeat_processed_submission_with_changed_response",
+            "assert_original_grade_and_no_extra_grading_call",
+            "verify_second_round_targets_only_weak_concepts",
+            "submit_second_round",
+            "assert_round_scores_separate",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-14",
+      "kind": "workflow",
+      "lecture": 6,
+      "question": "Run duplicate_after_final with a fixed 80% chapter threshold; verify every recorded transition and saved result.",
+      "sources": [],
+      "scenario": {
+        "name": "duplicate_after_final",
+        "passing_threshold": 0.8,
+        "round1": {
+          "correct": 6,
+          "total": 10
+        },
+        "round2": {
+          "result": "fail"
+        },
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": true,
+        "live_grading_note": "For actual-grader end-to-end runs, compute expected transitions from returned grades and record the frozen scenario instance; injected counts test the controller only."
+      },
+      "expected": {
+        "baseline": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "failed",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "repeat_processed_submission_with_changed_response",
+            "assert_original_grade_and_no_extra_grading_call",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        },
+        "full": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "round2_generated",
+            "round2_submitted",
+            "round2_scored",
+            "finished"
+          ],
+          "final_state": "failed_after_2",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "repeat_processed_submission_with_changed_response",
+            "assert_original_grade_and_no_extra_grading_call",
+            "verify_second_round_targets_only_weak_concepts",
+            "submit_second_round",
+            "assert_round_scores_separate",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-15",
+      "kind": "workflow",
+      "lecture": 8,
+      "question": "Run independent_qa with a fixed 80% chapter threshold; verify every recorded transition and saved result.",
+      "sources": [],
+      "scenario": {
+        "name": "independent_qa",
+        "passing_threshold": 0.8,
+        "round1": {
+          "correct": 8,
+          "total": 10
+        },
+        "round2": null,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": true,
+        "live_grading_note": "For actual-grader end-to-end runs, compute expected transitions from returned grades and record the frozen scenario instance; injected counts test the controller only."
+      },
+      "expected": {
+        "baseline": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "passed",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "snapshot_practice_scores_round_and_status",
+            "ask_independent_question",
+            "assert_practice_snapshot_unchanged",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        },
+        "full": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "passed_round_1",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "snapshot_practice_scores_round_and_status",
+            "ask_independent_question",
+            "assert_practice_snapshot_unchanged",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-16",
+      "kind": "workflow",
+      "lecture": 4,
+      "question": "Run qa_between_rounds with a fixed 80% chapter threshold; verify every recorded transition and saved result.",
+      "sources": [],
+      "scenario": {
+        "name": "qa_between_rounds",
+        "passing_threshold": 0.8,
+        "round1": {
+          "correct": 6,
+          "total": 10
+        },
+        "round2": {
+          "result": "pass"
+        },
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": true,
+        "live_grading_note": "For actual-grader end-to-end runs, compute expected transitions from returned grades and record the frozen scenario instance; injected counts test the controller only."
+      },
+      "expected": {
+        "baseline": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "failed",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "snapshot_practice_scores_round_and_status",
+            "ask_independent_question",
+            "assert_practice_snapshot_unchanged",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        },
+        "full": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "round2_generated",
+            "round2_submitted",
+            "round2_scored",
+            "finished"
+          ],
+          "final_state": "passed_round_2",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "snapshot_practice_scores_round_and_status",
+            "ask_independent_question",
+            "assert_practice_snapshot_unchanged",
+            "verify_second_round_targets_only_weak_concepts",
+            "submit_second_round",
+            "assert_round_scores_separate",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-17",
+      "kind": "workflow",
+      "lecture": 6,
+      "question": "Run process_restart with a fixed 80% chapter threshold; verify every recorded transition and saved result.",
+      "sources": [],
+      "scenario": {
+        "name": "process_restart",
+        "passing_threshold": 0.8,
+        "round1": {
+          "correct": 6,
+          "total": 10
+        },
+        "round2": {
+          "result": "pass"
+        },
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": true,
+        "live_grading_note": "For actual-grader end-to-end runs, compute expected transitions from returned grades and record the frozen scenario instance; injected counts test the controller only."
+      },
+      "expected": {
+        "baseline": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "failed",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "save_partial_answers",
+            "restart_api_process",
+            "resume_same_session",
+            "assert_same_question_ids_and_drafts",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        },
+        "full": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "round2_generated",
+            "round2_submitted",
+            "round2_scored",
+            "finished"
+          ],
+          "final_state": "passed_round_2",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "save_partial_answers",
+            "restart_api_process",
+            "resume_same_session",
+            "assert_same_question_ids_and_drafts",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "verify_second_round_targets_only_weak_concepts",
+            "submit_second_round",
+            "assert_round_scores_separate",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-18",
+      "kind": "workflow",
+      "lecture": 8,
+      "question": "Run saved_draft_restore with a fixed 90% chapter threshold; verify every recorded transition and saved result.",
+      "sources": [],
+      "scenario": {
+        "name": "saved_draft_restore",
+        "passing_threshold": 0.9,
+        "round1": {
+          "correct": 7,
+          "total": 10
+        },
+        "round2": {
+          "result": "fail"
+        },
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": true,
+        "live_grading_note": "For actual-grader end-to-end runs, compute expected transitions from returned grades and record the frozen scenario instance; injected counts test the controller only."
+      },
+      "expected": {
+        "baseline": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "failed",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "save_partial_answers",
+            "restart_api_process",
+            "resume_same_session",
+            "assert_same_question_ids_and_drafts",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        },
+        "full": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "round2_generated",
+            "round2_submitted",
+            "round2_scored",
+            "finished"
+          ],
+          "final_state": "failed_after_2",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "save_partial_answers",
+            "restart_api_process",
+            "resume_same_session",
+            "assert_same_question_ids_and_drafts",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "verify_second_round_targets_only_weak_concepts",
+            "submit_second_round",
+            "assert_round_scores_separate",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-19",
+      "kind": "workflow",
+      "lecture": 4,
+      "question": "Run model_timeout_then_retry with a fixed 80% chapter threshold; verify every recorded transition and saved result.",
+      "sources": [],
+      "scenario": {
+        "name": "model_timeout_then_retry",
+        "passing_threshold": 0.8,
+        "round1": {
+          "correct": 7,
+          "total": 10
+        },
+        "round2": {
+          "result": "pass"
+        },
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": true,
+        "live_grading_note": "For actual-grader end-to-end runs, compute expected transitions from returned grades and record the frozen scenario instance; injected counts test the controller only."
+      },
+      "expected": {
+        "baseline": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "failed",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "inject_grader_timeout",
+            "submit_answer",
+            "assert_saved_draft_without_official_score",
+            "restore_grader",
+            "retry_same_submission",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        },
+        "full": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "round2_generated",
+            "round2_submitted",
+            "round2_scored",
+            "finished"
+          ],
+          "final_state": "passed_round_2",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "inject_grader_timeout",
+            "submit_answer",
+            "assert_saved_draft_without_official_score",
+            "restore_grader",
+            "retry_same_submission",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "verify_second_round_targets_only_weak_concepts",
+            "submit_second_round",
+            "assert_round_scores_separate",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-20",
+      "kind": "workflow",
+      "lecture": 6,
+      "question": "Run rounding_boundary with a fixed 80% chapter threshold; verify every recorded transition and saved result.",
+      "sources": [],
+      "scenario": {
+        "name": "rounding_boundary",
+        "passing_threshold": 0.8,
+        "round1": {
+          "correct": 159,
+          "total": 200
+        },
+        "round2": {
+          "result": "fail"
+        },
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": true,
+        "live_grading_note": "For actual-grader end-to-end runs, compute expected transitions from returned grades and record the frozen scenario instance; injected counts test the controller only."
+      },
+      "expected": {
+        "baseline": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "finished"
+          ],
+          "final_state": "failed",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        },
+        "full": {
+          "transitions": [
+            "start",
+            "round1_generated",
+            "round1_submitted",
+            "round1_scored",
+            "round2_generated",
+            "round2_submitted",
+            "round2_scored",
+            "finished"
+          ],
+          "final_state": "failed_after_2",
+          "actions": [
+            "start_session",
+            "record_saved_threshold_and_question_ids",
+            "submit_first_round",
+            "capture_first_round_grade_and_feedback",
+            "verify_second_round_targets_only_weak_concepts",
+            "submit_second_round",
+            "assert_round_scores_separate",
+            "capture_final_report",
+            "assert_no_automatic_third_round",
+            "reopen_and_verify_saved_result"
+          ]
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    }
+  ]
+}

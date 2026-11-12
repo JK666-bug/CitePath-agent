@@ -18,3 +18,5 @@ python -m evaluation score ../evaluation_assets/cohorts/upstream-20261112/datase
 ```
 
 完整协议和实际开发联调命令见 `docs/EVALUATION.md` 与 `docs/LIVE-INTEGRATION.md`。开发联调脚本不是最终 120 次 baseline/full 对照采集器，也不能替代两位成员的独立人工评价。
+
+当前采集器/归档恢复版本的新准备批次位于 `../execution-20261112`。本旧批次仍未采集；真实运行协议变化不能套用其旧配置。

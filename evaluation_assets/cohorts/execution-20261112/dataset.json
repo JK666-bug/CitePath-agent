@@ -1,0 +1,3310 @@
+{
+  "schema": "citepath-evaluation-v1",
+  "evaluation_id": "mit6006-execution-20261112-preparation-v3",
+  "split": "final",
+  "synthetic": false,
+  "status": "assistant-authored-draft-awaiting-independent-human-review",
+  "freeze": {
+    "manifest_sha256": "1742215a3ddf4f355de37a42cf13bf519681620cd5a4c2a332b4bb584b9c69df",
+    "created_at": "2026-11-12T06:34:24.151569+00:00",
+    "git_commit": "5314e8c6dbd86c364617e1a74facb508d6a60f8a",
+    "provider": "hku",
+    "model": "gpt-4.1-mini",
+    "base_url_sha256": "1edd4321e58be238f64ddabf26c33f2efaba8ec20e5d6c53cc85321bd0158da6",
+    "preparation_snapshot": true
+  },
+  "documents": [
+    {
+      "id": "mit6006-l04",
+      "lecture": 4,
+      "title": "Hashing",
+      "split": "final",
+      "pdf_path": "data/mit-6.006-spring-2020/lecture-04.pdf",
+      "sha256": "cbc9a669f00c7554520c667853f4bc95f041348fea7ce76fd8a37246c94dc564",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/ce9e94705b914598ce78a00a70a1f734_MIT6_006S20_lec4.pdf",
+      "page_count": 5,
+      "teaching_pages": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "attribution_pages": [
+        5
+      ]
+    },
+    {
+      "id": "mit6006-l06",
+      "lecture": 6,
+      "title": "Binary Trees, Part 1",
+      "split": "final",
+      "pdf_path": "data/mit-6.006-spring-2020/lecture-06.pdf",
+      "sha256": "b296cb999a106c0de56f2fda725162c8adf12bce06ae849d97842f87c272ad2d",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/376714cc85c6c784d90eec9c575ec027_MIT6_006S20_lec6.pdf",
+      "page_count": 6,
+      "teaching_pages": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "attribution_pages": [
+        6
+      ]
+    },
+    {
+      "id": "mit6006-l08",
+      "lecture": 8,
+      "title": "Binary Heaps",
+      "split": "final",
+      "pdf_path": "data/mit-6.006-spring-2020/lecture-08.pdf",
+      "sha256": "e9a6cdd3ec699a757c4d2c0973cef38dfa3a2aa5da0404dcfdf910197cb92fa3",
+      "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/40d4851e550507ca14dc778b9b2266cc_MIT6_006S20_lec8.pdf",
+      "page_count": 7,
+      "teaching_pages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "attribution_pages": [
+        7
+      ]
+    }
+  ],
+  "items": [
+    {
+      "id": "SA-01-1",
+      "kind": "short",
+      "lecture": 4,
+      "question": "Compare direct addressing with hashing when the key universe is much larger than the stored set.",
+      "response": "Direct addressing uses an array position determined directly by the key. Its array may need space proportional to the entire key universe. Hashing maps keys from that universe into a smaller index range. Choosing the table size proportional to the number of stored items saves space. Distinct keys may map to the same table index, so collisions must be handled.",
+      "rubric": [
+        "Direct addressing uses an array position determined directly by the key.",
+        "Its array may need space proportional to the entire key universe.",
+        "Hashing maps keys from that universe into a smaller index range.",
+        "Choosing the table size proportional to the number of stored items saves space.",
+        "Distinct keys may map to the same table index, so collisions must be handled."
+      ],
+      "concept": "Direct access and hashing",
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 2
+        }
+      ],
+      "reference_points": [
+        "Direct addressing uses an array position determined directly by the key.",
+        "Its array may need space proportional to the entire key universe.",
+        "Hashing maps keys from that universe into a smaller index range.",
+        "Choosing the table size proportional to the number of stored items saves space.",
+        "Distinct keys may map to the same table index, so collisions must be handled."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-01-2",
+      "kind": "short",
+      "lecture": 4,
+      "question": "Compare direct addressing with hashing when the key universe is much larger than the stored set.",
+      "response": "Direct addressing uses an array position determined directly by the key. Its array may need space proportional to the entire key universe. Hashing maps keys from that universe into a smaller index range. Choosing the table size proportional to the number of stored items saves space.",
+      "rubric": [
+        "Direct addressing uses an array position determined directly by the key.",
+        "Its array may need space proportional to the entire key universe.",
+        "Hashing maps keys from that universe into a smaller index range.",
+        "Choosing the table size proportional to the number of stored items saves space.",
+        "Distinct keys may map to the same table index, so collisions must be handled."
+      ],
+      "concept": "Direct access and hashing",
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 2
+        }
+      ],
+      "reference_points": [
+        "Direct addressing uses an array position determined directly by the key.",
+        "Its array may need space proportional to the entire key universe.",
+        "Hashing maps keys from that universe into a smaller index range.",
+        "Choosing the table size proportional to the number of stored items saves space.",
+        "Distinct keys may map to the same table index, so collisions must be handled."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-01-3",
+      "kind": "short",
+      "lecture": 4,
+      "question": "Compare direct addressing with hashing when the key universe is much larger than the stored set.",
+      "response": "Direct addressing uses an array position determined directly by the key. Its array may need space proportional to the entire key universe. Hashing maps keys from that universe into a smaller index range.",
+      "rubric": [
+        "Direct addressing uses an array position determined directly by the key.",
+        "Its array may need space proportional to the entire key universe.",
+        "Hashing maps keys from that universe into a smaller index range.",
+        "Choosing the table size proportional to the number of stored items saves space.",
+        "Distinct keys may map to the same table index, so collisions must be handled."
+      ],
+      "concept": "Direct access and hashing",
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 2
+        }
+      ],
+      "reference_points": [
+        "Direct addressing uses an array position determined directly by the key.",
+        "Its array may need space proportional to the entire key universe.",
+        "Hashing maps keys from that universe into a smaller index range.",
+        "Choosing the table size proportional to the number of stored items saves space.",
+        "Distinct keys may map to the same table index, so collisions must be handled."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-01-4",
+      "kind": "short",
+      "lecture": 4,
+      "question": "Compare direct addressing with hashing when the key universe is much larger than the stored set.",
+      "response": "I have not worked out an answer to this question.",
+      "rubric": [
+        "Direct addressing uses an array position determined directly by the key.",
+        "Its array may need space proportional to the entire key universe.",
+        "Hashing maps keys from that universe into a smaller index range.",
+        "Choosing the table size proportional to the number of stored items saves space.",
+        "Distinct keys may map to the same table index, so collisions must be handled."
+      ],
+      "concept": "Direct access and hashing",
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 2
+        }
+      ],
+      "reference_points": [
+        "Direct addressing uses an array position determined directly by the key.",
+        "Its array may need space proportional to the entire key universe.",
+        "Hashing maps keys from that universe into a smaller index range.",
+        "Choosing the table size proportional to the number of stored items saves space.",
+        "Distinct keys may map to the same table index, so collisions must be handled."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-01-1",
+      "kind": "evidence",
+      "lecture": 4,
+      "question": "Why can direct addressing waste memory for a sparse key universe?",
+      "reference_points": [
+        "Its array may need space proportional to the entire key universe."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 2
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-01-2",
+      "kind": "evidence",
+      "lecture": 4,
+      "question": "What range does a hash function map a key into?",
+      "reference_points": [
+        "Hashing maps keys from that universe into a smaller index range."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 2
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-01-3",
+      "kind": "evidence",
+      "lecture": 4,
+      "question": "Can every key have a unique slot if the hash table is smaller than the universe? Explain.",
+      "reference_points": [
+        "When m is smaller than u, the pigeonhole principle rules out an injective mapping of the entire key universe into m slots; at least two keys must collide."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 2
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-02-1",
+      "kind": "short",
+      "lecture": 4,
+      "question": "Explain how chaining resolves hash collisions and what determines its operation cost.",
+      "response": "A collision means different keys receive the same hash-table index. Chaining stores items for one index in an additional collection at that index. If keys spread evenly, the typical chain length is proportional to n divided by m. A bounded chain length permits constant-time operations on that chain. A poor hash function can place all n items in one chain, causing linear work.",
+      "rubric": [
+        "A collision means different keys receive the same hash-table index.",
+        "Chaining stores items for one index in an additional collection at that index.",
+        "If keys spread evenly, the typical chain length is proportional to n divided by m.",
+        "A bounded chain length permits constant-time operations on that chain.",
+        "A poor hash function can place all n items in one chain, causing linear work."
+      ],
+      "concept": "Chaining",
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 3
+        }
+      ],
+      "reference_points": [
+        "A collision means different keys receive the same hash-table index.",
+        "Chaining stores items for one index in an additional collection at that index.",
+        "If keys spread evenly, the typical chain length is proportional to n divided by m.",
+        "A bounded chain length permits constant-time operations on that chain.",
+        "A poor hash function can place all n items in one chain, causing linear work."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-02-2",
+      "kind": "short",
+      "lecture": 4,
+      "question": "Explain how chaining resolves hash collisions and what determines its operation cost.",
+      "response": "A collision means different keys receive the same hash-table index. Chaining stores items for one index in an additional collection at that index. If keys spread evenly, the typical chain length is proportional to n divided by m. A bounded chain length permits constant-time operations on that chain.",
+      "rubric": [
+        "A collision means different keys receive the same hash-table index.",
+        "Chaining stores items for one index in an additional collection at that index.",
+        "If keys spread evenly, the typical chain length is proportional to n divided by m.",
+        "A bounded chain length permits constant-time operations on that chain.",
+        "A poor hash function can place all n items in one chain, causing linear work."
+      ],
+      "concept": "Chaining",
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 3
+        }
+      ],
+      "reference_points": [
+        "A collision means different keys receive the same hash-table index.",
+        "Chaining stores items for one index in an additional collection at that index.",
+        "If keys spread evenly, the typical chain length is proportional to n divided by m.",
+        "A bounded chain length permits constant-time operations on that chain.",
+        "A poor hash function can place all n items in one chain, causing linear work."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-02-3",
+      "kind": "short",
+      "lecture": 4,
+      "question": "Explain how chaining resolves hash collisions and what determines its operation cost.",
+      "response": "A collision means different keys receive the same hash-table index. Chaining stores items for one index in an additional collection at that index. If keys spread evenly, the typical chain length is proportional to n divided by m.",
+      "rubric": [
+        "A collision means different keys receive the same hash-table index.",
+        "Chaining stores items for one index in an additional collection at that index.",
+        "If keys spread evenly, the typical chain length is proportional to n divided by m.",
+        "A bounded chain length permits constant-time operations on that chain.",
+        "A poor hash function can place all n items in one chain, causing linear work."
+      ],
+      "concept": "Chaining",
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 3
+        }
+      ],
+      "reference_points": [
+        "A collision means different keys receive the same hash-table index.",
+        "Chaining stores items for one index in an additional collection at that index.",
+        "If keys spread evenly, the typical chain length is proportional to n divided by m.",
+        "A bounded chain length permits constant-time operations on that chain.",
+        "A poor hash function can place all n items in one chain, causing linear work."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-02-4",
+      "kind": "short",
+      "lecture": 4,
+      "question": "Explain how chaining resolves hash collisions and what determines its operation cost.",
+      "response": "I have not worked out an answer to this question.",
+      "rubric": [
+        "A collision means different keys receive the same hash-table index.",
+        "Chaining stores items for one index in an additional collection at that index.",
+        "If keys spread evenly, the typical chain length is proportional to n divided by m.",
+        "A bounded chain length permits constant-time operations on that chain.",
+        "A poor hash function can place all n items in one chain, causing linear work."
+      ],
+      "concept": "Chaining",
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 3
+        }
+      ],
+      "reference_points": [
+        "A collision means different keys receive the same hash-table index.",
+        "Chaining stores items for one index in an additional collection at that index.",
+        "If keys spread evenly, the typical chain length is proportional to n divided by m.",
+        "A bounded chain length permits constant-time operations on that chain.",
+        "A poor hash function can place all n items in one chain, causing linear work."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-02-1",
+      "kind": "evidence",
+      "lecture": 4,
+      "question": "What counts as a hash collision?",
+      "reference_points": [
+        "A collision means different keys receive the same hash-table index."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 3
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-02-2",
+      "kind": "evidence",
+      "lecture": 4,
+      "question": "How does a chain store colliding items?",
+      "reference_points": [
+        "Chaining stores items for one index in an additional collection at that index."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 3
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-02-3",
+      "kind": "evidence",
+      "lecture": 4,
+      "question": "What happens to the cost of lookup if every item hashes to the same index?",
+      "reference_points": [
+        "A poor hash function can place all n items in one chain, causing linear work."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 3
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-03-1",
+      "kind": "short",
+      "lecture": 4,
+      "question": "Explain how universal hashing, load factor and resizing determine the expected cost of a dynamic hash table.",
+      "response": "The table chooses a hash function at random from an appropriate family. The lecture family bounds the collision probability for distinct keys by one divided by m. The expected chain size is bounded by one plus (n minus one) divided by m. Keeping m proportional to n keeps the load factor bounded. Resizing and choosing a new random hash function permits expected amortized constant-time dynamic operations.",
+      "rubric": [
+        "The table chooses a hash function at random from an appropriate family.",
+        "The lecture family bounds the collision probability for distinct keys by one divided by m.",
+        "The expected chain size is bounded by one plus (n minus one) divided by m.",
+        "Keeping m proportional to n keeps the load factor bounded.",
+        "Resizing and choosing a new random hash function permits expected amortized constant-time dynamic operations."
+      ],
+      "concept": "Randomized hashing",
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 4
+        }
+      ],
+      "reference_points": [
+        "The table chooses a hash function at random from an appropriate family.",
+        "The lecture family bounds the collision probability for distinct keys by one divided by m.",
+        "The expected chain size is bounded by one plus (n minus one) divided by m.",
+        "Keeping m proportional to n keeps the load factor bounded.",
+        "Resizing and choosing a new random hash function permits expected amortized constant-time dynamic operations."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-03-2",
+      "kind": "short",
+      "lecture": 4,
+      "question": "Explain how universal hashing, load factor and resizing determine the expected cost of a dynamic hash table.",
+      "response": "The table chooses a hash function at random from an appropriate family. The lecture family bounds the collision probability for distinct keys by one divided by m. The expected chain size is bounded by one plus (n minus one) divided by m. Keeping m proportional to n keeps the load factor bounded.",
+      "rubric": [
+        "The table chooses a hash function at random from an appropriate family.",
+        "The lecture family bounds the collision probability for distinct keys by one divided by m.",
+        "The expected chain size is bounded by one plus (n minus one) divided by m.",
+        "Keeping m proportional to n keeps the load factor bounded.",
+        "Resizing and choosing a new random hash function permits expected amortized constant-time dynamic operations."
+      ],
+      "concept": "Randomized hashing",
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 4
+        }
+      ],
+      "reference_points": [
+        "The table chooses a hash function at random from an appropriate family.",
+        "The lecture family bounds the collision probability for distinct keys by one divided by m.",
+        "The expected chain size is bounded by one plus (n minus one) divided by m.",
+        "Keeping m proportional to n keeps the load factor bounded.",
+        "Resizing and choosing a new random hash function permits expected amortized constant-time dynamic operations."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-03-3",
+      "kind": "short",
+      "lecture": 4,
+      "question": "Explain how universal hashing, load factor and resizing determine the expected cost of a dynamic hash table.",
+      "response": "The table chooses a hash function at random from an appropriate family. The lecture family bounds the collision probability for distinct keys by one divided by m. The expected chain size is bounded by one plus (n minus one) divided by m.",
+      "rubric": [
+        "The table chooses a hash function at random from an appropriate family.",
+        "The lecture family bounds the collision probability for distinct keys by one divided by m.",
+        "The expected chain size is bounded by one plus (n minus one) divided by m.",
+        "Keeping m proportional to n keeps the load factor bounded.",
+        "Resizing and choosing a new random hash function permits expected amortized constant-time dynamic operations."
+      ],
+      "concept": "Randomized hashing",
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 4
+        }
+      ],
+      "reference_points": [
+        "The table chooses a hash function at random from an appropriate family.",
+        "The lecture family bounds the collision probability for distinct keys by one divided by m.",
+        "The expected chain size is bounded by one plus (n minus one) divided by m.",
+        "Keeping m proportional to n keeps the load factor bounded.",
+        "Resizing and choosing a new random hash function permits expected amortized constant-time dynamic operations."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-03-4",
+      "kind": "short",
+      "lecture": 4,
+      "question": "Explain how universal hashing, load factor and resizing determine the expected cost of a dynamic hash table.",
+      "response": "I have not worked out an answer to this question.",
+      "rubric": [
+        "The table chooses a hash function at random from an appropriate family.",
+        "The lecture family bounds the collision probability for distinct keys by one divided by m.",
+        "The expected chain size is bounded by one plus (n minus one) divided by m.",
+        "Keeping m proportional to n keeps the load factor bounded.",
+        "Resizing and choosing a new random hash function permits expected amortized constant-time dynamic operations."
+      ],
+      "concept": "Randomized hashing",
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 4
+        }
+      ],
+      "reference_points": [
+        "The table chooses a hash function at random from an appropriate family.",
+        "The lecture family bounds the collision probability for distinct keys by one divided by m.",
+        "The expected chain size is bounded by one plus (n minus one) divided by m.",
+        "Keeping m proportional to n keeps the load factor bounded.",
+        "Resizing and choosing a new random hash function permits expected amortized constant-time dynamic operations."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-03-1",
+      "kind": "evidence",
+      "lecture": 4,
+      "question": "Why choose a hash function randomly from a universal family?",
+      "reference_points": [
+        "The table chooses a hash function at random from an appropriate family.",
+        "The lecture family bounds the collision probability for distinct keys by one divided by m."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 4
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-03-2",
+      "kind": "evidence",
+      "lecture": 4,
+      "question": "How does a bounded load factor help control expected chain length?",
+      "reference_points": [
+        "The expected chain size is bounded by one plus (n minus one) divided by m.",
+        "Keeping m proportional to n keeps the load factor bounded."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 4
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-03-3",
+      "kind": "evidence",
+      "lecture": 4,
+      "question": "What does a dynamic hash table do when its table size is no longer appropriate?",
+      "reference_points": [
+        "Resizing and choosing a new random hash function permits expected amortized constant-time dynamic operations."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 4
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-04-1",
+      "kind": "short",
+      "lecture": 6,
+      "question": "Describe binary-tree node fields, root and leaf definitions, traversal order and the cost of listing all nodes.",
+      "response": "A node stores an item together with parent, left-child and right-child pointers. The root has no parent. A leaf has no children. Traversal visits the left subtree, then the node, then the right subtree. Listing all nodes in this traversal takes linear time.",
+      "rubric": [
+        "A node stores an item together with parent, left-child and right-child pointers.",
+        "The root has no parent.",
+        "A leaf has no children.",
+        "Traversal visits the left subtree, then the node, then the right subtree.",
+        "Listing all nodes in this traversal takes linear time."
+      ],
+      "concept": "Tree representation and traversal",
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 1
+        },
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 2
+        }
+      ],
+      "reference_points": [
+        "A node stores an item together with parent, left-child and right-child pointers.",
+        "The root has no parent.",
+        "A leaf has no children.",
+        "Traversal visits the left subtree, then the node, then the right subtree.",
+        "Listing all nodes in this traversal takes linear time."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-04-2",
+      "kind": "short",
+      "lecture": 6,
+      "question": "Describe binary-tree node fields, root and leaf definitions, traversal order and the cost of listing all nodes.",
+      "response": "A node stores an item together with parent, left-child and right-child pointers. The root has no parent. A leaf has no children. Traversal visits the left subtree, then the node, then the right subtree.",
+      "rubric": [
+        "A node stores an item together with parent, left-child and right-child pointers.",
+        "The root has no parent.",
+        "A leaf has no children.",
+        "Traversal visits the left subtree, then the node, then the right subtree.",
+        "Listing all nodes in this traversal takes linear time."
+      ],
+      "concept": "Tree representation and traversal",
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 1
+        },
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 2
+        }
+      ],
+      "reference_points": [
+        "A node stores an item together with parent, left-child and right-child pointers.",
+        "The root has no parent.",
+        "A leaf has no children.",
+        "Traversal visits the left subtree, then the node, then the right subtree.",
+        "Listing all nodes in this traversal takes linear time."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-04-3",
+      "kind": "short",
+      "lecture": 6,
+      "question": "Describe binary-tree node fields, root and leaf definitions, traversal order and the cost of listing all nodes.",
+      "response": "A node stores an item together with parent, left-child and right-child pointers. The root has no parent. A leaf has no children.",
+      "rubric": [
+        "A node stores an item together with parent, left-child and right-child pointers.",
+        "The root has no parent.",
+        "A leaf has no children.",
+        "Traversal visits the left subtree, then the node, then the right subtree.",
+        "Listing all nodes in this traversal takes linear time."
+      ],
+      "concept": "Tree representation and traversal",
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 1
+        },
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 2
+        }
+      ],
+      "reference_points": [
+        "A node stores an item together with parent, left-child and right-child pointers.",
+        "The root has no parent.",
+        "A leaf has no children.",
+        "Traversal visits the left subtree, then the node, then the right subtree.",
+        "Listing all nodes in this traversal takes linear time."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-04-4",
+      "kind": "short",
+      "lecture": 6,
+      "question": "Describe binary-tree node fields, root and leaf definitions, traversal order and the cost of listing all nodes.",
+      "response": "I have not worked out an answer to this question.",
+      "rubric": [
+        "A node stores an item together with parent, left-child and right-child pointers.",
+        "The root has no parent.",
+        "A leaf has no children.",
+        "Traversal visits the left subtree, then the node, then the right subtree.",
+        "Listing all nodes in this traversal takes linear time."
+      ],
+      "concept": "Tree representation and traversal",
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 1
+        },
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 2
+        }
+      ],
+      "reference_points": [
+        "A node stores an item together with parent, left-child and right-child pointers.",
+        "The root has no parent.",
+        "A leaf has no children.",
+        "Traversal visits the left subtree, then the node, then the right subtree.",
+        "Listing all nodes in this traversal takes linear time."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-04-1",
+      "kind": "evidence",
+      "lecture": 6,
+      "question": "Which pointers belong to a binary-tree node in the lecture?",
+      "reference_points": [
+        "A node stores an item together with parent, left-child and right-child pointers."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 1
+        },
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 2
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-04-2",
+      "kind": "evidence",
+      "lecture": 6,
+      "question": "What distinguishes a root from a leaf?",
+      "reference_points": [
+        "The root has no parent.",
+        "A leaf has no children."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 1
+        },
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 2
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-04-3",
+      "kind": "evidence",
+      "lecture": 6,
+      "question": "In what order does recursive traversal visit a node and its subtrees, and what is the cost of listing all nodes?",
+      "reference_points": [
+        "Traversal visits the left subtree, then the node, then the right subtree.",
+        "Listing all nodes in this traversal takes linear time."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 1
+        },
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 2
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-05-1",
+      "kind": "short",
+      "lecture": 6,
+      "question": "How is the successor of a node found in the tree traversal order?",
+      "response": "The successor is the next node in traversal order. If a right subtree exists, the successor is its first node. The first node of a subtree is reached by following left children until no left child remains. Without a right subtree, search upward for the lowest ancestor whose left subtree contains the original node. The search takes time proportional to the tree height, and the last node has no successor.",
+      "rubric": [
+        "The successor is the next node in traversal order.",
+        "If a right subtree exists, the successor is its first node.",
+        "The first node of a subtree is reached by following left children until no left child remains.",
+        "Without a right subtree, search upward for the lowest ancestor whose left subtree contains the original node.",
+        "The search takes time proportional to the tree height, and the last node has no successor."
+      ],
+      "concept": "Traversal successor",
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 2
+        }
+      ],
+      "reference_points": [
+        "The successor is the next node in traversal order.",
+        "If a right subtree exists, the successor is its first node.",
+        "The first node of a subtree is reached by following left children until no left child remains.",
+        "Without a right subtree, search upward for the lowest ancestor whose left subtree contains the original node.",
+        "The search takes time proportional to the tree height, and the last node has no successor."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-05-2",
+      "kind": "short",
+      "lecture": 6,
+      "question": "How is the successor of a node found in the tree traversal order?",
+      "response": "The successor is the next node in traversal order. If a right subtree exists, the successor is its first node. The first node of a subtree is reached by following left children until no left child remains. Without a right subtree, search upward for the lowest ancestor whose left subtree contains the original node.",
+      "rubric": [
+        "The successor is the next node in traversal order.",
+        "If a right subtree exists, the successor is its first node.",
+        "The first node of a subtree is reached by following left children until no left child remains.",
+        "Without a right subtree, search upward for the lowest ancestor whose left subtree contains the original node.",
+        "The search takes time proportional to the tree height, and the last node has no successor."
+      ],
+      "concept": "Traversal successor",
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 2
+        }
+      ],
+      "reference_points": [
+        "The successor is the next node in traversal order.",
+        "If a right subtree exists, the successor is its first node.",
+        "The first node of a subtree is reached by following left children until no left child remains.",
+        "Without a right subtree, search upward for the lowest ancestor whose left subtree contains the original node.",
+        "The search takes time proportional to the tree height, and the last node has no successor."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-05-3",
+      "kind": "short",
+      "lecture": 6,
+      "question": "How is the successor of a node found in the tree traversal order?",
+      "response": "The successor is the next node in traversal order. If a right subtree exists, the successor is its first node. The first node of a subtree is reached by following left children until no left child remains.",
+      "rubric": [
+        "The successor is the next node in traversal order.",
+        "If a right subtree exists, the successor is its first node.",
+        "The first node of a subtree is reached by following left children until no left child remains.",
+        "Without a right subtree, search upward for the lowest ancestor whose left subtree contains the original node.",
+        "The search takes time proportional to the tree height, and the last node has no successor."
+      ],
+      "concept": "Traversal successor",
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 2
+        }
+      ],
+      "reference_points": [
+        "The successor is the next node in traversal order.",
+        "If a right subtree exists, the successor is its first node.",
+        "The first node of a subtree is reached by following left children until no left child remains.",
+        "Without a right subtree, search upward for the lowest ancestor whose left subtree contains the original node.",
+        "The search takes time proportional to the tree height, and the last node has no successor."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-05-4",
+      "kind": "short",
+      "lecture": 6,
+      "question": "How is the successor of a node found in the tree traversal order?",
+      "response": "I have not worked out an answer to this question.",
+      "rubric": [
+        "The successor is the next node in traversal order.",
+        "If a right subtree exists, the successor is its first node.",
+        "The first node of a subtree is reached by following left children until no left child remains.",
+        "Without a right subtree, search upward for the lowest ancestor whose left subtree contains the original node.",
+        "The search takes time proportional to the tree height, and the last node has no successor."
+      ],
+      "concept": "Traversal successor",
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 2
+        }
+      ],
+      "reference_points": [
+        "The successor is the next node in traversal order.",
+        "If a right subtree exists, the successor is its first node.",
+        "The first node of a subtree is reached by following left children until no left child remains.",
+        "Without a right subtree, search upward for the lowest ancestor whose left subtree contains the original node.",
+        "The search takes time proportional to the tree height, and the last node has no successor."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-05-1",
+      "kind": "evidence",
+      "lecture": 6,
+      "question": "How is the first node of a subtree found?",
+      "reference_points": [
+        "The first node of a subtree is reached by following left children until no left child remains."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 2
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-05-2",
+      "kind": "evidence",
+      "lecture": 6,
+      "question": "Where is a node successor when it has a right subtree?",
+      "reference_points": [
+        "If a right subtree exists, the successor is its first node.",
+        "The first node of a subtree is reached by following left children until no left child remains."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 2
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-05-3",
+      "kind": "evidence",
+      "lecture": 6,
+      "question": "How is a successor located when there is no right subtree?",
+      "reference_points": [
+        "Without a right subtree, search upward for the lowest ancestor whose left subtree contains the original node.",
+        "The search takes time proportional to the tree height, and the last node has no successor."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 2
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-06-1",
+      "kind": "short",
+      "lecture": 6,
+      "question": "Describe insertion immediately after a node and the method for deleting a non-leaf item.",
+      "response": "If the node has no right child, an inserted successor can become its right child. Otherwise the new node becomes the left child of the existing traversal successor. A leaf can be deleted by detaching it from its parent. Deleting a non-leaf item swaps it toward its predecessor or successor and continues until a leaf is removed. These navigation and update steps take time proportional to the tree height.",
+      "rubric": [
+        "If the node has no right child, an inserted successor can become its right child.",
+        "Otherwise the new node becomes the left child of the existing traversal successor.",
+        "A leaf can be deleted by detaching it from its parent.",
+        "Deleting a non-leaf item swaps it toward its predecessor or successor and continues until a leaf is removed.",
+        "These navigation and update steps take time proportional to the tree height."
+      ],
+      "concept": "Tree insertion and deletion",
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 3
+        }
+      ],
+      "reference_points": [
+        "If the node has no right child, an inserted successor can become its right child.",
+        "Otherwise the new node becomes the left child of the existing traversal successor.",
+        "A leaf can be deleted by detaching it from its parent.",
+        "Deleting a non-leaf item swaps it toward its predecessor or successor and continues until a leaf is removed.",
+        "These navigation and update steps take time proportional to the tree height."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-06-2",
+      "kind": "short",
+      "lecture": 6,
+      "question": "Describe insertion immediately after a node and the method for deleting a non-leaf item.",
+      "response": "If the node has no right child, an inserted successor can become its right child. Otherwise the new node becomes the left child of the existing traversal successor. A leaf can be deleted by detaching it from its parent. Deleting a non-leaf item swaps it toward its predecessor or successor and continues until a leaf is removed.",
+      "rubric": [
+        "If the node has no right child, an inserted successor can become its right child.",
+        "Otherwise the new node becomes the left child of the existing traversal successor.",
+        "A leaf can be deleted by detaching it from its parent.",
+        "Deleting a non-leaf item swaps it toward its predecessor or successor and continues until a leaf is removed.",
+        "These navigation and update steps take time proportional to the tree height."
+      ],
+      "concept": "Tree insertion and deletion",
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 3
+        }
+      ],
+      "reference_points": [
+        "If the node has no right child, an inserted successor can become its right child.",
+        "Otherwise the new node becomes the left child of the existing traversal successor.",
+        "A leaf can be deleted by detaching it from its parent.",
+        "Deleting a non-leaf item swaps it toward its predecessor or successor and continues until a leaf is removed.",
+        "These navigation and update steps take time proportional to the tree height."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-06-3",
+      "kind": "short",
+      "lecture": 6,
+      "question": "Describe insertion immediately after a node and the method for deleting a non-leaf item.",
+      "response": "If the node has no right child, an inserted successor can become its right child. Otherwise the new node becomes the left child of the existing traversal successor. A leaf can be deleted by detaching it from its parent.",
+      "rubric": [
+        "If the node has no right child, an inserted successor can become its right child.",
+        "Otherwise the new node becomes the left child of the existing traversal successor.",
+        "A leaf can be deleted by detaching it from its parent.",
+        "Deleting a non-leaf item swaps it toward its predecessor or successor and continues until a leaf is removed.",
+        "These navigation and update steps take time proportional to the tree height."
+      ],
+      "concept": "Tree insertion and deletion",
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 3
+        }
+      ],
+      "reference_points": [
+        "If the node has no right child, an inserted successor can become its right child.",
+        "Otherwise the new node becomes the left child of the existing traversal successor.",
+        "A leaf can be deleted by detaching it from its parent.",
+        "Deleting a non-leaf item swaps it toward its predecessor or successor and continues until a leaf is removed.",
+        "These navigation and update steps take time proportional to the tree height."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-06-4",
+      "kind": "short",
+      "lecture": 6,
+      "question": "Describe insertion immediately after a node and the method for deleting a non-leaf item.",
+      "response": "I have not worked out an answer to this question.",
+      "rubric": [
+        "If the node has no right child, an inserted successor can become its right child.",
+        "Otherwise the new node becomes the left child of the existing traversal successor.",
+        "A leaf can be deleted by detaching it from its parent.",
+        "Deleting a non-leaf item swaps it toward its predecessor or successor and continues until a leaf is removed.",
+        "These navigation and update steps take time proportional to the tree height."
+      ],
+      "concept": "Tree insertion and deletion",
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 3
+        }
+      ],
+      "reference_points": [
+        "If the node has no right child, an inserted successor can become its right child.",
+        "Otherwise the new node becomes the left child of the existing traversal successor.",
+        "A leaf can be deleted by detaching it from its parent.",
+        "Deleting a non-leaf item swaps it toward its predecessor or successor and continues until a leaf is removed.",
+        "These navigation and update steps take time proportional to the tree height."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-06-1",
+      "kind": "evidence",
+      "lecture": 6,
+      "question": "Where can a new node be inserted immediately after a node with no right child?",
+      "reference_points": [
+        "If the node has no right child, an inserted successor can become its right child."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 3
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-06-2",
+      "kind": "evidence",
+      "lecture": 6,
+      "question": "Why can inserting after a node with a right subtree use its successor left link?",
+      "reference_points": [
+        "The traversal successor has no left child, so its left-child link is available for the inserted node.",
+        "Otherwise the new node becomes the left child of the existing traversal successor."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 3
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-06-3",
+      "kind": "evidence",
+      "lecture": 6,
+      "question": "How do the notes reduce non-leaf item deletion to leaf deletion?",
+      "reference_points": [
+        "A leaf can be deleted by detaching it from its parent.",
+        "Deleting a non-leaf item swaps it toward its predecessor or successor and continues until a leaf is removed.",
+        "These navigation and update steps take time proportional to the tree height."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 3
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-07-1",
+      "kind": "short",
+      "lecture": 6,
+      "question": "How do subtree sizes support indexed access in a sequence binary tree, and how are cached sizes updated after adding or removing a leaf?",
+      "response": "The sequence follows the tree traversal order. Each node stores the size of its subtree. An index smaller than the left-subtree size is searched for in the left subtree. An equal index identifies the current node, and a larger index is shifted by the left size plus one before going right. Adding or removing a leaf updates the sizes of its ancestors in time proportional to tree height.",
+      "rubric": [
+        "The sequence follows the tree traversal order.",
+        "Each node stores the size of its subtree.",
+        "An index smaller than the left-subtree size is searched for in the left subtree.",
+        "An equal index identifies the current node, and a larger index is shifted by the left size plus one before going right.",
+        "Adding or removing a leaf updates the sizes of its ancestors in time proportional to tree height."
+      ],
+      "concept": "Subtree-size augmentation",
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 4
+        }
+      ],
+      "reference_points": [
+        "The sequence follows the tree traversal order.",
+        "Each node stores the size of its subtree.",
+        "An index smaller than the left-subtree size is searched for in the left subtree.",
+        "An equal index identifies the current node, and a larger index is shifted by the left size plus one before going right.",
+        "Adding or removing a leaf updates the sizes of its ancestors in time proportional to tree height."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-07-2",
+      "kind": "short",
+      "lecture": 6,
+      "question": "How do subtree sizes support indexed access in a sequence binary tree, and how are cached sizes updated after adding or removing a leaf?",
+      "response": "The sequence follows the tree traversal order. Each node stores the size of its subtree. An index smaller than the left-subtree size is searched for in the left subtree. An equal index identifies the current node, and a larger index is shifted by the left size plus one before going right.",
+      "rubric": [
+        "The sequence follows the tree traversal order.",
+        "Each node stores the size of its subtree.",
+        "An index smaller than the left-subtree size is searched for in the left subtree.",
+        "An equal index identifies the current node, and a larger index is shifted by the left size plus one before going right.",
+        "Adding or removing a leaf updates the sizes of its ancestors in time proportional to tree height."
+      ],
+      "concept": "Subtree-size augmentation",
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 4
+        }
+      ],
+      "reference_points": [
+        "The sequence follows the tree traversal order.",
+        "Each node stores the size of its subtree.",
+        "An index smaller than the left-subtree size is searched for in the left subtree.",
+        "An equal index identifies the current node, and a larger index is shifted by the left size plus one before going right.",
+        "Adding or removing a leaf updates the sizes of its ancestors in time proportional to tree height."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-07-3",
+      "kind": "short",
+      "lecture": 6,
+      "question": "How do subtree sizes support indexed access in a sequence binary tree, and how are cached sizes updated after adding or removing a leaf?",
+      "response": "The sequence follows the tree traversal order. Each node stores the size of its subtree. An index smaller than the left-subtree size is searched for in the left subtree.",
+      "rubric": [
+        "The sequence follows the tree traversal order.",
+        "Each node stores the size of its subtree.",
+        "An index smaller than the left-subtree size is searched for in the left subtree.",
+        "An equal index identifies the current node, and a larger index is shifted by the left size plus one before going right.",
+        "Adding or removing a leaf updates the sizes of its ancestors in time proportional to tree height."
+      ],
+      "concept": "Subtree-size augmentation",
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 4
+        }
+      ],
+      "reference_points": [
+        "The sequence follows the tree traversal order.",
+        "Each node stores the size of its subtree.",
+        "An index smaller than the left-subtree size is searched for in the left subtree.",
+        "An equal index identifies the current node, and a larger index is shifted by the left size plus one before going right.",
+        "Adding or removing a leaf updates the sizes of its ancestors in time proportional to tree height."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-07-4",
+      "kind": "short",
+      "lecture": 6,
+      "question": "How do subtree sizes support indexed access in a sequence binary tree, and how are cached sizes updated after adding or removing a leaf?",
+      "response": "I have not worked out an answer to this question.",
+      "rubric": [
+        "The sequence follows the tree traversal order.",
+        "Each node stores the size of its subtree.",
+        "An index smaller than the left-subtree size is searched for in the left subtree.",
+        "An equal index identifies the current node, and a larger index is shifted by the left size plus one before going right.",
+        "Adding or removing a leaf updates the sizes of its ancestors in time proportional to tree height."
+      ],
+      "concept": "Subtree-size augmentation",
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 4
+        }
+      ],
+      "reference_points": [
+        "The sequence follows the tree traversal order.",
+        "Each node stores the size of its subtree.",
+        "An index smaller than the left-subtree size is searched for in the left subtree.",
+        "An equal index identifies the current node, and a larger index is shifted by the left size plus one before going right.",
+        "Adding or removing a leaf updates the sizes of its ancestors in time proportional to tree height."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-07-1",
+      "kind": "evidence",
+      "lecture": 6,
+      "question": "What order represents a sequence in a sequence binary tree?",
+      "reference_points": [
+        "The sequence follows the tree traversal order."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 4
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-07-2",
+      "kind": "evidence",
+      "lecture": 6,
+      "question": "How is a subtree size used to select an indexed item?",
+      "reference_points": [
+        "Each node stores the size of its subtree.",
+        "An index smaller than the left-subtree size is searched for in the left subtree.",
+        "An equal index identifies the current node, and a larger index is shifted by the left size plus one before going right."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 4
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-07-3",
+      "kind": "evidence",
+      "lecture": 6,
+      "question": "Which cached sizes change when a leaf is added?",
+      "reference_points": [
+        "Adding or removing a leaf updates the sizes of its ancestors in time proportional to tree height."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 4
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-08-1",
+      "kind": "short",
+      "lecture": 8,
+      "question": "Explain how a zero-based array represents a complete binary tree without pointers.",
+      "response": "The nodes fill levels from top to bottom and from left to right. The root is stored at index zero. The left child of index i is stored at two times i plus one. The right child of index i is stored at two times i plus two. For a non-root node, the parent index is the floor of (i minus one) divided by two.",
+      "rubric": [
+        "The nodes fill levels from top to bottom and from left to right.",
+        "The root is stored at index zero.",
+        "The left child of index i is stored at two times i plus one.",
+        "The right child of index i is stored at two times i plus two.",
+        "For a non-root node, the parent index is the floor of (i minus one) divided by two."
+      ],
+      "concept": "Implicit complete binary tree",
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 3
+        }
+      ],
+      "reference_points": [
+        "The nodes fill levels from top to bottom and from left to right.",
+        "The root is stored at index zero.",
+        "The left child of index i is stored at two times i plus one.",
+        "The right child of index i is stored at two times i plus two.",
+        "For a non-root node, the parent index is the floor of (i minus one) divided by two."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-08-2",
+      "kind": "short",
+      "lecture": 8,
+      "question": "Explain how a zero-based array represents a complete binary tree without pointers.",
+      "response": "The nodes fill levels from top to bottom and from left to right. The root is stored at index zero. The left child of index i is stored at two times i plus one. The right child of index i is stored at two times i plus two.",
+      "rubric": [
+        "The nodes fill levels from top to bottom and from left to right.",
+        "The root is stored at index zero.",
+        "The left child of index i is stored at two times i plus one.",
+        "The right child of index i is stored at two times i plus two.",
+        "For a non-root node, the parent index is the floor of (i minus one) divided by two."
+      ],
+      "concept": "Implicit complete binary tree",
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 3
+        }
+      ],
+      "reference_points": [
+        "The nodes fill levels from top to bottom and from left to right.",
+        "The root is stored at index zero.",
+        "The left child of index i is stored at two times i plus one.",
+        "The right child of index i is stored at two times i plus two.",
+        "For a non-root node, the parent index is the floor of (i minus one) divided by two."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-08-3",
+      "kind": "short",
+      "lecture": 8,
+      "question": "Explain how a zero-based array represents a complete binary tree without pointers.",
+      "response": "The nodes fill levels from top to bottom and from left to right. The root is stored at index zero. The left child of index i is stored at two times i plus one.",
+      "rubric": [
+        "The nodes fill levels from top to bottom and from left to right.",
+        "The root is stored at index zero.",
+        "The left child of index i is stored at two times i plus one.",
+        "The right child of index i is stored at two times i plus two.",
+        "For a non-root node, the parent index is the floor of (i minus one) divided by two."
+      ],
+      "concept": "Implicit complete binary tree",
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 3
+        }
+      ],
+      "reference_points": [
+        "The nodes fill levels from top to bottom and from left to right.",
+        "The root is stored at index zero.",
+        "The left child of index i is stored at two times i plus one.",
+        "The right child of index i is stored at two times i plus two.",
+        "For a non-root node, the parent index is the floor of (i minus one) divided by two."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-08-4",
+      "kind": "short",
+      "lecture": 8,
+      "question": "Explain how a zero-based array represents a complete binary tree without pointers.",
+      "response": "I have not worked out an answer to this question.",
+      "rubric": [
+        "The nodes fill levels from top to bottom and from left to right.",
+        "The root is stored at index zero.",
+        "The left child of index i is stored at two times i plus one.",
+        "The right child of index i is stored at two times i plus two.",
+        "For a non-root node, the parent index is the floor of (i minus one) divided by two."
+      ],
+      "concept": "Implicit complete binary tree",
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 3
+        }
+      ],
+      "reference_points": [
+        "The nodes fill levels from top to bottom and from left to right.",
+        "The root is stored at index zero.",
+        "The left child of index i is stored at two times i plus one.",
+        "The right child of index i is stored at two times i plus two.",
+        "For a non-root node, the parent index is the floor of (i minus one) divided by two."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-08-1",
+      "kind": "evidence",
+      "lecture": 8,
+      "question": "How are positions filled in the array view of a complete binary tree?",
+      "reference_points": [
+        "The nodes fill levels from top to bottom and from left to right."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 3
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-08-2",
+      "kind": "evidence",
+      "lecture": 8,
+      "question": "What are the child-index formulas for a zero-based array tree?",
+      "reference_points": [
+        "The left child of index i is stored at two times i plus one.",
+        "The right child of index i is stored at two times i plus two."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 3
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-08-3",
+      "kind": "evidence",
+      "lecture": 8,
+      "question": "How can a non-root node compute its parent index without a pointer?",
+      "reference_points": [
+        "For a non-root node, the parent index is the floor of (i minus one) divided by two."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 3
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-09-1",
+      "kind": "short",
+      "lecture": 8,
+      "question": "Explain how insertion and delete-max restore the max-heap property.",
+      "response": "A parent key must be at least as large as the keys of its children. Insertion appends the item at the end of the array. The inserted item moves upward by swapping with a smaller parent when necessary. Delete-max replaces the root using the last array item before removing that last position. The replacement moves downward by swapping with its larger child until the heap property holds.",
+      "rubric": [
+        "A parent key must be at least as large as the keys of its children.",
+        "Insertion appends the item at the end of the array.",
+        "The inserted item moves upward by swapping with a smaller parent when necessary.",
+        "Delete-max replaces the root using the last array item before removing that last position.",
+        "The replacement moves downward by swapping with its larger child until the heap property holds."
+      ],
+      "concept": "Heap updates",
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 4
+        },
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 5
+        }
+      ],
+      "reference_points": [
+        "A parent key must be at least as large as the keys of its children.",
+        "Insertion appends the item at the end of the array.",
+        "The inserted item moves upward by swapping with a smaller parent when necessary.",
+        "Delete-max replaces the root using the last array item before removing that last position.",
+        "The replacement moves downward by swapping with its larger child until the heap property holds."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-09-2",
+      "kind": "short",
+      "lecture": 8,
+      "question": "Explain how insertion and delete-max restore the max-heap property.",
+      "response": "A parent key must be at least as large as the keys of its children. Insertion appends the item at the end of the array. The inserted item moves upward by swapping with a smaller parent when necessary. Delete-max replaces the root using the last array item before removing that last position.",
+      "rubric": [
+        "A parent key must be at least as large as the keys of its children.",
+        "Insertion appends the item at the end of the array.",
+        "The inserted item moves upward by swapping with a smaller parent when necessary.",
+        "Delete-max replaces the root using the last array item before removing that last position.",
+        "The replacement moves downward by swapping with its larger child until the heap property holds."
+      ],
+      "concept": "Heap updates",
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 4
+        },
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 5
+        }
+      ],
+      "reference_points": [
+        "A parent key must be at least as large as the keys of its children.",
+        "Insertion appends the item at the end of the array.",
+        "The inserted item moves upward by swapping with a smaller parent when necessary.",
+        "Delete-max replaces the root using the last array item before removing that last position.",
+        "The replacement moves downward by swapping with its larger child until the heap property holds."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-09-3",
+      "kind": "short",
+      "lecture": 8,
+      "question": "Explain how insertion and delete-max restore the max-heap property.",
+      "response": "A parent key must be at least as large as the keys of its children. Insertion appends the item at the end of the array. The inserted item moves upward by swapping with a smaller parent when necessary.",
+      "rubric": [
+        "A parent key must be at least as large as the keys of its children.",
+        "Insertion appends the item at the end of the array.",
+        "The inserted item moves upward by swapping with a smaller parent when necessary.",
+        "Delete-max replaces the root using the last array item before removing that last position.",
+        "The replacement moves downward by swapping with its larger child until the heap property holds."
+      ],
+      "concept": "Heap updates",
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 4
+        },
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 5
+        }
+      ],
+      "reference_points": [
+        "A parent key must be at least as large as the keys of its children.",
+        "Insertion appends the item at the end of the array.",
+        "The inserted item moves upward by swapping with a smaller parent when necessary.",
+        "Delete-max replaces the root using the last array item before removing that last position.",
+        "The replacement moves downward by swapping with its larger child until the heap property holds."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-09-4",
+      "kind": "short",
+      "lecture": 8,
+      "question": "Explain how insertion and delete-max restore the max-heap property.",
+      "response": "I have not worked out an answer to this question.",
+      "rubric": [
+        "A parent key must be at least as large as the keys of its children.",
+        "Insertion appends the item at the end of the array.",
+        "The inserted item moves upward by swapping with a smaller parent when necessary.",
+        "Delete-max replaces the root using the last array item before removing that last position.",
+        "The replacement moves downward by swapping with its larger child until the heap property holds."
+      ],
+      "concept": "Heap updates",
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 4
+        },
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 5
+        }
+      ],
+      "reference_points": [
+        "A parent key must be at least as large as the keys of its children.",
+        "Insertion appends the item at the end of the array.",
+        "The inserted item moves upward by swapping with a smaller parent when necessary.",
+        "Delete-max replaces the root using the last array item before removing that last position.",
+        "The replacement moves downward by swapping with its larger child until the heap property holds."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-09-1",
+      "kind": "evidence",
+      "lecture": 8,
+      "question": "What condition defines the max-heap property?",
+      "reference_points": [
+        "A parent key must be at least as large as the keys of its children."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 4
+        },
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 5
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-09-2",
+      "kind": "evidence",
+      "lecture": 8,
+      "question": "How does inserting a new heap item repair the heap?",
+      "reference_points": [
+        "Insertion appends the item at the end of the array.",
+        "The inserted item moves upward by swapping with a smaller parent when necessary."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 4
+        },
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 5
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-09-3",
+      "kind": "evidence",
+      "lecture": 8,
+      "question": "Why does delete-max choose the larger child during downward repair?",
+      "reference_points": [
+        "A parent key must be at least as large as the keys of its children.",
+        "The replacement moves downward by swapping with its larger child until the heap property holds."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 4
+        },
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 5
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-10-1",
+      "kind": "short",
+      "lecture": 8,
+      "question": "Compare bottom-up heap construction with repeated insertion and explain the implication for heap sort.",
+      "response": "Repeated insertion can require logarithmic upward work for many inserted items. Bottom-up construction starts with the full array interpreted as a complete tree. It processes nodes from the leaves toward the root using downward heap repair. The sum of node heights bounds bottom-up construction by linear work. Linear construction does not reduce the overall heap-sort bound below O(n log n).",
+      "rubric": [
+        "Repeated insertion can require logarithmic upward work for many inserted items.",
+        "Bottom-up construction starts with the full array interpreted as a complete tree.",
+        "It processes nodes from the leaves toward the root using downward heap repair.",
+        "The sum of node heights bounds bottom-up construction by linear work.",
+        "Linear construction does not reduce the overall heap-sort bound below O(n log n)."
+      ],
+      "concept": "Heap construction and sorting",
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 5
+        },
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 6
+        }
+      ],
+      "reference_points": [
+        "Repeated insertion can require logarithmic upward work for many inserted items.",
+        "Bottom-up construction starts with the full array interpreted as a complete tree.",
+        "It processes nodes from the leaves toward the root using downward heap repair.",
+        "The sum of node heights bounds bottom-up construction by linear work.",
+        "Linear construction does not reduce the overall heap-sort bound below O(n log n)."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-10-2",
+      "kind": "short",
+      "lecture": 8,
+      "question": "Compare bottom-up heap construction with repeated insertion and explain the implication for heap sort.",
+      "response": "Repeated insertion can require logarithmic upward work for many inserted items. Bottom-up construction starts with the full array interpreted as a complete tree. It processes nodes from the leaves toward the root using downward heap repair. The sum of node heights bounds bottom-up construction by linear work.",
+      "rubric": [
+        "Repeated insertion can require logarithmic upward work for many inserted items.",
+        "Bottom-up construction starts with the full array interpreted as a complete tree.",
+        "It processes nodes from the leaves toward the root using downward heap repair.",
+        "The sum of node heights bounds bottom-up construction by linear work.",
+        "Linear construction does not reduce the overall heap-sort bound below O(n log n)."
+      ],
+      "concept": "Heap construction and sorting",
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 5
+        },
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 6
+        }
+      ],
+      "reference_points": [
+        "Repeated insertion can require logarithmic upward work for many inserted items.",
+        "Bottom-up construction starts with the full array interpreted as a complete tree.",
+        "It processes nodes from the leaves toward the root using downward heap repair.",
+        "The sum of node heights bounds bottom-up construction by linear work.",
+        "Linear construction does not reduce the overall heap-sort bound below O(n log n)."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-10-3",
+      "kind": "short",
+      "lecture": 8,
+      "question": "Compare bottom-up heap construction with repeated insertion and explain the implication for heap sort.",
+      "response": "Repeated insertion can require logarithmic upward work for many inserted items. Bottom-up construction starts with the full array interpreted as a complete tree. It processes nodes from the leaves toward the root using downward heap repair.",
+      "rubric": [
+        "Repeated insertion can require logarithmic upward work for many inserted items.",
+        "Bottom-up construction starts with the full array interpreted as a complete tree.",
+        "It processes nodes from the leaves toward the root using downward heap repair.",
+        "The sum of node heights bounds bottom-up construction by linear work.",
+        "Linear construction does not reduce the overall heap-sort bound below O(n log n)."
+      ],
+      "concept": "Heap construction and sorting",
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 5
+        },
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 6
+        }
+      ],
+      "reference_points": [
+        "Repeated insertion can require logarithmic upward work for many inserted items.",
+        "Bottom-up construction starts with the full array interpreted as a complete tree.",
+        "It processes nodes from the leaves toward the root using downward heap repair.",
+        "The sum of node heights bounds bottom-up construction by linear work.",
+        "Linear construction does not reduce the overall heap-sort bound below O(n log n)."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "SA-10-4",
+      "kind": "short",
+      "lecture": 8,
+      "question": "Compare bottom-up heap construction with repeated insertion and explain the implication for heap sort.",
+      "response": "I have not worked out an answer to this question.",
+      "rubric": [
+        "Repeated insertion can require logarithmic upward work for many inserted items.",
+        "Bottom-up construction starts with the full array interpreted as a complete tree.",
+        "It processes nodes from the leaves toward the root using downward heap repair.",
+        "The sum of node heights bounds bottom-up construction by linear work.",
+        "Linear construction does not reduce the overall heap-sort bound below O(n log n)."
+      ],
+      "concept": "Heap construction and sorting",
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 5
+        },
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 6
+        }
+      ],
+      "reference_points": [
+        "Repeated insertion can require logarithmic upward work for many inserted items.",
+        "Bottom-up construction starts with the full array interpreted as a complete tree.",
+        "It processes nodes from the leaves toward the root using downward heap repair.",
+        "The sum of node heights bounds bottom-up construction by linear work.",
+        "Linear construction does not reduce the overall heap-sort bound below O(n log n)."
+      ],
+      "response_origin": "assistant-authored practice response",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-10-1",
+      "kind": "evidence",
+      "lecture": 8,
+      "question": "How does bottom-up heap construction order its repair operations?",
+      "reference_points": [
+        "Bottom-up construction starts with the full array interpreted as a complete tree.",
+        "It processes nodes from the leaves toward the root using downward heap repair."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 5
+        },
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 6
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-10-2",
+      "kind": "evidence",
+      "lecture": 8,
+      "question": "Why can bottom-up construction take linear total work?",
+      "reference_points": [
+        "The sum of node heights bounds bottom-up construction by linear work."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 5
+        },
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 6
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-10-3",
+      "kind": "evidence",
+      "lecture": 8,
+      "question": "Does faster construction make heap sort linear-time?",
+      "reference_points": [
+        "Linear construction does not reduce the overall heap-sort bound below O(n log n)."
+      ],
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 5
+        },
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 6
+        }
+      ],
+      "reference_support_status": "assistant-proposed-supported",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-U-01",
+      "kind": "evidence",
+      "lecture": 4,
+      "question": "Give the relaxation steps of the Bellman-Ford shortest-path algorithm.",
+      "sources": [],
+      "reference_points": [],
+      "reference_support_status": "assistant-proposed-unsupported-in-selected-corpus",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-U-02",
+      "kind": "evidence",
+      "lecture": 6,
+      "question": "Derive the recurrence and reconstruction rule for longest common subsequence.",
+      "sources": [],
+      "reference_points": [],
+      "reference_support_status": "assistant-proposed-unsupported-in-selected-corpus",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-U-03",
+      "kind": "evidence",
+      "lecture": 8,
+      "question": "Show the full red-black tree insertion fix-up algorithm and its color cases.",
+      "sources": [],
+      "reference_points": [],
+      "reference_support_status": "assistant-proposed-unsupported-in-selected-corpus",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-U-04",
+      "kind": "evidence",
+      "lecture": 4,
+      "question": "Prove the correctness of the Ford-Fulkerson maximum-flow algorithm.",
+      "sources": [],
+      "reference_points": [],
+      "reference_support_status": "assistant-proposed-unsupported-in-selected-corpus",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-U-05",
+      "kind": "evidence",
+      "lecture": 6,
+      "question": "Explain RSA encryption and key generation with a worked numerical example.",
+      "sources": [],
+      "reference_points": [],
+      "reference_support_status": "assistant-proposed-unsupported-in-selected-corpus",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-U-06",
+      "kind": "evidence",
+      "lecture": 8,
+      "question": "Provide the transaction-isolation rules of a PostgreSQL database.",
+      "sources": [],
+      "reference_points": [],
+      "reference_support_status": "assistant-proposed-unsupported-in-selected-corpus",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-U-07",
+      "kind": "evidence",
+      "lecture": 4,
+      "question": "Derive the gradient update for a neural network trained with backpropagation.",
+      "sources": [],
+      "reference_points": [],
+      "reference_support_status": "assistant-proposed-unsupported-in-selected-corpus",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-U-08",
+      "kind": "evidence",
+      "lecture": 6,
+      "question": "Explain B-tree page splitting in an on-disk database index.",
+      "sources": [],
+      "reference_points": [],
+      "reference_support_status": "assistant-proposed-unsupported-in-selected-corpus",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-U-09",
+      "kind": "evidence",
+      "lecture": 8,
+      "question": "Give the failure-recovery protocol used by the Raft consensus algorithm.",
+      "sources": [],
+      "reference_points": [],
+      "reference_support_status": "assistant-proposed-unsupported-in-selected-corpus",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "EV-U-10",
+      "kind": "evidence",
+      "lecture": 4,
+      "question": "State the implementation and proof of the Boyer-Moore string-search algorithm.",
+      "sources": [],
+      "reference_points": [],
+      "reference_support_status": "assistant-proposed-unsupported-in-selected-corpus",
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "MC-01",
+      "kind": "mcq",
+      "lecture": 4,
+      "question": "What scale of space can a direct-access array require?",
+      "options": [
+        "The size of the key universe",
+        "Only the tree height",
+        "Exactly one word",
+        "The square root of stored items"
+      ],
+      "answer_key": "A",
+      "reference_answer": "The size of the key universe",
+      "response": "A",
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 2
+        }
+      ],
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "MC-02",
+      "kind": "mcq",
+      "lecture": 4,
+      "question": "What is a hash collision?",
+      "options": [
+        "Two independent arrays sharing no values",
+        "Two different keys mapping to the same table slot",
+        "Two keys stored in different courses",
+        "An array containing no keys"
+      ],
+      "answer_key": "B",
+      "reference_answer": "Two different keys mapping to the same table slot",
+      "response": "B",
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 3
+        }
+      ],
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "MC-03",
+      "kind": "mcq",
+      "lecture": 4,
+      "question": "What does chaining attach to a table slot?",
+      "options": [
+        "A priority queue containing unrelated lectures",
+        "Only one key with every other key discarded",
+        "A collection holding keys assigned to that slot",
+        "A guaranteed perfect ordering of all keys"
+      ],
+      "answer_key": "C",
+      "reference_answer": "A collection holding keys assigned to that slot",
+      "response": "C",
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 3
+        }
+      ],
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "MC-04",
+      "kind": "mcq",
+      "lecture": 4,
+      "question": "What can happen if a hash function returns the same index for all n keys?",
+      "options": [
+        "Every lookup becomes logarithmic automatically",
+        "The table becomes collision-free",
+        "The universe size becomes zero",
+        "A chain can grow to linear size"
+      ],
+      "answer_key": "D",
+      "reference_answer": "A chain can grow to linear size",
+      "response": "D",
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 3
+        }
+      ],
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "MC-05",
+      "kind": "mcq",
+      "lecture": 4,
+      "question": "What does keeping n/m bounded help ensure under universal hashing?",
+      "options": [
+        "Bounded expected chain length",
+        "No collisions for every possible input",
+        "A sorted traversal of all keys",
+        "Worst-case constant time for every chosen hash function"
+      ],
+      "answer_key": "A",
+      "reference_answer": "Bounded expected chain length",
+      "response": "A",
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 4
+        }
+      ],
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "MC-06",
+      "kind": "mcq",
+      "lecture": 4,
+      "question": "What should be reselected when a hash table is rebuilt for a different table size?",
+      "options": [
+        "No hash function at all",
+        "A suitable new random hash function",
+        "The original array ordering as a search key",
+        "A new tree root for each possible universe element"
+      ],
+      "answer_key": "B",
+      "reference_answer": "A suitable new random hash function",
+      "response": "B",
+      "sources": [
+        {
+          "document_id": "mit6006-l04",
+          "page_number": 4
+        }
+      ],
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "MC-07",
+      "kind": "mcq",
+      "lecture": 6,
+      "question": "Which node has no parent?",
+      "options": [
+        "Every right child",
+        "Only nodes at maximum depth",
+        "The root",
+        "Every leaf"
+      ],
+      "answer_key": "C",
+      "reference_answer": "The root",
+      "response": "C",
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 2
+        }
+      ],
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "MC-08",
+      "kind": "mcq",
+      "lecture": 6,
+      "question": "Which description defines a leaf?",
+      "options": [
+        "A node with no parent",
+        "A node whose key must be maximum",
+        "A node at depth exactly one",
+        "A node with no children"
+      ],
+      "answer_key": "D",
+      "reference_answer": "A node with no children",
+      "response": "D",
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 2
+        }
+      ],
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "MC-09",
+      "kind": "mcq",
+      "lecture": 6,
+      "question": "What is the traversal order used in the notes?",
+      "options": [
+        "Left subtree, node, right subtree",
+        "Node, right subtree, left subtree",
+        "All right children before every left child",
+        "Increasing allocation address"
+      ],
+      "answer_key": "A",
+      "reference_answer": "Left subtree, node, right subtree",
+      "response": "A",
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 2
+        }
+      ],
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "MC-10",
+      "kind": "mcq",
+      "lecture": 6,
+      "question": "If a node has a right subtree, where is its traversal successor?",
+      "options": [
+        "The root of the entire tree regardless of shape",
+        "The first node of that right subtree",
+        "Always its parent",
+        "Always its left child"
+      ],
+      "answer_key": "B",
+      "reference_answer": "The first node of that right subtree",
+      "response": "B",
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 2
+        }
+      ],
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "MC-11",
+      "kind": "mcq",
+      "lecture": 6,
+      "question": "A node has no right child. How can a new node be inserted immediately after it?",
+      "options": [
+        "Make the new node the parent of the whole tree",
+        "Delete the original node first",
+        "Make the new node its right child",
+        "Replace every node in its left subtree"
+      ],
+      "answer_key": "C",
+      "reference_answer": "Make the new node its right child",
+      "response": "D",
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 3
+        }
+      ],
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "MC-12",
+      "kind": "mcq",
+      "lecture": 6,
+      "question": "What extra field supports fast indexed access in a sequence binary tree?",
+      "options": [
+        "A hash of every course document",
+        "The total number of PDF pages",
+        "The index of the largest key in an unrelated array",
+        "The size of the node subtree"
+      ],
+      "answer_key": "D",
+      "reference_answer": "The size of the node subtree",
+      "response": "A",
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 4
+        }
+      ],
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "MC-13",
+      "kind": "mcq",
+      "lecture": 6,
+      "question": "At index i equal to the left-subtree size, which node is selected?",
+      "options": [
+        "The current node",
+        "Its leftmost descendant",
+        "Its rightmost descendant",
+        "No node can match this case"
+      ],
+      "answer_key": "A",
+      "reference_answer": "The current node",
+      "response": "B",
+      "sources": [
+        {
+          "document_id": "mit6006-l06",
+          "page_number": 4
+        }
+      ],
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "MC-14",
+      "kind": "mcq",
+      "lecture": 8,
+      "question": "Where is the root in the zero-based implicit complete binary tree?",
+      "options": [
+        "At a stored parent pointer only",
+        "Index 0",
+        "Index 1",
+        "Index n"
+      ],
+      "answer_key": "B",
+      "reference_answer": "Index 0",
+      "response": "C",
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 3
+        }
+      ],
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "MC-15",
+      "kind": "mcq",
+      "lecture": 8,
+      "question": "What is the left-child index of i?",
+      "options": [
+        "i-1",
+        "floor(i/2)",
+        "2*i+1",
+        "2*i+2"
+      ],
+      "answer_key": "C",
+      "reference_answer": "2*i+1",
+      "response": "D",
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 3
+        }
+      ],
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "MC-16",
+      "kind": "mcq",
+      "lecture": 8,
+      "question": "What is the right-child index of i?",
+      "options": [
+        "2*i+1",
+        "i+1",
+        "floor((i-1)/2)",
+        "2*i+2"
+      ],
+      "answer_key": "D",
+      "reference_answer": "2*i+2",
+      "response": "A",
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 3
+        }
+      ],
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "MC-17",
+      "kind": "mcq",
+      "lecture": 8,
+      "question": "Where is a maximum item in a max-heap?",
+      "options": [
+        "At the root",
+        "At the last index in every heap",
+        "At the deepest left leaf in every heap",
+        "At an index chosen by hashing"
+      ],
+      "answer_key": "A",
+      "reference_answer": "At the root",
+      "response": "B",
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 4
+        }
+      ],
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "MC-18",
+      "kind": "mcq",
+      "lecture": 8,
+      "question": "Which direction repairs the heap after appending a new item?",
+      "options": [
+        "No repair is ever needed",
+        "Upward toward its parent as needed",
+        "Only downward through its children",
+        "Across all leaves in sorted order"
+      ],
+      "answer_key": "B",
+      "reference_answer": "Upward toward its parent as needed",
+      "response": "C",
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 4
+        }
+      ],
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "MC-19",
+      "kind": "mcq",
+      "lecture": 8,
+      "question": "During heapify-down, which child is considered for a swap in a max-heap?",
+      "options": [
+        "Always the right child even if smaller",
+        "The first node allocated in memory",
+        "The child with the larger key",
+        "Always the left child even if smaller"
+      ],
+      "answer_key": "C",
+      "reference_answer": "The child with the larger key",
+      "response": "D",
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 5
+        }
+      ],
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "MC-20",
+      "kind": "mcq",
+      "lecture": 8,
+      "question": "What is the tight asymptotic running-time bound of bottom-up heap construction?",
+      "options": [
+        "Theta(log n)",
+        "Theta(n squared)",
+        "Theta(n factorial)",
+        "Theta(n)"
+      ],
+      "answer_key": "D",
+      "reference_answer": "Theta(n)",
+      "response": "A",
+      "sources": [
+        {
+          "document_id": "mit6006-l08",
+          "page_number": 6
+        }
+      ],
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-01",
+      "kind": "workflow",
+      "lecture": 4,
+      "question": "Run actual_grade_decision with the frozen 70% threshold and authored response policy; record actual integer grades, separate rounds, state transitions and saved results.",
+      "sources": [],
+      "scenario": {
+        "name": "actual_grade_decision",
+        "passing_threshold": 0.7,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": false,
+        "required_branch": "first_round_pass",
+        "planned_followup_input": "wrong_reference",
+        "input_policy_note": "A frozen response strategy attempts a branch; actual scores and observed branch must be recorded. Do not inject desired counts or retry until a desired result appears."
+      },
+      "expected": {
+        "baseline": {
+          "policy": "actual_grade_v1"
+        },
+        "full": {
+          "policy": "actual_grade_v1"
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-02",
+      "kind": "workflow",
+      "lecture": 6,
+      "question": "Run actual_grade_decision with the frozen 70% threshold and authored response policy; record actual integer grades, separate rounds, state transitions and saved results.",
+      "sources": [],
+      "scenario": {
+        "name": "actual_grade_decision",
+        "passing_threshold": 0.7,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": false,
+        "required_branch": "first_round_pass",
+        "planned_followup_input": "wrong_reference",
+        "input_policy_note": "A frozen response strategy attempts a branch; actual scores and observed branch must be recorded. Do not inject desired counts or retry until a desired result appears."
+      },
+      "expected": {
+        "baseline": {
+          "policy": "actual_grade_v1"
+        },
+        "full": {
+          "policy": "actual_grade_v1"
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-03",
+      "kind": "workflow",
+      "lecture": 8,
+      "question": "Run actual_grade_decision with the frozen 70% threshold and authored response policy; record actual integer grades, separate rounds, state transitions and saved results.",
+      "sources": [],
+      "scenario": {
+        "name": "actual_grade_decision",
+        "passing_threshold": 0.7,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": false,
+        "required_branch": "followup",
+        "planned_followup_input": "reference",
+        "input_policy_note": "A frozen response strategy attempts a branch; actual scores and observed branch must be recorded. Do not inject desired counts or retry until a desired result appears."
+      },
+      "expected": {
+        "baseline": {
+          "policy": "actual_grade_v1"
+        },
+        "full": {
+          "policy": "actual_grade_v1"
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-04",
+      "kind": "workflow",
+      "lecture": 4,
+      "question": "Run actual_grade_decision with the frozen 80% threshold and authored response policy; record actual integer grades, separate rounds, state transitions and saved results.",
+      "sources": [],
+      "scenario": {
+        "name": "actual_grade_decision",
+        "passing_threshold": 0.8,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": false,
+        "required_branch": "first_round_pass",
+        "planned_followup_input": "wrong_reference",
+        "input_policy_note": "A frozen response strategy attempts a branch; actual scores and observed branch must be recorded. Do not inject desired counts or retry until a desired result appears."
+      },
+      "expected": {
+        "baseline": {
+          "policy": "actual_grade_v1"
+        },
+        "full": {
+          "policy": "actual_grade_v1"
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-05",
+      "kind": "workflow",
+      "lecture": 6,
+      "question": "Run actual_grade_decision with the frozen 80% threshold and authored response policy; record actual integer grades, separate rounds, state transitions and saved results.",
+      "sources": [],
+      "scenario": {
+        "name": "actual_grade_decision",
+        "passing_threshold": 0.8,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": false,
+        "required_branch": "first_round_pass",
+        "planned_followup_input": "wrong_reference",
+        "input_policy_note": "A frozen response strategy attempts a branch; actual scores and observed branch must be recorded. Do not inject desired counts or retry until a desired result appears."
+      },
+      "expected": {
+        "baseline": {
+          "policy": "actual_grade_v1"
+        },
+        "full": {
+          "policy": "actual_grade_v1"
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-06",
+      "kind": "workflow",
+      "lecture": 8,
+      "question": "Run actual_grade_decision with the frozen 80% threshold and authored response policy; record actual integer grades, separate rounds, state transitions and saved results.",
+      "sources": [],
+      "scenario": {
+        "name": "actual_grade_decision",
+        "passing_threshold": 0.8,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": false,
+        "required_branch": "followup",
+        "planned_followup_input": "reference",
+        "input_policy_note": "A frozen response strategy attempts a branch; actual scores and observed branch must be recorded. Do not inject desired counts or retry until a desired result appears."
+      },
+      "expected": {
+        "baseline": {
+          "policy": "actual_grade_v1"
+        },
+        "full": {
+          "policy": "actual_grade_v1"
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-07",
+      "kind": "workflow",
+      "lecture": 4,
+      "question": "Run actual_grade_decision with the frozen 90% threshold and authored response policy; record actual integer grades, separate rounds, state transitions and saved results.",
+      "sources": [],
+      "scenario": {
+        "name": "actual_grade_decision",
+        "passing_threshold": 0.9,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": false,
+        "required_branch": "first_round_pass",
+        "planned_followup_input": "wrong_reference",
+        "input_policy_note": "A frozen response strategy attempts a branch; actual scores and observed branch must be recorded. Do not inject desired counts or retry until a desired result appears."
+      },
+      "expected": {
+        "baseline": {
+          "policy": "actual_grade_v1"
+        },
+        "full": {
+          "policy": "actual_grade_v1"
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-08",
+      "kind": "workflow",
+      "lecture": 6,
+      "question": "Run actual_grade_decision with the frozen 90% threshold and authored response policy; record actual integer grades, separate rounds, state transitions and saved results.",
+      "sources": [],
+      "scenario": {
+        "name": "actual_grade_decision",
+        "passing_threshold": 0.9,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": false,
+        "required_branch": "first_round_pass",
+        "planned_followup_input": "wrong_reference",
+        "input_policy_note": "A frozen response strategy attempts a branch; actual scores and observed branch must be recorded. Do not inject desired counts or retry until a desired result appears."
+      },
+      "expected": {
+        "baseline": {
+          "policy": "actual_grade_v1"
+        },
+        "full": {
+          "policy": "actual_grade_v1"
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-09",
+      "kind": "workflow",
+      "lecture": 8,
+      "question": "Run actual_grade_decision with the frozen 90% threshold and authored response policy; record actual integer grades, separate rounds, state transitions and saved results.",
+      "sources": [],
+      "scenario": {
+        "name": "actual_grade_decision",
+        "passing_threshold": 0.9,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": false,
+        "required_branch": "followup",
+        "planned_followup_input": "wrong_reference",
+        "input_policy_note": "A frozen response strategy attempts a branch; actual scores and observed branch must be recorded. Do not inject desired counts or retry until a desired result appears."
+      },
+      "expected": {
+        "baseline": {
+          "policy": "actual_grade_v1"
+        },
+        "full": {
+          "policy": "actual_grade_v1"
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-10",
+      "kind": "workflow",
+      "lecture": 4,
+      "question": "Run actual_grade_decision with the frozen 80% threshold and authored response policy; record actual integer grades, separate rounds, state transitions and saved results.",
+      "sources": [],
+      "scenario": {
+        "name": "actual_grade_decision",
+        "passing_threshold": 0.8,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": false,
+        "required_branch": "followup",
+        "planned_followup_input": "reference",
+        "input_policy_note": "A frozen response strategy attempts a branch; actual scores and observed branch must be recorded. Do not inject desired counts or retry until a desired result appears."
+      },
+      "expected": {
+        "baseline": {
+          "policy": "actual_grade_v1"
+        },
+        "full": {
+          "policy": "actual_grade_v1"
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-11",
+      "kind": "workflow",
+      "lecture": 6,
+      "question": "Run actual_grade_decision with the frozen 70% threshold and authored response policy; record actual integer grades, separate rounds, state transitions and saved results.",
+      "sources": [],
+      "scenario": {
+        "name": "actual_grade_decision",
+        "passing_threshold": 0.7,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": false,
+        "required_branch": "followup",
+        "planned_followup_input": "reference",
+        "input_policy_note": "A frozen response strategy attempts a branch; actual scores and observed branch must be recorded. Do not inject desired counts or retry until a desired result appears."
+      },
+      "expected": {
+        "baseline": {
+          "policy": "actual_grade_v1"
+        },
+        "full": {
+          "policy": "actual_grade_v1"
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-12",
+      "kind": "workflow",
+      "lecture": 8,
+      "question": "Run actual_grade_decision with the frozen 80% threshold and authored response policy; record actual integer grades, separate rounds, state transitions and saved results.",
+      "sources": [],
+      "scenario": {
+        "name": "actual_grade_decision",
+        "passing_threshold": 0.8,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": false,
+        "required_branch": "followup",
+        "planned_followup_input": "wrong_reference",
+        "input_policy_note": "A frozen response strategy attempts a branch; actual scores and observed branch must be recorded. Do not inject desired counts or retry until a desired result appears."
+      },
+      "expected": {
+        "baseline": {
+          "policy": "actual_grade_v1"
+        },
+        "full": {
+          "policy": "actual_grade_v1"
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-13",
+      "kind": "workflow",
+      "lecture": 4,
+      "question": "Run duplicate_submit with the frozen 80% threshold and authored response policy; record actual integer grades, separate rounds, state transitions and saved results.",
+      "sources": [],
+      "scenario": {
+        "name": "duplicate_submit",
+        "passing_threshold": 0.8,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": false,
+        "required_branch": "followup",
+        "planned_followup_input": "reference",
+        "input_policy_note": "A frozen response strategy attempts a branch; actual scores and observed branch must be recorded. Do not inject desired counts or retry until a desired result appears."
+      },
+      "expected": {
+        "baseline": {
+          "policy": "actual_grade_v1"
+        },
+        "full": {
+          "policy": "actual_grade_v1"
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-14",
+      "kind": "workflow",
+      "lecture": 6,
+      "question": "Run duplicate_after_final with the frozen 80% threshold and authored response policy; record actual integer grades, separate rounds, state transitions and saved results.",
+      "sources": [],
+      "scenario": {
+        "name": "duplicate_after_final",
+        "passing_threshold": 0.8,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": false,
+        "required_branch": "followup",
+        "planned_followup_input": "wrong_reference",
+        "input_policy_note": "A frozen response strategy attempts a branch; actual scores and observed branch must be recorded. Do not inject desired counts or retry until a desired result appears."
+      },
+      "expected": {
+        "baseline": {
+          "policy": "actual_grade_v1"
+        },
+        "full": {
+          "policy": "actual_grade_v1"
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-15",
+      "kind": "workflow",
+      "lecture": 8,
+      "question": "Run independent_qa with the frozen 80% threshold and authored response policy; record actual integer grades, separate rounds, state transitions and saved results.",
+      "sources": [],
+      "scenario": {
+        "name": "independent_qa",
+        "passing_threshold": 0.8,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": false,
+        "required_branch": "first_round_pass",
+        "planned_followup_input": "wrong_reference",
+        "input_policy_note": "A frozen response strategy attempts a branch; actual scores and observed branch must be recorded. Do not inject desired counts or retry until a desired result appears."
+      },
+      "expected": {
+        "baseline": {
+          "policy": "actual_grade_v1"
+        },
+        "full": {
+          "policy": "actual_grade_v1"
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-16",
+      "kind": "workflow",
+      "lecture": 4,
+      "question": "Run qa_between_rounds with the frozen 80% threshold and authored response policy; record actual integer grades, separate rounds, state transitions and saved results.",
+      "sources": [],
+      "scenario": {
+        "name": "qa_between_rounds",
+        "passing_threshold": 0.8,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": false,
+        "required_branch": "followup",
+        "planned_followup_input": "reference",
+        "input_policy_note": "A frozen response strategy attempts a branch; actual scores and observed branch must be recorded. Do not inject desired counts or retry until a desired result appears."
+      },
+      "expected": {
+        "baseline": {
+          "policy": "actual_grade_v1"
+        },
+        "full": {
+          "policy": "actual_grade_v1"
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-17",
+      "kind": "workflow",
+      "lecture": 6,
+      "question": "Run process_restart with the frozen 80% threshold and authored response policy; record actual integer grades, separate rounds, state transitions and saved results.",
+      "sources": [],
+      "scenario": {
+        "name": "process_restart",
+        "passing_threshold": 0.8,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": false,
+        "required_branch": "followup",
+        "planned_followup_input": "reference",
+        "input_policy_note": "A frozen response strategy attempts a branch; actual scores and observed branch must be recorded. Do not inject desired counts or retry until a desired result appears."
+      },
+      "expected": {
+        "baseline": {
+          "policy": "actual_grade_v1"
+        },
+        "full": {
+          "policy": "actual_grade_v1"
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-18",
+      "kind": "workflow",
+      "lecture": 8,
+      "question": "Run saved_draft_restore with the frozen 90% threshold and authored response policy; record actual integer grades, separate rounds, state transitions and saved results.",
+      "sources": [],
+      "scenario": {
+        "name": "saved_draft_restore",
+        "passing_threshold": 0.9,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": false,
+        "required_branch": "followup",
+        "planned_followup_input": "wrong_reference",
+        "input_policy_note": "A frozen response strategy attempts a branch; actual scores and observed branch must be recorded. Do not inject desired counts or retry until a desired result appears."
+      },
+      "expected": {
+        "baseline": {
+          "policy": "actual_grade_v1"
+        },
+        "full": {
+          "policy": "actual_grade_v1"
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-19",
+      "kind": "workflow",
+      "lecture": 4,
+      "question": "Run model_timeout_then_retry with the frozen 80% threshold and authored response policy; record actual integer grades, separate rounds, state transitions and saved results.",
+      "sources": [],
+      "scenario": {
+        "name": "model_timeout_then_retry",
+        "passing_threshold": 0.8,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": false,
+        "required_branch": "followup",
+        "planned_followup_input": "reference",
+        "input_policy_note": "A frozen response strategy attempts a branch; actual scores and observed branch must be recorded. Do not inject desired counts or retry until a desired result appears."
+      },
+      "expected": {
+        "baseline": {
+          "policy": "actual_grade_v1"
+        },
+        "full": {
+          "policy": "actual_grade_v1"
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    },
+    {
+      "id": "WF-20",
+      "kind": "workflow",
+      "lecture": 6,
+      "question": "Run actual_grade_decision with the frozen 80% threshold and authored response policy; record actual integer grades, separate rounds, state transitions and saved results.",
+      "sources": [],
+      "scenario": {
+        "name": "actual_grade_decision",
+        "passing_threshold": 0.8,
+        "repeats_per_system": 3,
+        "controller_inputs_are_injected": false,
+        "required_branch": "followup",
+        "planned_followup_input": "wrong_reference",
+        "input_policy_note": "A frozen response strategy attempts a branch; actual scores and observed branch must be recorded. Do not inject desired counts or retry until a desired result appears."
+      },
+      "expected": {
+        "baseline": {
+          "policy": "actual_grade_v1"
+        },
+        "full": {
+          "policy": "actual_grade_v1"
+        }
+      },
+      "predictions": {
+        "baseline": null,
+        "full": null
+      }
+    }
+  ],
+  "provenance": {
+    "item_author": "AI assistant",
+    "human_annotations_completed": false,
+    "system_predictions_collected": false,
+    "evaluation_questions_indexed": false,
+    "note": "Synthetic student responses are authored test inputs, not real student data. No model outputs or human judgments are fabricated.",
+    "runtime_note": "Preparation snapshot of committed code and installed runtime. Local PDF/embedding/reranker smoke passed separately. No chat-model authentication, actual grading, workflow collection or human judgments.",
+    "supersedes_evaluation_id": "mit6006-upstream-20261112-preparation-v2",
+    "chapter_mapping_status": "not_observed; dedicated runtime fixture IDs and original teaching-page coverage must be verified before freezing a formal cohort",
+    "workflow_revision": "Injected-count controller drafts preserved separately. Real workflows use actual_grade_v1, with required branches and response strategies fixed before collection; two human reviewers must approve the protocol and observed fixture mapping."
+  },
+  "evaluation_protocol": {
+    "policy": "actual_grade_v1",
+    "reviewed": false,
+    "review_origin": null,
+    "reviewed_by": [],
+    "chapter_mapping_sha256": null,
+    "response_policy_sha256": null,
+    "response_origin": "authored_reference_or_wrong_reference_branch_probes_not_student_data",
+    "quality_scope": "Workflow state correctness; not student learning outcomes or independent answer quality."
+  }
+}

@@ -1,0 +1,1609 @@
+{
+  "schema": "citepath-evaluation-v1",
+  "dataset_sha256": "aa09989cf2733601ab9e83b405d4ae068794efc57d7fb8abfb3d8a85d90a5adc",
+  "annotator_id": null,
+  "independent": false,
+  "label_origin": "unassigned",
+  "labels": [
+    {
+      "item_id": "SA-01-1",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-01-2",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-01-3",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-01-4",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "EV-01-1",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-01-1",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-01-2",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-01-2",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-01-3",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-01-3",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "SA-02-1",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-02-2",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-02-3",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-02-4",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "EV-02-1",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-02-1",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-02-2",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-02-2",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-02-3",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-02-3",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "SA-03-1",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-03-2",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-03-3",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-03-4",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "EV-03-1",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-03-1",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-03-2",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-03-2",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-03-3",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-03-3",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "SA-04-1",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-04-2",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-04-3",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-04-4",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "EV-04-1",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-04-1",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-04-2",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-04-2",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-04-3",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-04-3",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "SA-05-1",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-05-2",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-05-3",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-05-4",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "EV-05-1",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-05-1",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-05-2",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-05-2",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-05-3",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-05-3",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "SA-06-1",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-06-2",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-06-3",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-06-4",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "EV-06-1",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-06-1",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-06-2",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-06-2",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-06-3",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-06-3",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "SA-07-1",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-07-2",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-07-3",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-07-4",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "EV-07-1",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-07-1",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-07-2",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-07-2",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-07-3",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-07-3",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "SA-08-1",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-08-2",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-08-3",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-08-4",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "EV-08-1",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-08-1",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-08-2",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-08-2",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-08-3",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-08-3",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "SA-09-1",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-09-2",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-09-3",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-09-4",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "EV-09-1",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-09-1",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-09-2",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-09-2",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-09-3",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-09-3",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "SA-10-1",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-10-2",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-10-3",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "SA-10-4",
+      "variant": "shared",
+      "hits": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "EV-10-1",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-10-1",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-10-2",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-10-2",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-10-3",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-10-3",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-U-01",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-U-01",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-U-02",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-U-02",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-U-03",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-U-03",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-U-04",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-U-04",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-U-05",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-U-05",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-U-06",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-U-06",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-U-07",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-U-07",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-U-08",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-U-08",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-U-09",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-U-09",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-U-10",
+      "variant": "baseline",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "EV-U-10",
+      "variant": "full",
+      "supported": null,
+      "answer_correct": null,
+      "supporting_pages": [],
+      "reference_point_hits": null,
+      "claims_complete": null,
+      "claim_support": {},
+      "irrelevant_citations": null
+    },
+    {
+      "item_id": "MC-01",
+      "variant": "shared",
+      "correct": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "MC-02",
+      "variant": "shared",
+      "correct": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "MC-03",
+      "variant": "shared",
+      "correct": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "MC-04",
+      "variant": "shared",
+      "correct": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "MC-05",
+      "variant": "shared",
+      "correct": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "MC-06",
+      "variant": "shared",
+      "correct": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "MC-07",
+      "variant": "shared",
+      "correct": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "MC-08",
+      "variant": "shared",
+      "correct": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "MC-09",
+      "variant": "shared",
+      "correct": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "MC-10",
+      "variant": "shared",
+      "correct": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "MC-11",
+      "variant": "shared",
+      "correct": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "MC-12",
+      "variant": "shared",
+      "correct": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "MC-13",
+      "variant": "shared",
+      "correct": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "MC-14",
+      "variant": "shared",
+      "correct": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "MC-15",
+      "variant": "shared",
+      "correct": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "MC-16",
+      "variant": "shared",
+      "correct": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "MC-17",
+      "variant": "shared",
+      "correct": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "MC-18",
+      "variant": "shared",
+      "correct": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "MC-19",
+      "variant": "shared",
+      "correct": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    },
+    {
+      "item_id": "MC-20",
+      "variant": "shared",
+      "correct": null,
+      "supporting_pages": [],
+      "question_audit": {
+        "clear": null,
+        "source_supported": null,
+        "answer_key_correct": null,
+        "not_repeated": null
+      }
+    }
+  ]
+}
