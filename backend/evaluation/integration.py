@@ -135,14 +135,29 @@ class OwnedApiProcess:
         raise IntegrationFailure("managed_api_start_timeout")
 
     def stop(self):
-        process, self.process = self.process, None
+        process = self.process
         if process is not None and process.poll() is None:
+            if os.name == "nt":
+                # A Windows venv executable is a redirector with a child Python
+                # process. Terminating only the redirector leaves Uvicorn bound
+                # to the port. Limit cleanup to the tree this object created.
+                import psutil
+                children = psutil.Process(process.pid).children(recursive=True)
+                for child in reversed(children):
+                    try:
+                        child.kill()
+                    except psutil.NoSuchProcess:
+                        pass
+                _, alive = psutil.wait_procs(children, timeout=5)
+                if alive:
+                    raise IntegrationFailure("owned_api_child_shutdown_timeout")
             process.terminate()
             try:
                 process.wait(timeout=10)
             except subprocess.TimeoutExpired:
                 process.kill()
                 process.wait(timeout=5)
+        self.process = None
 
     def restart(self):
         if self.process is None:

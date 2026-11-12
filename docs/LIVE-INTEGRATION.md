@@ -55,3 +55,5 @@ development run still has `formal_evaluation_run: false` and
 `official_accepted: null`. Formal collection needs frozen configuration, actual
 baseline/full observations and independent human review as described in
 [EVALUATION.md](EVALUATION.md).
+
+On Windows the owned-process adapter also closes its own virtual-environment redirector descendants, so the restarted API can rebind its port. This requires the pinned Windows psutil dependency. A local network permission is needed even for Python asyncio socketpair initialization in this sandbox. A health/restart smoke without SQL is separate from saved-draft/database recovery.

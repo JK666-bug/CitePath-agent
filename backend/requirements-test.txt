@@ -10,3 +10,4 @@ python-dotenv==1.2.4
 httpx==0.28.1
 # This Windows host blocks the newer xxhash native wheel used by langsmith.
 xxhash==3.5.0; sys_platform == "win32"
+psutil==7.2.2; sys_platform == "win32"

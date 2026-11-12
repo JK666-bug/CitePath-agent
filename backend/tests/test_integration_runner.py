@@ -1,6 +1,7 @@
 """Synthetic protocol checks; these are not live API observations."""
 import copy
 import json
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -173,8 +174,37 @@ class IntegrationRunnerTest(unittest.TestCase):
         fake.poll.return_value = None
         process = OwnedApiProcess("http://127.0.0.1:8123")
         process.process = fake
-        process.stop()
+        with patch("evaluation.integration.os.name", "posix"):
+            process.stop()
         fake.terminate.assert_called_once()
+        self.assertIsNone(process.process)
+
+    def test_windows_stop_cleans_owned_redirector_tree_and_retains_handle_on_failure(self):
+        process = OwnedApiProcess("http://127.0.0.1:8123")
+        fake = unittest.mock.Mock(pid=9876)
+        fake.poll.return_value = None
+        process.process = fake
+        parent, child, module = unittest.mock.Mock(), unittest.mock.Mock(), unittest.mock.Mock()
+        module.Process.return_value = parent
+        parent.children.return_value = [child]
+        module.wait_procs.return_value = ([child], [])
+        module.NoSuchProcess = ProcessLookupError
+        with patch("evaluation.integration.os.name", "nt"), patch.dict(sys.modules, {"psutil": module}):
+            parent.children.side_effect = OSError("controlled shutdown failure")
+            with self.assertRaises(OSError):
+                process.stop()
+            self.assertIs(process.process, fake)
+            parent.children.side_effect = None
+            process.stop()
+            module.Process.assert_called_with(9876)
+            parent.children.assert_called_with(recursive=True)
+            child.kill.assert_called_once()
+            module.wait_procs.assert_called_once_with([child], timeout=5)
+            module.Process.reset_mock()
+            process.stop()
+            module.Process.assert_not_called()
+        fake.terminate.assert_called_once()
+        fake.wait.assert_called_once_with(timeout=10)
         self.assertIsNone(process.process)
 
     def test_owned_start_failure_is_cleaned_up_and_shutdown_failure_fails_report(self):
