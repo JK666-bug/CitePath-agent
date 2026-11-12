@@ -162,6 +162,35 @@ class AppendWorkflowTest(unittest.TestCase):
 
 
 class PersistenceGuardTest(unittest.TestCase):
+    def test_unchanged_existing_plan_does_not_insert_when_mysql_affected_rows_is_zero(self):
+        current = sample_plan()
+        connection, cursor = self.connection(current)
+        cursor.fetchone.side_effect = [{"id": 3}, {"id": 17}]
+        cursor.rowcount = 0
+        with patch.object(plans, "connect", return_value=connection), patch.object(plans, "ensure_plan_storage"):
+            plans.save_plan(3, current)
+        statements = [" ".join(call.args[0].split()) for call in cursor.execute.call_args_list]
+        self.assertFalse(any(sql.startswith("INSERT INTO study_plans") for sql in statements))
+        self.assertIn("FROM courses", statements[0])
+        self.assertIn("FROM study_plans", statements[1])
+        self.assertIn("FOR UPDATE", statements[1])
+        self.assertEqual(cursor.execute.call_args.args[1], (json.dumps(current, ensure_ascii=False), 3))
+        connection.commit.assert_called_once()
+        connection.rollback.assert_not_called()
+
+    def test_missing_plan_row_is_created_with_original_json(self):
+        current = sample_plan()
+        connection, cursor = self.connection(None)
+        cursor.fetchone.side_effect = [{"id": 3}, None]
+        with patch.object(plans, "connect", return_value=connection), patch.object(plans, "ensure_plan_storage"):
+            plans.save_plan(3, current)
+        statements = [" ".join(call.args[0].split()) for call in cursor.execute.call_args_list]
+        self.assertEqual(sum(sql.startswith("INSERT INTO study_plans") for sql in statements), 1)
+        self.assertFalse(any(sql.startswith("UPDATE study_plans") for sql in statements))
+        self.assertEqual(cursor.execute.call_args.args[1], (3, json.dumps(current, ensure_ascii=False)))
+        connection.commit.assert_called_once()
+        connection.rollback.assert_not_called()
+
     def connection(self, current):
         connection = MagicMock()
         cursor = connection.cursor.return_value.__enter__.return_value
@@ -307,7 +336,7 @@ class PersistenceGuardTest(unittest.TestCase):
         proposed["tasks"].extend(planner.schedule_tasks([addition], "2026-11-12", "2026-11-15"))
         proposed["tasks"][0]["custom"] = {"tampered": True}
         connection, cursor = self.connection(current)
-        cursor.fetchone.side_effect = [{"id": 3}, {"plan_json": json.dumps(current)}, {"last_position": 2}]
+        cursor.fetchone.side_effect = [{"id": 3}, {"plan_json": json.dumps(current)}, {"last_position": 2}, {"id": 17}]
         cursor.lastrowid = 19
         with patch.object(plans, "connect", return_value=connection):
             result = plans.save_appended_plan(3, proposed, ["new-c1"], expected_version=1)

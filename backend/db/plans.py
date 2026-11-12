@@ -678,21 +678,28 @@ def _with_saved_ids(plan: dict, id_map: dict[str, str]) -> dict:
 
 def _write_plan_json(cursor, course_id: int, plan: dict) -> None:
     payload = json.dumps(plan, ensure_ascii=False)
+    # Callers already hold the course row lock. Check actual row existence;
+    # MySQL reports zero affected rows when an existing payload is unchanged.
     cursor.execute(
-        """
-        UPDATE study_plans
-        SET plan_json = %s, status = 'ready'
-        WHERE course_id = %s
-        """,
-        (payload, course_id),
+        "SELECT id FROM study_plans WHERE course_id = %s FOR UPDATE",
+        (course_id,),
     )
-    if cursor.rowcount == 0:
+    if cursor.fetchone() is None:
         cursor.execute(
             """
             INSERT INTO study_plans (course_id, student_brief, status, plan_json)
             VALUES (%s, '', 'ready', %s)
             """,
             (course_id, payload),
+        )
+    else:
+        cursor.execute(
+            """
+            UPDATE study_plans
+            SET plan_json = %s, status = 'ready'
+            WHERE course_id = %s
+            """,
+            (payload, course_id),
         )
 
 

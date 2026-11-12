@@ -57,3 +57,5 @@ baseline/full observations and independent human review as described in
 [EVALUATION.md](EVALUATION.md).
 
 On Windows the owned-process adapter also closes its own virtual-environment redirector descendants, so the restarted API can rebind its port. This requires the pinned Windows psutil dependency. A local network permission is needed even for Python asyncio socketpair initialization in this sandbox. A health/restart smoke without SQL is separate from saved-draft/database recovery.
+
+For real storage checks without a chat-model key, run `python tools/sql_storage_smoke.py --run` and `python tools/storage_http_smoke.py --run` from the repository root. These retain dedicated development fixtures and report no formal model-quality result. See [actual service verification](SERVICES-2026-11-12.zh-CN.md).
