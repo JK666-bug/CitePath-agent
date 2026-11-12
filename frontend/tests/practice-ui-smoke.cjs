@@ -41,7 +41,8 @@ async function run() {
     const body = req.postData() ? JSON.parse(req.postData()) : null
     calls.push({ method: req.method(), path, body })
     let result
-    if (path.endsWith('/exams/5/drafts')) {
+    if (path.endsWith('/documents/inventory')) result = require('./mock-inventory.cjs').inventoryOf([source])
+    else if (path.endsWith('/exams/5/drafts')) {
       examDraftPending = true
       markDraftStarted()
       await draftReleased

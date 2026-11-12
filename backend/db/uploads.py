@@ -1,8 +1,10 @@
 import pymysql
+import hashlib
+import re
 from contextlib import contextmanager
 
 from db.connection import connect
-from db.document_files import save_original_pdf
+from db.document_files import original_pdf_path, save_original_pdf
 
 
 _numbers_ready = False
@@ -72,6 +74,15 @@ def ensure_document_numbers() -> None:
             )
             if int(cursor.fetchone()["n"]) == 0:
                 cursor.execute("ALTER TABLE documents ADD COLUMN ingest_error TEXT NULL")
+            for column, definition in (("is_active", "TINYINT(1) NOT NULL DEFAULT 1"), ("removed_at", "DATETIME NULL")):
+                cursor.execute(
+                    "SELECT COUNT(*) AS n FROM information_schema.COLUMNS "
+                    "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'documents' AND COLUMN_NAME = %s",
+                    (column,),
+                )
+                if int(cursor.fetchone()["n"]) == 0:
+                    cursor.execute(f"ALTER TABLE documents ADD COLUMN {column} {definition}")
+            cursor.execute("ALTER TABLE documents MODIFY position INT NULL")
         connection.commit()
     except Exception:
         connection.rollback()
@@ -91,6 +102,8 @@ def existing_upload(course_id: int, content_hash: str, pdf_data: bytes | None = 
     row = _hash_row(course_id, content_hash)
     if row is None:
         return None
+    if not row.get("is_active", True):
+        return _restore_upload(course_id, row, pdf_data)
     _store_original_pdf(int(row["id"]), pdf_data)
     usable = int(row["usable_page_count"] or 0)
     ready = False
@@ -260,6 +273,10 @@ def require_ingested_documents(documents: list[dict]) -> None:
     """Reject incomplete/legacy broken indexes before any question generation."""
     for document in documents:
         label = f"Document {document['id']} ({document['filename']})"
+        if "is_active" in document and document["is_active"] is None:
+            raise ValueError(f"Source document {document['id']} is no longer available. Its historical identity cannot be replaced by a different upload.")
+        if not document.get("is_active", True):
+            raise ValueError(f"{label} was removed from this course. Restore it before generating new questions.")
         if document.get("ingest_status") != "complete":
             reason = document.get("ingest_error") or "Lecture ingestion is still pending."
             raise ValueError(f"{label} is not ready. {reason}")
@@ -277,13 +294,13 @@ def _hash_row(course_id: int, content_hash: str) -> dict | None:
         with connection.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT d.id, d.filename, d.ingest_status, d.ingest_error,
+                SELECT d.id, d.filename, d.ingest_status, d.ingest_error, d.is_active, d.content_hash,
                        COUNT(p.id) AS page_count,
                        SUM(CASE WHEN p.usable = 1 THEN 1 ELSE 0 END) AS usable_page_count
                 FROM documents d
                 LEFT JOIN pages p ON p.document_id = d.id
                 WHERE d.course_id = %s AND d.content_hash = %s
-                GROUP BY d.id, d.filename, d.ingest_status, d.ingest_error
+                GROUP BY d.id, d.filename, d.ingest_status, d.ingest_error, d.is_active, d.content_hash
                 """,
                 (course_id, content_hash),
             )
@@ -321,3 +338,74 @@ def _payload(row: dict, segments: int, duplicate: bool) -> dict:
         "ingest_error": None,
         "duplicate": duplicate,
     }
+
+
+def restore_document(user_id: int, course_id: int, document_id: int) -> dict:
+    """Restore only an owned retained identity; never match an old reference by name."""
+    ensure_document_numbers()
+    connection = connect()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT d.content_hash FROM documents d JOIN courses c ON c.id = d.course_id "
+                "WHERE d.id = %s AND d.course_id = %s AND c.user_id = %s",
+                (document_id, course_id, user_id),
+            )
+            document = cursor.fetchone()
+            if document is None:
+                raise LookupError("Material not found")
+    finally:
+        connection.close()
+    row = _hash_row(course_id, document["content_hash"])
+    if row is None or int(row["id"]) != document_id:
+        raise LookupError("Material not found")
+    return _restore_upload(course_id, row)
+
+
+def _restore_upload(course_id: int, row: dict, pdf_data: bytes | None = None) -> dict:
+    document_id = int(row["id"])
+    with document_ingestion_lock(document_id):
+        # A remove/restore may have finished while waiting for the document lock.
+        row = _hash_row(course_id, row.get("content_hash"))
+        if row is None or int(row["id"]) != document_id:
+            raise LookupError("Material not found")
+        expected_hash = str(row.get("content_hash") or "")
+        if not re.fullmatch(r"[0-9a-f]{64}", expected_hash):
+            raise ValueError("This legacy document has no verifiable original hash. Its historical references cannot be reassigned to another upload.")
+        path = original_pdf_path(document_id)
+        data = pdf_data if pdf_data is not None else (path.read_bytes() if path is not None else None)
+        if data is None:
+            raise ValueError("Original PDF unavailable. Upload the exact same PDF to restore this document.")
+        if hashlib.sha256(data).hexdigest() != expected_hash:
+            raise ValueError("The PDF does not match this document's original hash. Upload the exact original PDF; historical IDs cannot be reassigned.")
+        if pdf_data is not None:
+            _store_original_pdf(document_id, pdf_data)
+        was_removed = not row.get("is_active", True)
+        pages = _load_pages(document_id)
+        # Stay inactive while pending/failed, including when partial vectors already exist.
+        count = _index_document(document_id, pages)
+        _activate_document(course_id, document_id)
+        return {**_payload(row, count, True), "restored": was_removed}
+
+
+def _activate_document(course_id: int, document_id: int) -> None:
+    connection = connect()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id FROM courses WHERE id = %s FOR UPDATE", (course_id,))
+            if cursor.fetchone() is None:
+                raise LookupError("Course not found")
+            cursor.execute("SELECT is_active FROM documents WHERE id = %s AND course_id = %s FOR UPDATE", (document_id, course_id))
+            row = cursor.fetchone()
+            if row is None:
+                raise LookupError("Material not found")
+            if not row["is_active"]:
+                cursor.execute("SELECT COALESCE(MAX(position), 0) + 1 AS n FROM documents WHERE course_id = %s AND is_active = 1", (course_id,))
+                position = int(cursor.fetchone()["n"])
+                cursor.execute("UPDATE documents SET is_active = 1, removed_at = NULL, position = %s WHERE id = %s AND course_id = %s", (position, document_id, course_id))
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()

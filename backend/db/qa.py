@@ -18,7 +18,7 @@ def load_page_bodies(pairs: list[tuple[int, int]]) -> dict[tuple[int, int], dict
                 SELECT p.document_id, p.page_number, p.body, d.filename
                 FROM pages p
                 JOIN documents d ON d.id = p.document_id
-                WHERE p.usable = 1 AND ({clauses})
+                WHERE d.is_active = 1 AND p.usable = 1 AND ({clauses})
                 """,
                 params,
             )
@@ -118,7 +118,7 @@ def recent_turns(user_id: int, course_id: int, limit: int = 10) -> list[dict]:
         with connection.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT question, answer
+                SELECT question, answer, cited_pages
                 FROM qa_records
                 WHERE course_id = %s AND user_id = %s
                 ORDER BY id DESC
@@ -127,10 +127,31 @@ def recent_turns(user_id: int, course_id: int, limit: int = 10) -> list[dict]:
                 (course_id, user_id, limit),
             )
             rows = list(cursor.fetchall())
+            cursor.execute("SELECT id FROM documents WHERE course_id = %s AND is_active = 1", (course_id,))
+            active = {int(row["id"]) for row in cursor.fetchall()}
     finally:
         connection.close()
     rows.reverse()
-    return [{"question": row["question"], "answer": row["answer"]} for row in rows]
+    memory = []
+    for row in rows:
+        references = row.get("cited_pages")
+        if isinstance(references, (bytes, bytearray)):
+            references = references.decode("utf-8", errors="replace")
+        if isinstance(references, str):
+            try:
+                references = json.loads(references)
+            except ValueError:
+                continue
+        references = references or []
+        if not isinstance(references, list):
+            continue
+        try:
+            available = all(isinstance(source, dict) and int(source["document_id"]) in active for source in references)
+        except (KeyError, ValueError, TypeError):
+            available = False
+        if available:
+            memory.append({"question": row["question"], "answer": row["answer"]})
+    return memory
 
 
 def list_records(user_id: int, course_id: int) -> list[dict]:
@@ -179,7 +200,7 @@ def list_records(user_id: int, course_id: int) -> list[dict]:
                 continue
             document = documents.get(int(item.get("document_id") or 0))
             if document is None:
-                continue
+                document = {"id": int(item.get("document_id") or 0), "position": None, "filename": "Unavailable original document"}
             cited.append(
                 {
                     "document_id": int(document["id"]),

@@ -15,6 +15,15 @@ export type Material = {
   usable_page_count: number
 }
 
+export type MaterialInventory = Omit<Material, 'position'> & {
+  position: number | null
+  active: boolean
+  removed_at: string
+  sha256: string | null
+  original_pdf_available: boolean
+  page_numbers: number[]
+}
+
 export type CourseDetail = {
   id: number
   name: string
@@ -25,7 +34,7 @@ export type CourseDetail = {
 
 export type Source = {
   document_id: number
-  position?: number
+  position?: number | null
   filename: string
   page_number: number
 }

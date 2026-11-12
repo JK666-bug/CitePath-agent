@@ -64,9 +64,22 @@ TCP listeners respond and `/api/health` responds. It invokes no model. A listene
 does not prove authentication or persistence. `blocked` lists missing prerequisites
 and keeps `formal_evaluation_run: false`.
 
+To exercise the actual local PDF/embedding/reranker models without SQL or a chat
+API key, use `python -m evaluation local-model-smoke --output logs/local-models.json --run`.
+It may download public weights. On Windows use a short writable cache path as
+documented in `.env.example`. It checks development page accounting and one local
+ranking example; it does not certify semantic fidelity, Milvus or citation quality.
+
 The bounded live runner, its retained test data, safe process ownership and exit
 codes are documented in [LIVE-INTEGRATION.md](LIVE-INTEGRATION.md). It uses only
 development Lectures 2/3 and is not the 120-run final comparison collector.
+
+The separate paired collector and QA collector are now implemented. See
+[FORMAL-COLLECTION.md](FORMAL-COLLECTION.md) for empty runtime-binding preparation,
+real runtime attestation, first-round replay, owned-process restart, controlled
+timeout probes and merging grading/QA/workflow outputs from one original snapshot.
+The workflow adapter exercises production backend controller/SQL functions; it
+does not replace full HTTP/browser acceptance via the development integration run.
 
 For live integration, create a dedicated test account/course, upload development
 lectures, and verify ingestion, generation, first-round success/failure, targeted
@@ -102,6 +115,13 @@ protocol step. The old `evaluation_assets/final` preparation snapshot is retaine
 for provenance; later code/provider changes require a new named cohort. The updated
 preparation batch is `evaluation_assets/cohorts/upstream-20261112`; its labels,
 predictions, workflow observations and chapter mapping remain unfilled.
+
+The later `execution-20261112` preparation cohort uses the frozen
+`actual_grade_v1` workflow policy, with required branches and authored/reference
+response strategies. Original injected-count examples are retained separately as
+synthetic controller regression cases. Final execution additionally requires two
+human protocol reviewers and frozen fixture-map/response-policy hashes; those
+fields deliberately remain blank in the preparation delivery.
 
 ## Dataset schema
 

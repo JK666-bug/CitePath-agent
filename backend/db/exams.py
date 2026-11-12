@@ -142,9 +142,9 @@ def load_chapter(user_id: int, course_id: int, chapter_id: int, require_ready: b
                 raise LookupError("Chapter not found")
             cursor.execute(
                 """
-                SELECT DISTINCT d.id, d.filename, d.ingest_status, d.ingest_error
+                SELECT DISTINCT p.document_id AS id, d.filename, d.ingest_status, d.ingest_error, d.is_active
                 FROM plan_chapter_pages p
-                JOIN documents d ON d.id = p.document_id AND d.course_id = %s
+                LEFT JOIN documents d ON d.id = p.document_id AND d.course_id = %s
                 WHERE p.chapter_id = %s
                 """,
                 (course_id, chapter_id),

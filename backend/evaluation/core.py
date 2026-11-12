@@ -101,6 +101,8 @@ def validate_dataset(data):
             if prediction is None:
                 continue
             require(isinstance(prediction, dict), "A prediction must be an object or null")
+            require(prediction.get("synthetic") is not True or data["synthetic"],
+                    "Synthetic observations cannot be imported into a real evaluation cohort")
             if item["kind"] in ("mcq", "short"):
                 require(type(prediction.get("correct")) is bool, "A recorded grade must be a boolean")
             elif item["kind"] == "evidence":
@@ -118,6 +120,8 @@ def validate_dataset(data):
             else:
                 require(isinstance(prediction.get("runs"), list), "Workflow predictions need their actual runs")
                 require(all(isinstance(run, dict) for run in prediction["runs"]), "Every workflow run must be an object")
+                require(all(run.get("synthetic") is not True or data["synthetic"] for run in prediction["runs"]),
+                        "Synthetic workflow runs cannot be formal observations")
                 repeats = [run.get("repeat") for run in prediction["runs"]]
                 require(all(type(r) is int and r in (1, 2, 3) for r in repeats) and len(repeats) == len(set(repeats)), "Workflow repeats must be unique 1, 2 or 3")
     return documents
@@ -278,6 +282,22 @@ def _freeze_problems(data):
     require(isinstance(freeze["git_commit"], str) and len(freeze["git_commit"]) == 40
             and all(c in "0123456789abcdef" for c in freeze["git_commit"]), "Invalid frozen Git commit")
     frozen_at = timestamp(freeze["created_at"])
+    actual_policy = any(any(expected.get("policy") == "actual_grade_v1" for expected in (item.get("expected") or {}).values())
+                        for item in data["items"] if item["kind"] == "workflow")
+    protocol = data.get("evaluation_protocol") or {}
+    if actual_policy and data["split"] == "final" and not data["synthetic"]:
+        reviewers = protocol.get("reviewed_by")
+        mapping = protocol.get("chapter_mapping_sha256")
+        response_policy = protocol.get("response_policy_sha256")
+        reviewed = (protocol.get("reviewed") is True and protocol.get("review_origin") == "human"
+                    and isinstance(reviewers, list) and len(reviewers) == 2
+                    and all(isinstance(value, str) and value.strip() for value in reviewers)
+                    and len({value.strip().casefold() for value in reviewers}) == 2 and isinstance(mapping, str) and len(mapping) == 64
+                    and all(character in "0123456789abcdef" for character in mapping))
+        reviewed = (reviewed and isinstance(response_policy, str) and len(response_policy) == 64
+                    and all(character in "0123456789abcdef" for character in response_policy))
+        if not reviewed:
+            problems.append("Two human reviewers must review the actual-grade protocol and freeze the chapter/fixture mapping")
     for item in data["items"]:
         for variant, prediction in (item.get("predictions") or {}).items():
             if prediction is None:
@@ -288,6 +308,12 @@ def _freeze_problems(data):
             require(timestamp(prediction["collected_at"]) >= frozen_at, "A prediction was collected before configuration freezing")
             require(prediction["configuration_sha256"] == freeze["manifest_sha256"], "A prediction uses a different frozen configuration")
             require(prediction.get("model") == freeze["model"], "Baseline and full predictions must use the frozen model")
+            if freeze.get("provider"):
+                require(prediction.get("provider") == freeze["provider"]
+                        and prediction.get("base_url_sha256") == freeze.get("base_url_sha256"), "Collected provider or endpoint differs from freeze")
+            if actual_policy and item["kind"] == "workflow" and data["split"] == "final" and not data["synthetic"]:
+                require(prediction.get("chapter_mapping_sha256") == protocol.get("chapter_mapping_sha256"), "Workflow mapping differs from reviewed protocol")
+                require(prediction.get("response_policy_sha256") == protocol.get("response_policy_sha256"), "Workflow responses differ from reviewed protocol")
     return problems
 
 
@@ -468,7 +494,18 @@ def _workflow_runs(item, variant, prediction):
     result = []
     for repeat in (1, 2, 3):
         run = observed.get(repeat)
-        complete = bool(run and expected.get("transitions") and expected.get("final_state")
+        rule = expected
+        if expected.get("policy") is not None:
+            from evaluation.protocol import POLICY, actual_grade_expectation
+            require(expected["policy"] == POLICY, "Unknown frozen workflow policy")
+            rule = actual_grade_expectation(item, variant, (run or {}).get("observed_rounds")) or {}
+        expected_actions = rule.get("actions") or []
+        if run and "scenario_match" in run:
+            require(run["scenario_match"] is None or type(run["scenario_match"]) is bool,
+                    "Scenario-match evidence must be a boolean or unknown")
+        complete = bool(run and rule.get("transitions") and rule.get("final_state")
+                        and (not expected.get("policy") or type(run.get("passing_threshold")) in (int, float))
+                        and run.get("observation_status") not in {"not_run", "failed", "uncertain"}
                         and isinstance(run.get("transitions"), list) and run.get("final_state")
                         and (not expected_actions or isinstance(run.get("actions"), list))
                         and all(type(run.get(name)) is bool for name in PROHIBITED))
@@ -478,8 +515,11 @@ def _workflow_runs(item, variant, prediction):
                 prohibited.append("third_round" if run["round_count"] > 2 else "baseline_generated_followup")
         passed = None
         if complete:
-            passed = (run["transitions"] == expected["transitions"] and run["final_state"] == expected["final_state"]
-                      and (not expected_actions or run["actions"] == expected_actions) and not prohibited)
+            passed = (run["transitions"] == rule["transitions"] and run["final_state"] == rule["final_state"]
+                      and (not expected_actions or run["actions"] == expected_actions) and not prohibited
+                      and run.get("scenario_match") is not False and rule.get("grade_consistent") is not False)
+            if expected.get("policy"):
+                passed = passed and run["passing_threshold"] == item["scenario"]["passing_threshold"]
             if "passed" in run:
                 require(type(run["passed"]) is bool and run["passed"] == passed, "Self-reported workflow success contradicts its trace")
         result.append({"item_id": item["id"], "repeat": repeat, "passed": passed,

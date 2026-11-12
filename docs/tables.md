@@ -1,6 +1,8 @@
 # 数据
 
-MySQL 保存讲义页、学习计划、题目、作答、分数和出处页。Milvus 保存带页码的讲义片段，只用于检索。两者由 Docker Compose 在本机启动。表结构以本文为准。
+MySQL 保存讲义页、学习计划、题目、作答、分数和出处页。Milvus 保存带页码的讲义片段，只用于检索。两者由 Docker Compose 在本机启动。
+
+本文保留原始表设计草案。当前建表定义以 `backend/db/schema.sql` 为准，兼容旧数据的新增字段由各 `db/*.py` 存储初始化函数迁移；接口与状态以 `frontend/BACKEND_INTEGRATION.zh-CN.md` 为准。当前实现包含计划 JSON/只读版本、两轮练习、解释恢复以及资料 `is_active/removed_at` 归档字段，不能按本草案覆盖已有数据库。
 
 时间使用 MySQL `DATETIME`。比例使用 `DECIMAL(5,4)`，例如 `0.8000` 表示 80%。
 

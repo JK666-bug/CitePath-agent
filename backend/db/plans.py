@@ -142,7 +142,7 @@ def load_usable_pages(course_id: int) -> list[dict]:
     try:
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT id, filename, ingest_status, ingest_error FROM documents WHERE course_id = %s",
+                "SELECT id, filename, ingest_status, ingest_error FROM documents WHERE course_id = %s AND is_active = 1",
                 (course_id,),
             )
             require_ingested_documents(list(cursor.fetchall()))
@@ -152,7 +152,7 @@ def load_usable_pages(course_id: int) -> list[dict]:
                        p.page_number, p.body
                 FROM documents d
                 JOIN pages p ON p.document_id = d.id
-                WHERE d.course_id = %s
+                WHERE d.course_id = %s AND d.is_active = 1
                   AND d.ingest_status = 'complete'
                   AND p.usable = 1
                   AND p.body IS NOT NULL
@@ -181,13 +181,13 @@ def _planning_materials(cursor, course_id: int, locked: bool = False) -> dict:
     suffix = " FOR UPDATE" if locked else ""
     cursor.execute(
         "SELECT id, filename, position, content_hash, ingest_status FROM documents "
-        "WHERE course_id = %s ORDER BY id" + suffix, (course_id,),
+        "WHERE course_id = %s AND is_active = 1 ORDER BY id" + suffix, (course_id,),
     )
     documents = list(cursor.fetchall())
     cursor.execute(
         """SELECT d.id AS document_id, d.filename, d.position, p.page_number, p.body
            FROM documents d JOIN pages p ON p.document_id = d.id
-           WHERE d.course_id = %s AND d.ingest_status = 'complete'
+           WHERE d.course_id = %s AND d.is_active = 1 AND d.ingest_status = 'complete'
              AND p.usable = 1 AND p.body IS NOT NULL AND TRIM(p.body) <> ''
            ORDER BY d.id, p.page_number""" + suffix, (course_id,),
     )
@@ -623,7 +623,7 @@ def _load_chapters(cursor, course_id: int) -> list[dict]:
         sources.setdefault(int(row["chapter_id"]), []).append(
             {
                 "document_id": int(row["document_id"]),
-                "position": int(row["position"]),
+                "position": int(row["position"]) if row["position"] is not None else None,
                 "filename": row["filename"],
                 "page_number": int(row["page_number"]),
             }
@@ -648,7 +648,7 @@ def _stamp_document_numbers(plan: dict, course_id: int) -> None:
                 "SELECT id, position FROM documents WHERE course_id = %s",
                 (course_id,),
             )
-            numbers = {int(row["id"]): int(row["position"]) for row in cursor.fetchall()}
+            numbers = {int(row["id"]): int(row["position"]) for row in cursor.fetchall() if row["position"] is not None}
     finally:
         connection.close()
     for chapter in plan.get("chapters") or []:

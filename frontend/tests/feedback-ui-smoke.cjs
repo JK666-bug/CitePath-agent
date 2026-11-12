@@ -62,7 +62,8 @@ async function run() {
     const body = request.postData() ? JSON.parse(request.postData()) : null
     calls.push({ path, method: request.method(), body })
     let result
-    if (path === '/api/me') result = { id: 1, username: 'Tester' }
+    if (path.endsWith('/documents/inventory')) result = require('./mock-inventory.cjs').inventoryOf([source])
+    else if (path === '/api/me') result = { id: 1, username: 'Tester' }
     else if (path === '/api/courses') result = { courses: [{ id: 1, name: 'Algorithms', student_brief: 'Study hashing', created_at: '2026-11-11', document_count: 1 }] }
     else if (path === '/api/courses/1/plan') result = { status: 'ready', plan: { version: 1, start: '2026-11-11', end: '2026-11-12', chapters: [{ id: '10', title: 'Hashing', concepts: ['Hashing'], sources: [source] }], tasks: [], reason: '' } }
     else if (path.endsWith('/practice/1/draft')) {

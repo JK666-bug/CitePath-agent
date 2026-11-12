@@ -6,6 +6,7 @@ import type {
   PlanningProfile,
   PlanQuestion,
   MaterialUpdate,
+  MaterialInventory,
 } from './types'
 
 export function deleteCourse(id: number) {
@@ -35,6 +36,7 @@ export function uploadMaterial(
     usable_page_count: number
     milvus_segments: number
     duplicate: boolean
+    restored?: boolean
     ingest_status?: string
     ingest_error?: string | null
   }>(
@@ -72,6 +74,16 @@ export function deleteMaterial(
     {
       method: 'DELETE',
     },
+  )
+}
+
+export function getDocumentInventory(courseId: number) {
+  return request<{ documents: MaterialInventory[] }>(`/api/courses/${courseId}/documents/inventory`)
+}
+
+export function restoreMaterial(courseId: number, documentId: number) {
+  return request<{ document_id: number; restored: boolean; ingest_status: string }>(
+    `/api/courses/${courseId}/documents/${documentId}/restore`, { method: 'POST' },
   )
 }
 

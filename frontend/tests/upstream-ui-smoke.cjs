@@ -23,7 +23,8 @@ async function run() {
       const req = route.request(), path = new URL(req.url()).pathname
       let result
       if (req.method() !== 'GET') mutations.push(path)
-      if (path === '/api/me') result = { id: 1, username: 'Reviewer' }
+      if (path.endsWith('/documents/inventory')) result = require('./mock-inventory.cjs').inventoryOf([source])
+      else if (path === '/api/me') result = { id: 1, username: 'Reviewer' }
       else if (path === '/api/courses') result = { courses: [{ ...course, document_count: 2 }] }
       else if (path === '/api/courses/1') result = course
       else if (path === '/api/courses/1/plan') result = { status: 'draft', plan: null }

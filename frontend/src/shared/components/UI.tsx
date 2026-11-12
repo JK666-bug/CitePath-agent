@@ -13,7 +13,9 @@ import {
   X,
 } from 'lucide-react'
 
-import type { Source } from '../../pages/course/types'
+import type { MaterialInventory, Source } from '../../pages/course/types'
+import { getDocumentInventory } from '../../pages/course/api'
+import { messageOf } from '../request'
 import { Link } from '../router'
 
 export function PageHeader({
@@ -204,6 +206,27 @@ export function Sources({
 }) {
   const [selected, setSelected] =
     useState<Source | null>(null)
+  const [document, setDocument] = useState<MaterialInventory | null>(null)
+  const [checking, setChecking] = useState(false)
+  const [error, setError] = useState('')
+  const lookup = useRef(0)
+
+  async function inspect(source: Source) {
+    const requestId = ++lookup.current
+    setSelected(source)
+    setDocument(null)
+    setError('')
+    if (!courseId || courseId === 'demo') return
+    setChecking(true)
+    try {
+      const inventory = await getDocumentInventory(Number(courseId))
+      if (lookup.current === requestId) setDocument(inventory.documents.find((item) => item.id === source.document_id) ?? null)
+    } catch (reason) {
+      if (lookup.current === requestId) setError(messageOf(reason))
+    } finally {
+      if (lookup.current === requestId) setChecking(false)
+    }
+  }
 
   return (
     <>
@@ -217,7 +240,7 @@ export function Sources({
               source.page_number
             }
             onClick={() =>
-              setSelected(source)
+              void inspect(source)
             }
           >
             <FileText size={12} />
@@ -231,7 +254,7 @@ export function Sources({
       <Modal
         open={Boolean(selected)}
         title="Source reference"
-        onClose={() => setSelected(null)}
+        onClose={() => { lookup.current += 1; setSelected(null); setChecking(false) }}
       >
         {selected && (
           <div className="stack">
@@ -245,7 +268,16 @@ export function Sources({
               Original PDF page {selected.page_number}
             </p>
 
-            {courseId && courseId !== 'demo' ? (
+            {courseId && courseId !== 'demo' ? checking ? (
+              <p role="status">Checking source availability…</p>
+            ) : error ? (
+              <Notice tone="error">{error} <button className="text-button" onClick={() => void inspect(selected)}>Retry source lookup</button></Notice>
+            ) : !document ? (
+              <Notice>Original source unavailable. No retained material matches this saved document ID. Another upload cannot replace this historical reference.</Notice>
+            ) : (
+              <>
+              {!document.active && <Notice>Archived material. It is excluded from new plans and questions. This saved reference keeps its original document ID.</Notice>}
+              {document.original_pdf_available && document.page_numbers.includes(selected.page_number) ? (
               <a
                 className="button secondary"
                 href={`/api/courses/${courseId}/documents/${selected.document_id}/file#page=${selected.page_number}`}
@@ -254,6 +286,9 @@ export function Sources({
               >
                 Open original PDF at this page
               </a>
+              ) : <Notice>Original PDF or page unavailable. Upload the exact same PDF in Course information to recover this document where its original hash is retained.</Notice>}
+              {(!document.active || !document.original_pdf_available) && <Link className="button secondary" href={`/courses/${courseId}/info`}>Manage and restore course materials</Link>}
+              </>
             ) : (
               <p className="muted">This reference identifies the original document and PDF page.</p>
             )}

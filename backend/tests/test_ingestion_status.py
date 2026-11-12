@@ -107,7 +107,7 @@ class IngestionStorageTest(unittest.TestCase):
 
     def test_error_column_migration_keeps_existing_position_constraint(self):
         connection, cursor = connection_with_cursor()
-        cursor.fetchone.side_effect = [{"acquired": 1}, {"n": 1}, {"n": 0}]
+        cursor.fetchone.side_effect = [{"acquired": 1}, {"n": 1}, {"n": 0}, {"n": 0}, {"n": 0}]
         with patch.object(uploads, "_numbers_ready", False), patch.object(
             uploads, "connect", return_value=connection
         ):

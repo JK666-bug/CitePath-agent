@@ -4,3 +4,4 @@
 -r requirements.txt
 ujson==5.11.0; sys_platform == "win32"
 grpcio==1.74.0; sys_platform == "win32"
+xxhash==3.5.0; sys_platform == "win32"

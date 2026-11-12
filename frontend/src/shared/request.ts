@@ -146,6 +146,10 @@ function errorMessage(
     return messages[detail]
   }
 
+  if (status === 400 && typeof detail === 'string' && detail.includes('was removed from this course. Restore it')) {
+    return 'A source material is archived. Restore it in Course information before generating more questions; your saved work is retained.'
+  }
+
   if (status === 401) {
     return 'Please sign in to continue.'
   }

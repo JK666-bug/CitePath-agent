@@ -39,6 +39,7 @@ def manifest():
     settings = {**dotenv_values(ROOT / ".env"), **os.environ}
     from agent.llm import model_configuration
     model = model_configuration(settings)
+    from agent.telemetry import _rate
     constants = {}
     hashes = {}
     for name in FILES:
@@ -71,6 +72,9 @@ def manifest():
         "base_url_sha256": model["base_url_sha256"],
         "model_key_name": model["key_name"], "model_key_configured": model["key_configured"],
         "model_temperature": 0, "model_timeout_seconds": model["timeout"], "model_max_retries": 1,
+        "model_cost_configuration": {"input_per_million": _rate("MODEL_INPUT_COST_PER_MILLION"),
+                                     "output_per_million": _rate("MODEL_OUTPUT_COST_PER_MILLION"),
+                                     "currency": settings.get("MODEL_COST_CURRENCY") or None},
         "source_sha256": hashes, "source_hash_encoding": "UTF-8 source bytes with CRLF normalized to LF",
         "constants": constants, "installed_packages": packages,
         "development_lectures": [2, 3], "held_out_lectures": [4, 6, 8],
@@ -83,5 +87,5 @@ if __name__ == "__main__":
     parser.add_argument("--output", type=Path, required=True)
     arguments = parser.parse_args()
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
-    arguments.output.write_text(json.dumps(manifest(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    arguments.output.write_text(json.dumps(manifest(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
     print(f"Saved evaluation configuration: {arguments.output}")

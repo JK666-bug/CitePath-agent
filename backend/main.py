@@ -1,11 +1,13 @@
 import hashlib
 import os
 from pathlib import Path
+from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, File, HTTPException, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+from typing import Literal
 
 from agent.exam import open_exam, save_exam_drafts, start_exam, submit_exam, retry_exam_explanation
 from agent.practice import answer_practice, open_practice, save_practice_draft, start_practice, retry_practice_explanation
@@ -21,15 +23,23 @@ from db.courses import (
     get_course,
     list_courses,
     owns_document,
+    document_inventory,
 )
 from db.plans import complete_task, ensure_plan_storage, get_plan, get_plan_versions, get_plan_version, PlanConflict
 from db.document_files import original_pdf_path, delete_original_pdf
 from db.practice import list_chapter_reports
-from db.uploads import existing_upload, save_document
+from db.uploads import existing_upload, save_document, restore_document
 from ingest.pdf_reader import read_pdf
 from vector.segments import delete_segments
 
-app = FastAPI(title="CitePath")
+@asynccontextmanager
+async def lifespan(application):
+    from evaluation.runtime import runtime_summary
+    application.state.runtime_identity = runtime_summary()
+    yield
+
+
+app = FastAPI(title="CitePath", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
@@ -52,8 +62,16 @@ class CourseBody(BaseModel):
     student_brief: str = Field(max_length=MAX_BRIEF_LENGTH)
 
 
+class EvaluationContext(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    evaluation_id: str = Field(min_length=1, max_length=100, pattern=r"^[A-Za-z0-9_.:\-]+$")
+    system: Literal["baseline", "full"]
+    item_id: str = Field(min_length=1, max_length=100, pattern=r"^[A-Za-z0-9_.:\-]+$")
+
+
 class QuestionBody(BaseModel):
     question: str = Field(max_length=2000)
+    evaluation_context: EvaluationContext | None = None
 
 
 class PlanWindow(BaseModel):
@@ -228,6 +246,48 @@ def source_document(course_id: int, document_id: int, user: dict = Depends(curre
     )
 
 
+@app.get("/api/courses/{course_id}/documents/inventory")
+def course_document_inventory(course_id: int, user: dict = Depends(current_user)):
+    try:
+        return document_inventory(user["id"], course_id)
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail="Course not found") from error
+
+
+@app.post("/api/courses/{course_id}/documents/{document_id}/restore")
+def restore_course_document(course_id: int, document_id: int, user: dict = Depends(current_user)):
+    try:
+        return restore_document(user["id"], course_id, document_id)
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail="Material not found") from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
+
+
+@app.get("/api/courses/{course_id}/evaluation/runtime")
+def evaluation_runtime(course_id: int, user: dict = Depends(current_user)):
+    try:
+        inventory = document_inventory(user["id"], course_id)
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail="Course not found") from error
+    try:
+        from evaluation.runtime import runtime_summary
+        summary = runtime_summary()
+        loaded = getattr(app.state, "runtime_identity", summary)
+        if any(loaded.get(field) != summary.get(field) for field in ("source_sha256", "provider", "model", "api_version", "base_url_sha256", "runtime_packages_sha256", "model_cost_configuration")):
+            raise RuntimeError("Restart the API after configuration or source changes")
+        summary = loaded
+    except Exception as error:
+        raise HTTPException(status_code=503, detail="Runtime configuration is unavailable") from error
+    return {**summary, "course_id": course_id, "documents": [
+        {"id": document["id"], "sha256": document["sha256"], "page_count": document["page_count"],
+         "ingest_status": document["ingest_status"], "is_active": document["active"]}
+        for document in inventory["documents"] if document["active"]
+    ]}
+
+
 @app.delete("/api/courses/{course_id}/documents/{document_id}")
 def remove_document(
     course_id: int,
@@ -236,13 +296,7 @@ def remove_document(
 ):
     if not owns_document(user["id"], course_id, document_id):
         raise HTTPException(status_code=404, detail="Material not found")
-    delete_document_rows(document_id)
-    delete_original_pdf(document_id)
-    try:
-        delete_segments(document_id)
-    except Exception:
-        pass
-    return {"ok": True}
+    return delete_document_rows(document_id)
 
 
 @app.get("/api/courses/{course_id}/plan")
@@ -515,8 +569,13 @@ def create_question(
     body: QuestionBody,
     user: dict = Depends(current_user),
 ):
+    context = {}
+    if body.evaluation_context is not None:
+        if not str(user.get("username") or "").startswith(("citepath_eval_", "citepath_it_")):
+            raise HTTPException(status_code=403, detail="Evaluation context requires a dedicated test account")
+        context = body.evaluation_context.model_dump()
     try:
-        with usage_context(operation="qa.answer", user_id=user["id"], course_id=course_id):
+        with usage_context(operation="qa.answer", user_id=user["id"], course_id=course_id, **context):
             return answer_question(user["id"], course_id, body.question)
     except LookupError as error:
         raise HTTPException(status_code=404, detail="Course not found") from error

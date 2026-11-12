@@ -15,7 +15,7 @@ from langchain_core.callbacks import BaseCallbackHandler
 _write_lock = threading.Lock()
 _logger = logging.getLogger(__name__)
 _usage_context = ContextVar("citepath_usage_context", default={})
-_context_keys = {"operation", "operation_id", "user_id", "course_id", "chapter_id", "session_id", "exam_id", "question_id", "evaluation_id", "system", "repeat"}
+_context_keys = {"operation", "operation_id", "user_id", "course_id", "chapter_id", "session_id", "exam_id", "question_id", "evaluation_id", "system", "repeat", "item_id"}
 
 
 def _append(path, record):

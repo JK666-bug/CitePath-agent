@@ -60,5 +60,9 @@ renumbering, saved answers after refresh, and Q&A isolation from practice mutati
 The planning smoke verifies incomplete-profile questions, estimates and daily
 budgets, explicit incremental material updates, preserved completed tasks/reports,
 read-only version viewing, failure retry, version conflict recovery, plain-text
-legacy preferences and mobile layout. The four scripts currently cover 36 mocked
+legacy preferences and mobile layout. The original four scripts cover 36 mocked
 browser checks; they do not establish actual API or model performance.
+
+`node tests/restoration-ui-smoke.cjs` adds eight checks for archived/missing original
+sources, failed restore/retry, stable IDs, explicit archive wording and unchanged
+practice state. All five scripts use mocked APIs; the total is 44 browser checks.

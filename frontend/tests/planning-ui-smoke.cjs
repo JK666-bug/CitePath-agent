@@ -44,7 +44,8 @@ async function run() {
     const body = request.postData() ? JSON.parse(request.postData()) : null
     calls.push({ method: request.method(), path, body })
     let result
-    if (path === '/api/me') result = { id: 1, username: 'Tester' }
+    if (path.endsWith('/documents/inventory')) result = require('./mock-inventory.cjs').inventoryOf([source, addedSource])
+    else if (path === '/api/me') result = { id: 1, username: 'Tester' }
     else if (path === '/api/courses') result = { courses: [1, 2].map((id) => ({ id, name: id === 1 ? 'Algorithms' : 'New course', student_brief: 'Keep my study preferences', created_at: '2026-11-12', document_count: 2 })) }
     else if (/^\/api\/courses\/[12]$/.test(path)) result = { id: Number(path.split('/').at(-1)), name: path.endsWith('/1') ? 'Algorithms' : 'New course', student_brief: 'Keep my study preferences', created_at: '2026-11-12', documents: [{ id: 42, position: 1, filename: 'hashing.pdf', ingest_status: 'complete', usable_page_count: 10, page_count: 10 }, { id: 67, position: 2, filename: 'trees.pdf', ingest_status: 'complete', usable_page_count: 2, page_count: 2 }] }
     else if (path === '/api/courses/1/plan/versions') {

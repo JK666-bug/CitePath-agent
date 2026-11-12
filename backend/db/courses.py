@@ -1,10 +1,12 @@
 import json
 
 from db.connection import connect
-from db.uploads import ensure_document_numbers
+from db.uploads import document_ingestion_lock, ensure_document_numbers
+from db.document_files import original_pdf_path
 
 
 def list_courses(user_id: int) -> list[dict]:
+    ensure_document_numbers()
     connection = connect()
     try:
         with connection.cursor() as cursor:
@@ -14,7 +16,7 @@ def list_courses(user_id: int) -> list[dict]:
                        COUNT(d.id) AS document_count
                 FROM courses c
                 LEFT JOIN documents d
-                  ON d.course_id = c.id AND d.ingest_status = 'complete'
+                  ON d.course_id = c.id AND d.ingest_status = 'complete' AND d.is_active = 1
                 WHERE c.user_id = %s
                 GROUP BY c.id, c.name, c.student_brief, c.created_at
                 ORDER BY c.id DESC
@@ -137,7 +139,7 @@ def get_course(user_id: int, course_id: int) -> dict | None:
                        SUM(CASE WHEN p.usable = 1 THEN 1 ELSE 0 END) AS usable_page_count
                 FROM documents d
                 LEFT JOIN pages p ON p.document_id = d.id
-                WHERE d.course_id = %s
+                WHERE d.course_id = %s AND d.is_active = 1
                 GROUP BY d.id, d.position, d.filename, d.ingest_status, d.ingest_error
                 ORDER BY d.position, d.id
                 """,
@@ -167,6 +169,7 @@ def get_course(user_id: int, course_id: int) -> dict | None:
 
 
 def owns_document(user_id: int, course_id: int, document_id: int) -> bool:
+    ensure_document_numbers()
     connection = connect()
     try:
         with connection.cursor() as cursor:
@@ -264,7 +267,7 @@ def _renumber_documents(cursor, course_id: int) -> None:
         """
         SELECT id, position
         FROM documents
-        WHERE course_id = %s
+        WHERE course_id = %s AND is_active = 1
         ORDER BY position, id
         FOR UPDATE
         """,
@@ -287,8 +290,22 @@ def _renumber_documents(cursor, course_id: int) -> None:
             (new_position, row["id"], course_id),
         )
 
-def delete_document_rows(document_id: int) -> None:
+def delete_document_rows(document_id: int) -> dict:
+    """Archive one material. History, original bytes and identity remain intact."""
     ensure_document_numbers()
+    with document_ingestion_lock(document_id):
+        result = _archive_document(document_id)
+        if result["archived"]:
+            try:
+                from vector.segments import delete_segments
+                delete_segments(document_id)
+            except Exception:
+                # Relational active filters prevent stale vectors being retrieved.
+                pass
+        return result
+
+
+def _archive_document(document_id: int) -> dict:
     connection = connect()
 
     try:
@@ -307,7 +324,7 @@ def delete_document_rows(document_id: int) -> None:
             # 文档已经不存在时，直接结束。
             if document is None:
                 connection.rollback()
-                return
+                return {"ok": False, "document_id": document_id, "archived": False}
 
             course_id = int(document["course_id"])
 
@@ -323,15 +340,11 @@ def delete_document_rows(document_id: int) -> None:
             )
             if cursor.fetchone() is None:
                 connection.rollback()
-                return
+                return {"ok": False, "document_id": document_id, "archived": False}
 
             cursor.execute(
-                "DELETE FROM pages WHERE document_id = %s",
-                (document_id,),
-            )
-            cursor.execute(
                 """
-                DELETE FROM documents
+                UPDATE documents SET is_active = 0, removed_at = COALESCE(removed_at, CURRENT_TIMESTAMP), position = NULL
                 WHERE id = %s AND course_id = %s
                 """,
                 (document_id, course_id),
@@ -348,6 +361,40 @@ def delete_document_rows(document_id: int) -> None:
 
     finally:
         connection.close()
+    return {"ok": True, "document_id": document_id, "archived": True}
+
+
+def document_inventory(user_id: int, course_id: int) -> dict:
+    """Owned active and archived identities; absent old IDs stay unresolved."""
+    ensure_document_numbers()
+    connection = connect()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id FROM courses WHERE id = %s AND user_id = %s", (course_id, user_id))
+            if cursor.fetchone() is None:
+                raise LookupError("Course not found")
+            cursor.execute(
+                "SELECT d.id, d.position, d.filename, d.is_active, d.removed_at, d.content_hash, d.ingest_status, d.ingest_error, "
+                "COUNT(p.id) AS page_count, SUM(CASE WHEN p.usable = 1 THEN 1 ELSE 0 END) AS usable_page_count "
+                "FROM documents d LEFT JOIN pages p ON p.document_id = d.id WHERE d.course_id = %s "
+                "GROUP BY d.id, d.position, d.filename, d.is_active, d.removed_at, d.content_hash, d.ingest_status, d.ingest_error "
+                "ORDER BY d.is_active DESC, d.position, d.id", (course_id,),
+            )
+            documents = list(cursor.fetchall())
+            cursor.execute("SELECT p.document_id, p.page_number FROM pages p JOIN documents d ON d.id = p.document_id WHERE d.course_id = %s ORDER BY p.document_id, p.page_number", (course_id,))
+            pages = {}
+            for page in cursor.fetchall():
+                pages.setdefault(int(page["document_id"]), []).append(int(page["page_number"]))
+    finally:
+        connection.close()
+    return {"documents": [{
+        "id": int(row["id"]), "position": int(row["position"]) if row["position"] is not None else None,
+        "filename": row["filename"], "active": bool(row["is_active"]), "removed_at": _time(row["removed_at"]),
+        "sha256": row["content_hash"], "ingest_status": row["ingest_status"], "ingest_error": row["ingest_error"],
+        "page_count": int(row["page_count"] or 0), "usable_page_count": int(row["usable_page_count"] or 0),
+        "original_pdf_available": original_pdf_path(int(row["id"])) is not None,
+        "page_numbers": pages.get(int(row["id"]), []),
+    } for row in documents]}
 
 def _course_summary(row: dict) -> dict:
     return {

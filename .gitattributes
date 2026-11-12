@@ -1,0 +1,3 @@
+# Frozen datasets bind the exact manifest bytes, including original line endings.
+# Source hashes inside a manifest separately normalize CRLF to LF.
+evaluation_assets/**/frozen-configuration.json -text

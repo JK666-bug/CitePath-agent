@@ -14,7 +14,8 @@ from evaluation.core import VARIANTS, require, validate_dataset
 
 
 RUNTIME_MODULES = {"pymysql": "pymysql", "pymilvus": "pymilvus", "fitz": "fitz",
-                   "docling": "docling.document_converter", "fastembed": "fastembed"}
+                   "docling": "docling.document_converter", "fastembed": "fastembed", "llm": "agent.llm",
+                   "mysql_rsa": "cryptography.hazmat.primitives.asymmetric.rsa"}
 
 
 def runtime_imports(timeout=30):
@@ -89,7 +90,6 @@ def api_health(api_url):
 
 def preflight_report(api_url="http://127.0.0.1:8000"):
     from dotenv import dotenv_values
-    from agent.llm import model_configuration
     root = Path(__file__).resolve().parents[1]
     settings = {**dotenv_values(root / ".env"), **os.environ}
     checks = []
@@ -98,6 +98,7 @@ def preflight_report(api_url="http://127.0.0.1:8000"):
         checks.append({"name": name, "ready": bool(ready), "detail": detail})
 
     try:
+        from agent.llm import model_configuration
         model = model_configuration(settings)
         ready = model["key_configured"]
         detail = (f"A runner-local key is configured for the selected {model['provider']} provider; authentication and the running API configuration are not verified"
@@ -106,6 +107,9 @@ def preflight_report(api_url="http://127.0.0.1:8000"):
     except RuntimeError as error:
         model = None
         check("model_configuration", False, str(error))
+    except (ImportError, OSError):
+        model = None
+        check("model_configuration", False, "The model runtime cannot import; repair the pinned runtime dependencies before configuration checks")
     imported, import_status = runtime_imports()
     missing = [name for name, ready in imported.items() if not ready]
     check("full_runtime_dependencies", not missing and import_status == "completed",

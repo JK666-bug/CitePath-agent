@@ -14,7 +14,10 @@
 | GET / DELETE | `/api/courses/{course_id}` | 课程详情、删除课程 |
 | POST | `/api/courses/{course_id}/documents` | multipart 单个 PDF 上传，字段 `file` |
 | GET | `/api/courses/{course_id}/documents/{document_id}/file` | 有所有权检查的原始 PDF 查看/下载 |
-| DELETE | `/api/courses/{course_id}/documents/{document_id}` | 删除资料 |
+| DELETE | `/api/courses/{course_id}/documents/{document_id}` | 归档资料，保留 ID、原 PDF 与历史 |
+| GET | `/api/courses/{course_id}/documents/inventory` | 有所有权校验的在用/归档资料及原文件可用状态 |
+| POST | `/api/courses/{course_id}/documents/{document_id}/restore` | 校验原 SHA-256、重建向量后恢复原 ID |
+| GET | `/api/courses/{course_id}/evaluation/runtime` | 登录后读取本课程的无密钥运行配置与资料哈希证明 |
 | GET / POST | `/api/courses/{course_id}/plan` | 读取计划、首次生成或重新排期 |
 | GET / POST | `/api/courses/{course_id}/plan/requirements` | 读取或核对规划输入，缺项返回补充问题 |
 | GET | `/api/courses/{course_id}/plan/versions` | 只读版本列表 |
@@ -42,6 +45,12 @@
 来源对象使用真实 `document_id` 和原始 `page_number`，可附带界面文档序号 `position` 和 `filename`。文档序号用于展示，权限检查和数据关联使用 `document_id`。删除资料与跨存储清理尚不构成分布式原子事务。
 
 原始 PDF 默认保存到 `backend/storage/uploads`，可用后端变量 `PDF_STORAGE_DIR` 指定持久目录。原文件在向量索引前原子写入；文件名只用数据库整数 ID。查看接口检查当前用户与课程归属，引用链接可加 `#page=原始页码`。早期上传记录可能没有原文件，接口返回 404 时重传同一 PDF 可补回；不能从纯文本页面记录重建原文件。
+
+移除单份资料现在是明确归档：保留行、原 PDF、内容哈希和历史引用，`is_active=0`、`removed_at` 记录时间、展示位置设为空。归档来源仍可从历史打开；新规划、检索、问答记忆和新题生成排除它。恢复必须匹配原文件哈希，向量 flush 成功后才重新激活，失败保留归档状态供重试。删除整个课程仍永久清理其文件与记录。
+
+来源弹窗先查询 inventory，按稳定 document ID 核对原文件及原始页号；旧版本已经物理删除的 ID 显示不可用，新的上传不冒充旧来源。inventory 返回 `active`、`removed_at`、`sha256`、`original_pdf_available` 和 `page_numbers` 等字段。
+
+独立问答的可选 `evaluation_context` 包含 `evaluation_id`、`system`（baseline/full）、`item_id`，仅专用测试账号可提交，用于记录模型用量。普通前端不需要该字段。运行证明接口核对启动时和当前源码/模型配置，发生漂移时要求重启；它不返回 API 密钥或原始服务地址。
 
 ## 首次规划与重新排期
 

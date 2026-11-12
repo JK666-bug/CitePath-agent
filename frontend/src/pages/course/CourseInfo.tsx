@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { FileText } from 'lucide-react'
 
 import type {
   CourseDetail,
   Material,
+  MaterialInventory,
 } from './types'
 
 import { decodeBrief } from '../courseEditor/brief'
@@ -17,6 +18,8 @@ import {
   deleteMaterial,
   duplicateMessage,
   uploadMaterial,
+  getDocumentInventory,
+  restoreMaterial,
 } from './api'
 
 import { useStudy } from '../../shared/StudyProvider'
@@ -52,6 +55,15 @@ export default function CourseInfo({
   const [error, setError] = useState('')
   const [message, setMessage] =
     useState('')
+  const [inventory, setInventory] = useState<MaterialInventory[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+    if (!demo) void getDocumentInventory(course.id).then((result) => {
+      if (!cancelled) setInventory(result.documents)
+    }).catch((reason) => { if (!cancelled) setError(messageOf(reason)) })
+    return () => { cancelled = true }
+  }, [course.id, course.documents, demo])
 
   const [remove, setRemove] =
     useState<Material | null>(null)
@@ -90,6 +102,7 @@ export default function CourseInfo({
     setBusy(true)
     const duplicates: string[] = []
     let saved = 0
+    let restored = 0
 
     try {
       for (const file of files) {
@@ -102,7 +115,9 @@ export default function CourseInfo({
           file,
         )
 
-        if (result.duplicate) {
+        if (result.restored) {
+          restored += 1
+        } else if (result.duplicate) {
           duplicates.push(
             duplicateMessage(
               file.name,
@@ -123,6 +138,7 @@ export default function CourseInfo({
       }
 
       const parts: string[] = []
+      if (restored) parts.push(`Restored ${restored} archived material(s) with their original document IDs. Saved tasks, questions and scores remain linked.`)
 
       if (saved > 0) {
         parts.push(
@@ -168,7 +184,7 @@ export default function CourseInfo({
       await reload()
 
       setMessage(
-        'Material removed. Any future plan using it will need to be regenerated.',
+        'Material archived and excluded from new planning and questions. Original source references and learning history remain saved; restore it below when needed.',
       )
     } catch (reason) {
       setError(messageOf(reason))
@@ -176,6 +192,22 @@ export default function CourseInfo({
       setBusy(false)
       setRemove(null)
     }
+  }
+
+  async function restore(material: MaterialInventory) {
+    if (busy || demo) return
+    setBusy(true)
+    setError('')
+    setMessage('')
+    try {
+      await restoreMaterial(course.id, material.id)
+      await reload()
+      setInventory((await getDocumentInventory(course.id)).documents)
+      setMessage(`Restored ${material.filename} as Document ID ${material.id}. Existing source references, tasks and scores are unchanged.`)
+    } catch (reason) {
+      setError(`${messageOf(reason)} Restoration did not finish. Upload the exact original PDF to retry; historical document IDs cannot be reassigned.`)
+      try { setInventory((await getDocumentInventory(course.id)).documents) } catch { /* Keep the retained archive list available. */ }
+    } finally { setBusy(false) }
   }
 
   return (
@@ -287,7 +319,7 @@ export default function CourseInfo({
                       setRemove(material)
                     }
                   >
-                    Delete
+                    Remove from course
                   </button>
                 </li>
               ),
@@ -339,16 +371,38 @@ export default function CourseInfo({
         )}
       </section>
 
+      {!demo && inventory.some((material) => !material.active) && (
+        <section className="panel stack">
+          <h2>Archived materials</h2>
+          <p className="muted small">Archived PDFs stay available to their saved source references. They are excluded from new plans and questions until restored. Deleting the entire course permanently removes its retained files and records.</p>
+          <ul className="materials-list">
+            {inventory.filter((material) => !material.active).map((material) => (
+              <li key={material.id}>
+                <FileText size={18} strokeWidth={1.4} />
+                <div>
+                  <strong>{material.original_pdf_available ? <a href={`/api/courses/${courseId}/documents/${material.id}/file`} target="_blank" rel="noreferrer">{material.filename}</a> : material.filename}</strong>
+                  <p>Document ID {material.id} · {material.page_count} pages · Archived {material.removed_at}</p>
+                  {material.ingest_error && <p className="field-error">{material.ingest_error}</p>}
+                  {!material.original_pdf_available && <p>Original PDF unavailable. Upload the exact same PDF to recover the retained document identity.</p>}
+                  {!material.sha256 && <p>This legacy identity has no original hash and cannot be reassigned to another upload.</p>}
+                </div>
+                <span className="badge">Archived</span>
+                <button className="button small secondary" disabled={busy || !material.original_pdf_available || !material.sha256} onClick={() => void restore(material)}>Restore material</button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <Modal
         open={Boolean(remove)}
-        title="Delete course material?"
+        title="Remove material from course?"
         closeable={!busy}
         onClose={() => setRemove(null)}
       >
         <p>
-          Delete {remove?.filename}?
-          Future questions will no longer be
-          able to cite this material.
+          Archive {remove?.filename}? It will be excluded from new planning and questions.
+          The original PDF, source ID and learning history stay saved and can be restored.
         </p>
 
         <div className="actions">
@@ -358,8 +412,8 @@ export default function CourseInfo({
             onClick={confirmDelete}
           >
             {busy
-              ? 'Deleting…'
-              : 'Delete material'}
+              ? 'Archiving…'
+              : 'Remove from course'}
           </button>
 
           <button

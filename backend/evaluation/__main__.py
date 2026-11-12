@@ -70,6 +70,10 @@ def main(argv=None):
     commands = parser.add_subparsers(dest="command", required=True)
     validate = commands.add_parser("validate", help="Validate a dataset without scoring or model calls")
     validate.add_argument("dataset", type=Path)
+    preparation = commands.add_parser("prepare-collection", help="Write empty evidence/workflow bindings without credentials or service calls")
+    preparation.add_argument("dataset", type=Path)
+    preparation.add_argument("--manifest", type=Path, required=True)
+    preparation.add_argument("--output-dir", type=Path, required=True)
     labels = commands.add_parser("labels", help="Prepare two blank independent annotation files and blind work items")
     labels.add_argument("dataset", type=Path)
     labels.add_argument("--output-dir", type=Path, required=True)
@@ -88,12 +92,34 @@ def main(argv=None):
     recorded.add_argument("dataset", type=Path)
     recorded.add_argument("records", type=Path)
     recorded.add_argument("--output", type=Path, required=True)
+    merged = commands.add_parser("merge-collections", help="Combine grading, QA and workflow observations from the same original snapshot")
+    merged.add_argument("dataset", type=Path)
+    merged.add_argument("--collection", type=Path, action="append", required=True)
+    merged.add_argument("--output", type=Path, required=True)
     preflight = commands.add_parser("preflight", help="Check real-service prerequisites without invoking a model")
     preflight.add_argument("--api-url", default="http://127.0.0.1:8000")
     preflight.add_argument("--output", type=Path, required=True)
+    local_models = commands.add_parser("local-model-smoke", help="Explicitly run bounded local development PDF/embedding/reranker models without SQL or LLM")
+    local_models.add_argument("--components", nargs="+", choices=("pdf", "retrieval"), default=["pdf", "retrieval"])
+    local_models.add_argument("--corpus", type=Path)
+    local_models.add_argument("--output", type=Path, required=True)
+    local_models.add_argument("--run", action="store_true")
     collect = commands.add_parser("collect-grading", help="Run the actual grader once and reuse first-round grades for both variants")
     collect.add_argument("dataset", type=Path)
     collect.add_argument("--output", type=Path, required=True)
+    evidence = commands.add_parser("collect-evidence", help="Collect resumable production QA outputs on explicitly mapped dedicated courses")
+    evidence.add_argument("dataset", type=Path)
+    evidence.add_argument("--config", type=Path, required=True)
+    evidence.add_argument("--checkpoint-dir", type=Path)
+    evidence.add_argument("--output", type=Path, required=True)
+    evidence.add_argument("--run", action="store_true", help="Explicitly invoke the configured production QA service")
+    workflow = commands.add_parser("collect-workflows", help="Collect paired real-session workflow traces; missing adapters remain pending")
+    workflow.add_argument("dataset", type=Path)
+    workflow.add_argument("--bindings", type=Path, required=True)
+    workflow.add_argument("--answers", type=Path, required=True)
+    workflow.add_argument("--checkpoint-dir", type=Path, required=True)
+    workflow.add_argument("--output", type=Path, required=True)
+    workflow.add_argument("--run", action="store_true", help="Explicitly create isolated evaluation sessions")
     integration = commands.add_parser("live-integration", help="Observe a bounded live development API workflow, separate from formal evaluation")
     integration.add_argument("--api-url", default="http://127.0.0.1:8000")
     integration.add_argument("--corpus", type=Path)
@@ -105,6 +131,12 @@ def main(argv=None):
     integration.add_argument("--max-answers", type=int, default=64)
     args = parser.parse_args(argv)
     try:
+        if args.command == "local-model-smoke":
+            from evaluation.local_models import smoke_local_models
+            result = smoke_local_models(run=args.run, components=args.components, corpus_path=args.corpus)
+            write_json(args.output, result)
+            print(json.dumps({"status": result["status"], "llm_invoked": False, "output": str(args.output)}))
+            return 0 if result["status"] == "passed" else 2 if result["status"] == "not_run" else 1
         if args.command == "live-integration":
             from evaluation.integration import run_integration
             try:
@@ -131,6 +163,47 @@ def main(argv=None):
             return 0
         data = read_json(args.dataset)
         validate_dataset(data)
+        if args.command == "prepare-collection":
+            from evaluation.preparation import collection_templates
+            templates = collection_templates(data, args.manifest.resolve())
+            require(not args.output_dir.exists(), "Use a new directory for empty collection bindings")
+            protected = Path(__file__).resolve().parents[2] / "evaluation_assets"
+            require(args.output_dir.resolve() != protected and protected not in args.output_dir.resolve().parents,
+                    "Keep runtime configuration outside distributed evaluation assets")
+            for filename, value in templates.items():
+                write_json(args.output_dir / filename, value)
+            print(json.dumps({"status": "awaiting_runtime_bindings", "model_invoked": False, "output": str(args.output_dir)}))
+            return 0
+        if args.command in {"collect-evidence", "collect-workflows"}:
+            require(args.output.resolve() != args.dataset.resolve(), "Save collection results outside the input dataset")
+            input_paths = [args.dataset, *([args.config] if args.command == "collect-evidence" else [args.bindings, args.answers])]
+            require(args.output.resolve() not in {path.resolve() for path in input_paths}, "Collection output cannot replace configuration or input files")
+            protected = Path(__file__).resolve().parents[2] / "evaluation_assets"
+            require(args.output.resolve() != protected and protected not in args.output.resolve().parents,
+                    "Save actual results outside distributed preparation cohorts")
+            if args.command == "collect-evidence":
+                from evaluation.evidence import collect_evidence
+                result = collect_evidence(data, read_json(args.config), run=args.run, checkpoint_dir=args.checkpoint_dir)
+                report_path = args.output.with_suffix(args.output.suffix + ".report.json")
+                journal_path = args.output.with_suffix(args.output.suffix + ".journal.json")
+                require(report_path.resolve() != args.dataset.resolve() and journal_path.resolve() != args.dataset.resolve(), "Output paths collide with input")
+                write_json(args.output, result["dataset"])
+                write_json(report_path, result["report"])
+                write_json(journal_path, result["journal"])
+                status = result["report"]["status"]
+            else:
+                from evaluation.workflows import collect_workflows
+                try:
+                    result = collect_workflows(data, bindings=read_json(args.bindings), answers=read_json(args.answers),
+                                               checkpoint_dir=args.checkpoint_dir, allow_create_sessions=args.run)
+                except (ValueError, RuntimeError, OSError, ImportError) as error:
+                    result = {"schema": "citepath-workflow-collection-v1", "dataset_sha256": digest(data),
+                              "status": "blocked", "synthetic": False, "records": [], "run_statuses": [],
+                              "official_accepted": None, "failure_type": type(error).__name__}
+                write_json(args.output, result)
+                status = result["status"]
+            print(json.dumps({"status": status, "official_accepted": None, "output": str(args.output)}))
+            return 0 if status == "completed" else 1 if status == "failed" else 2
         if args.command == "validate":
             print(json.dumps({"valid": True, "dataset_sha256": digest(data),
                               "counts": {kind: sum(item["kind"] == kind for item in data["items"]) for kind in TARGET_COUNTS}}))
@@ -162,6 +235,11 @@ def main(argv=None):
             require(args.output.resolve() != args.dataset.resolve(), "Save collected observations as a new dataset snapshot")
             write_json(args.output, import_predictions(data, read_json(args.records)))
             print(json.dumps({"output": str(args.output)}))
+        elif args.command == "merge-collections":
+            from evaluation.merge import merge_collections
+            require(args.output.resolve() not in {path.resolve() for path in [args.dataset, *args.collection]}, "Save merged observations as a new snapshot")
+            write_json(args.output, merge_collections(data, [read_json(path) for path in args.collection]))
+            print(json.dumps({"status": "merged_observations_human_labels_still_required", "output": str(args.output)}))
         elif args.command == "collect-grading":
             from evaluation.live import collect_grading
             require(args.output.resolve() != args.dataset.resolve(), "Save observations as a new dataset snapshot")
