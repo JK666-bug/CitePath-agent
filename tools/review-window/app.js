@@ -700,28 +700,45 @@ async function fetchJson(url) {
 async function loadDemo() {
   setSaveStatus('载入准备包…');
   const params = new URLSearchParams(location.search);
-  const base = new URL('../../evaluation_assets/cohorts/execution-20261112-r2/', location.href);
-  const datasetUrl = params.get('dataset')
-    ? new URL(params.get('dataset'), location.href)
-    : new URL('dataset.json', base);
-  const annotationUrl = params.get('annotation')
-    ? new URL(params.get('annotation'), location.href)
-    : new URL('annotations/annotator-a.json', base);
-  try {
-    const [dataset, annotation] = await Promise.all([
-      fetchJson(datasetUrl),
-      fetchJson(annotationUrl),
-    ]);
-    loadDataset(dataset, false);
-    loadBase(annotation, false);
-    startReview();
-    setSaveStatus('准备数据已载入');
-    toast('已载入 execution-20261112-r2 准备数据');
-  } catch (error) {
-    setSaveStatus('自动载入失败');
-    $('#loadBanner').hidden = false;
-    toast(`自动载入失败：${error.message}。请用文件选择器载入。`, true);
+  const candidates = [];
+  if (params.get('dataset')) {
+    candidates.push({
+      dataset: new URL(params.get('dataset'), location.href),
+      annotation: params.get('annotation')
+        ? new URL(params.get('annotation'), location.href)
+        : null,
+    });
+  } else {
+    candidates.push({
+      dataset: new URL('../../evaluation_assets/cohorts/execution-20261112-r2/dataset.json', location.href),
+      annotation: new URL('../../evaluation_assets/cohorts/execution-20261112-r2/annotations/annotator-a.json', location.href),
+    });
+    candidates.push({
+      dataset: new URL('../../../work/CitePath-agent/evaluation_assets/cohorts/execution-20261112-r2/dataset.json', location.href),
+      annotation: new URL('../../../work/CitePath-agent/evaluation_assets/cohorts/execution-20261112-r2/annotations/annotator-a.json', location.href),
+    });
   }
+  let lastError = null;
+  for (const candidate of candidates) {
+    if (!candidate.annotation) continue;
+    try {
+      const [dataset, annotation] = await Promise.all([
+        fetchJson(candidate.dataset),
+        fetchJson(candidate.annotation),
+      ]);
+      loadDataset(dataset, false);
+      loadBase(annotation, false);
+      startReview();
+      setSaveStatus('准备数据已载入');
+      toast('已载入 execution-20261112-r2 准备数据');
+      return;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  setSaveStatus('自动载入失败');
+  $('#loadBanner').hidden = false;
+  toast(`自动载入失败：${lastError ? lastError.message : '缺少 annotation'}。请用文件选择器载入。`, true);
 }
 
 function loadDataset(data, start = true) {
