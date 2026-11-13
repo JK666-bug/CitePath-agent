@@ -1,5 +1,7 @@
 # CitePath 单复核人标注窗口
 
+详细操作步骤见 [`docs/REVIEW-WINDOW-STEPS.zh-CN.md`](../../docs/REVIEW-WINDOW-STEPS.zh-CN.md)。
+
 这是一个**纯静态浏览器窗口**：逐题填写 140 个人工标注项，自动保存在本机，最后导出 `annotator-a.json`。不需要后端、数据库或模型服务。
 
 ## 启动
