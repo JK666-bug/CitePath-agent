@@ -289,15 +289,21 @@ def _freeze_problems(data):
         reviewers = protocol.get("reviewed_by")
         mapping = protocol.get("chapter_mapping_sha256")
         response_policy = protocol.get("response_policy_sha256")
-        reviewed = (protocol.get("reviewed") is True and protocol.get("review_origin") == "human"
-                    and isinstance(reviewers, list) and len(reviewers) == 2
-                    and all(isinstance(value, str) and value.strip() for value in reviewers)
-                    and len({value.strip().casefold() for value in reviewers}) == 2 and isinstance(mapping, str) and len(mapping) == 64
-                    and all(character in "0123456789abcdef" for character in mapping))
-        reviewed = (reviewed and isinstance(response_policy, str) and len(response_policy) == 64
-                    and all(character in "0123456789abcdef" for character in response_policy))
-        if not reviewed:
-            problems.append("Two human reviewers must review the actual-grade protocol and freeze the chapter/fixture mapping")
+        hashes_ok = (isinstance(mapping, str) and len(mapping) == 64
+                     and all(character in "0123456789abcdef" for character in mapping)
+                     and isinstance(response_policy, str) and len(response_policy) == 64
+                     and all(character in "0123456789abcdef" for character in response_policy))
+        two_human = (protocol.get("reviewed") is True and protocol.get("review_origin") == "human"
+                     and isinstance(reviewers, list) and len(reviewers) == 2
+                     and all(isinstance(value, str) and value.strip() for value in reviewers)
+                     and len({value.strip().casefold() for value in reviewers}) == 2)
+        single_approved = (protocol.get("reviewed") is True
+                           and protocol.get("single_reviewer_approved") is True
+                           and protocol.get("review_origin") == "single_reviewer_approved"
+                           and isinstance(reviewers, list) and len(reviewers) == 1
+                           and all(isinstance(value, str) and value.strip() for value in reviewers))
+        if not ((two_human or single_approved) and hashes_ok):
+            problems.append("Two human reviewers, or an explicitly approved single-reviewer deviation, must review the actual-grade protocol and freeze the chapter/fixture mapping")
     for item in data["items"]:
         for variant, prediction in (item.get("predictions") or {}).items():
             if prediction is None:
