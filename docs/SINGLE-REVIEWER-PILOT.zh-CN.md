@@ -48,6 +48,37 @@ python -m evaluation score <observed-dataset.json> --annotator <a.json> --annota
 
 `score` 只有在两份独立人工表、完整观察和裁决都满足时才可能给出 `official_accepted: true`。
 
+## 如果课程/老师同意单人复核
+
+如果这是**明确批准的协议偏离**，可以把单人复核作为最终交付，但报告必须保留偏离记录，并继续把 `official_accepted` 写成 `null`；另用 `single_reviewer_conclusion` 表示单人结论。
+
+先由复核人完成 `annotator-a.json`，再在真实 120 次观察合并后运行：
+
+```powershell
+cd backend
+python tools/single_reviewer_report.py <dataset.json> <annotator-a.json> <report.json> `
+  --workflow <workflow-observations.json> `
+  --approved-by "<批准人>" --approval-reference "<邮件/日期/课程文件>" `
+  --markdown <report.md>
+```
+
+报告会记录：
+
+- `status: "single_reviewer_evaluation"`
+- `official_accepted: null`（协议要求两人，不能改）
+- `protocol_deviation`：需要 2 人、实际 1 人、批准人和批准依据（没填则 `pending`）
+- `single_reviewer_conclusion`：`pass` / `fail` / `insufficient`，按引用支持率 ≥85%、20 场景中至少 18 个通过、无禁止错误判断
+- MCQ 正确率、简答通过率、claim 支持率等描述性指标
+- 限制：没有复核人一致性、没有裁决，不能声称达到原协议的双人一致率目标
+
+可以写进最终报告的说法：
+
+> 在课程批准的单复核人偏离下，引用支持率为 X%、流程场景 Y/20 通过、无禁止错误；由于只有一位复核人，未计算双人一致率，`official_accepted` 保持 `null`。
+
+不能写进最终报告的说法：
+
+> 达到提案的 100% 选择题一致率、≥80% 简答一致率或完成正式双人验收。
+
 ## 不能做的事
 
 - 不要把 A 的标签复制成 B；代码能检查 ID 重复和 `independent` 声明，但无法证明独立性，复制会破坏学术诚信。
