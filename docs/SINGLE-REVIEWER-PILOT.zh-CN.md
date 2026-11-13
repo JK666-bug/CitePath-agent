@@ -32,7 +32,7 @@ python tools/single_reviewer_pilot.py <dataset.json> <annotator-a.json> <output.
 
 ## 推荐：尽快补第二位复核人
 
-优先找一位**没有参与标注**的成员或同学。一个人完成 140 项大约需要 2–4 小时；第二位复核人不需要写代码，只需要：
+优先找一位**没有参与标注**的成员或同学。一个人完成 140 项大约需要 4–8 小时（取决于证据题需要回看多少页）；第二位复核人不需要写代码，只需要：
 
 1. 拿到同一份 `observed-dataset.json` 和原始 PDF；
 2. 独立填写 `annotator-b.json`，完成前不要看 A 的标签；
