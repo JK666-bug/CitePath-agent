@@ -106,7 +106,9 @@ def main(argv=None):
     local_models.add_argument("--run", action="store_true")
     collect = commands.add_parser("collect-grading", help="Run the actual grader once and reuse first-round grades for both variants")
     collect.add_argument("dataset", type=Path)
+    collect.add_argument("--manifest", type=Path, help="Exact frozen manifest; required with --run")
     collect.add_argument("--output", type=Path, required=True)
+    collect.add_argument("--run", action="store_true", help="Explicitly attest the local runtime and invoke the actual grader")
     evidence = commands.add_parser("collect-evidence", help="Collect resumable production QA outputs on explicitly mapped dedicated courses")
     evidence.add_argument("dataset", type=Path)
     evidence.add_argument("--config", type=Path, required=True)
@@ -243,8 +245,16 @@ def main(argv=None):
         elif args.command == "collect-grading":
             from evaluation.live import collect_grading
             require(args.output.resolve() != args.dataset.resolve(), "Save observations as a new dataset snapshot")
-            write_json(args.output, collect_grading(data))
-            print(json.dumps({"status": "actual_grading_collected_human_labels_still_required", "output": str(args.output)}))
+            require(args.manifest is None or args.output.resolve() != args.manifest.resolve(), "Collection output cannot replace the frozen manifest")
+            protected = Path(__file__).resolve().parents[2] / "evaluation_assets"
+            require(args.output.resolve() != protected and protected not in args.output.resolve().parents,
+                    "Save actual results outside distributed preparation cohorts")
+            require(not args.output.exists(), "Use a new grading output file; saved observations cannot be overwritten")
+            write_json(args.output, collect_grading(data, manifest_path=args.manifest, run=args.run))
+            status = "actual_grading_collected_human_labels_still_required" if args.run else "not_run"
+            print(json.dumps({"status": status, "model_invoked": args.run, "output": str(args.output)}))
+            if not args.run:
+                return 2
         return 0
     except (ValueError, KeyError, OSError, RuntimeError) as error:
         # Do not print provider exceptions, request headers, cookies or secret values.

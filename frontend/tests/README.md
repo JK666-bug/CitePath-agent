@@ -66,3 +66,31 @@ browser checks; they do not establish actual API or model performance.
 `node tests/restoration-ui-smoke.cjs` adds eight checks for archived/missing original
 sources, failed restore/retry, stable IDs, explicit archive wording and unchanged
 practice state. All five scripts use mocked APIs; the total is 44 browser checks.
+
+## Read-only browser acceptance against actual services
+
+`node tests/live-ui-smoke.cjs` uses the real frontend/API and a previously completed
+dedicated development integration fixture. It does not mock API responses, create
+practice, grade answers, ask a new question or retry explanations. Start the actual
+API on port 8000 and Vite on port 5173; the existing Vite proxy forwards `/api`.
+
+Set these environment variables before running:
+
+- `CITEPATH_LIVE_CREDENTIALS_FILE`: a local private JSON file with `username` and
+  `password` for the dedicated `citepath_it_...` development account. Never commit
+  it. `CITEPATH_INTEGRATION_USERNAME` / `CITEPATH_INTEGRATION_PASSWORD` keys are also
+  accepted in that JSON file.
+- `CITEPATH_LIVE_REPORT_FILE`: the real backend integration report containing
+  `resources.user_id`, `course_id` and `practice_session_id`. The saved practice
+  must be finished; a generated plan, plan snapshot and Q&A history must exist.
+- `CITEPATH_UI_URL`: local frontend origin, default `http://127.0.0.1:5173`.
+- Optional `CITEPATH_LIVE_OUTPUT`: report JSON path; credentials, cookies, request
+  bodies, raw Playwright error text and page HTML are not exported.
+- Optional `CITEPATH_LIVE_SCREENSHOT_DIR`: directory for authenticated desktop and
+  mobile screenshots. Password inputs are masked; model-service keys are never
+  loaded into this test.
+
+`PLAYWRIGHT_MODULE` and `CITEPATH_BROWSER` behave like the mocked smoke suites.
+This verifies actual login, plan/history/source/report rendering, PDF identity,
+refresh, Q&A history and read-only invariants. It is separate from human grading,
+citation-support review and the formal baseline/full evaluation.

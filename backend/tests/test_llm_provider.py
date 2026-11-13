@@ -173,9 +173,11 @@ class ProviderCollectionTest(unittest.TestCase):
         original = copy.deepcopy(data)
         with patch.object(llm, "chat_model", return_value=SimpleNamespace(model_name="custom-model")), \
                 patch("agent.exam._grade_shorts", return_value={2: [0, 1, 2, 3]}) as grade, \
+                patch("evaluation.runtime.verify_runtime") as verify, \
                 patch("agent.telemetry.usage_context", side_effect=lambda **kwargs: nullcontext()):
-            result = collect_grading(data)
+            result = collect_grading(data, manifest_path="frozen.json", run=True)
         self.assertEqual(data, original)
+        self.assertEqual(verify.call_args.args[1]["manifest_path"], "frozen.json")
         grade.assert_called_once()
         for item in result["items"]:
             self.assertEqual(item["predictions"]["baseline"], item["predictions"]["full"])
@@ -191,7 +193,7 @@ class ProviderCollectionTest(unittest.TestCase):
                     patch.object(llm, "chat_model", return_value=SimpleNamespace(model_name="custom-model")), \
                     patch("agent.exam._grade_shorts") as grade:
                 with self.assertRaises(ValueError):
-                    collect_grading(data)
+                    collect_grading(data, manifest_path="frozen.json", run=True)
                 grade.assert_not_called()
 
 

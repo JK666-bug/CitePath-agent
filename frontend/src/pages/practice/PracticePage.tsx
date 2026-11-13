@@ -48,6 +48,7 @@ export default function PracticePage() {
             </span>
 
             <select
+              aria-label="Filter practice by course"
               className="cp-select"
               value={filter}
               onChange={(event) =>

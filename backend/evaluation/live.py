@@ -139,24 +139,25 @@ def preflight_report(api_url="http://127.0.0.1:8000"):
                        "Human labels and live workflow observations remain separate required evidence."]}
 
 
-def collect_grading(data):
+def collect_grading(data, *, manifest_path=None, run=False):
     """Use real application grading; callers must supply a frozen, audited question bank.
 
     This does not run retrieval, feedback, persistence, or two-round workflows.
+    Without run=True it returns an unchanged copy and never creates a model client.
+    Actual collection requires the exact manifest and an attested local runtime.
     The shared first round is executed only once for a controlled baseline comparison.
     """
     validate_dataset(data)
+    if not run:
+        return copy.deepcopy(data)
+    require(manifest_path is not None, "Provide the frozen manifest before actual grading collection")
     from agent.exam import _grade_shorts
     from agent.llm import chat_model, model_configuration
     from agent.telemetry import usage_context
     from grading.score import choice_correct, points_pass
-    # Instantiate (without requesting inference) first so absence of a key never
-    # leaves a partially collected bank that could be mistaken for a complete run.
     configuration = model_configuration()
-    model = chat_model()
     freeze = data.get("freeze") or {}
     require(all(freeze.get(key) for key in ("manifest_sha256", "created_at", "git_commit", "model")), "Freeze configuration before collecting predictions")
-    require(getattr(model, "model_name", None) == freeze["model"], "The configured grader model differs from the frozen model")
     require(configuration["model"] == freeze["model"], "The selected provider model differs from the frozen model")
     require(freeze.get("provider", "hku") == configuration["provider"], "The selected provider differs from the frozen provider")
     if configuration["provider"] != "hku":
@@ -165,11 +166,21 @@ def collect_grading(data):
         require(freeze["base_url_sha256"] == configuration["base_url_sha256"], "The selected endpoint differs from the frozen endpoint")
     from evaluation.core import _freeze_problems
     require(not _freeze_problems(data), "Complete and validate frozen metadata before collection")
+    # Attest the actual manifest bytes, source, dependencies, Python/API version,
+    # provider/endpoint and prices before constructing any model client. The same
+    # immutable original dataset remains the binding used by the other collectors.
+    from evaluation.core import digest
+    from evaluation.runtime import verify_runtime
+    verify_runtime(data, {"dataset_sha256": digest(data),
+                          "configuration_sha256": freeze["manifest_sha256"],
+                          "manifest_path": manifest_path})
     for item in data["items"]:
         if item["kind"] in ("mcq", "short"):
             require(all((item.get("predictions") or {}).get(variant) is None for variant in VARIANTS), "Do not overwrite previously collected grades")
         if item["kind"] == "mcq":
             require(item.get("answer_key") in ("A", "B", "C", "D"), "MCQ collection needs an explicitly recorded candidate answer_key; humans must audit it independently")
+    model = chat_model()
+    require(getattr(model, "model_name", None) == freeze["model"], "The configured grader model differs from the frozen model")
     updated = copy.deepcopy(data)
     short_items = [(number, item) for number, item in enumerate(updated["items"], 1) if item["kind"] == "short"]
     with usage_context(operation="evaluation.grading", evaluation_id=data["evaluation_id"], system="shared_first_round"):

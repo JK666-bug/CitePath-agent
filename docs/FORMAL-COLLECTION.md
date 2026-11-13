@@ -132,10 +132,21 @@ outputs once. Sequentially editing an already observed dataset would change its
 digest and break the other collectors' bindings.
 
 ```powershell
-python -m evaluation collect-grading path/to/original-dataset.json --output logs/grading-collected.json
+python -m evaluation collect-grading path/to/original-dataset.json --manifest path/to/frozen-configuration.json --output logs/grading-collected.json --run
 python -m evaluation merge-collections path/to/original-dataset.json --collection logs/grading-collected.json --collection logs/evidence-collected.json --collection logs/workflows-collected.json --output logs/observed-dataset.json
 python -m evaluation labels logs/observed-dataset.json --output-dir logs/human-review
 ```
+
+Grading requires the exact `--manifest` and explicit `--run`. It attests the
+manifest's raw-byte identity and current source/dependency/Python/API-version,
+provider/model/endpoint and cost configuration before constructing a model client.
+Without `--run`, it only writes an unchanged input copy, reports `not_run`, and
+exits 2; that file is not a new observation. Missing manifests, runtime drift and
+unreviewed final protocols fail before inference. Grading outputs cannot replace
+the input, manifest, an existing output file or distributed preparation cohorts.
+
+Use [the human review checklist](HUMAN-REVIEW.zh-CN.md) to distinguish protocol/input
+approval before collection from independent labeling and adjudication afterward.
 
 The merger rejects changed inputs/configuration, conflicting observations,
 synthetic results in a real cohort and controller-only records. Two humans fill

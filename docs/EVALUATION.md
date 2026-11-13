@@ -191,14 +191,23 @@ when 19/20 scenarios otherwise succeed.
 With the provider configured, run the application's MCQ/short grader on a fixed bank:
 
 ```powershell
-.venv/Scripts/python -m evaluation collect-grading path/to/dataset.json --output logs/graded-dataset.json
+.venv/Scripts/python -m evaluation collect-grading path/to/original-dataset.json --manifest path/to/frozen-configuration.json --output logs/graded-dataset.json --run
 ```
 
 This runs the actual shared first-round grader once and reuses its results for both
 variants. It collects grading only; retrieval, feedback, persistence and workflow
 observations require the live integration run. Candidate MCQ keys require human
 audit. Actual rubric indexes and model usage are retained. Missing provider
-configuration stops collection.
+configuration stops collection. Before constructing a model client, it verifies
+the exact frozen manifest bytes and compares current source hashes, dependencies,
+Python/API version, provider, model, endpoint and price settings with that manifest.
+Missing `--manifest` with `--run`, runtime drift, or an unreviewed final protocol
+stops execution before inference. Use a new output file outside `evaluation_assets`.
+
+Without `--run`, this command writes only an unchanged copy of the input and exits
+2 with `status: not_run`; it invokes no model, needs no manifest, and must not be
+counted as a collected grading result. All collectors must read the same original
+unobserved snapshot before the complementary results are merged.
 
 Import other actual collected outputs with a JSON object containing the current
 `dataset_sha256` (printed by `validate`) and records:

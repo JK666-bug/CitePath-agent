@@ -2,7 +2,7 @@
 
 CitePath 是基于课程讲义的学习 agent。学生上传讲义 PDF，系统按章节生成学习计划；学生阅读后做练习，系统批改并给出带页码的解释，再按成绩决定通过或再练一轮。学生也可以针对已上传讲义提问，回答必须带出处页码。
 
-依据是 Group 41 的 CitePath 项目提案。MySQL 保存计划、题目、作答、分数和出处。Milvus 保存讲义片段，供检索。两者都在本机用 Docker Compose 运行。界面用 React 和 TypeScript。后端用 Python，流程用 LangChain 编排。PDF 用 PyMuPDF 解析。
+依据是 Group 41 的 CitePath 项目提案。MySQL 保存计划、题目、作答、分数和出处。Milvus 保存讲义片段，供检索。两者都在本机用 Docker Compose 运行。界面用 React 和 TypeScript。后端用 Python；业务流程由 Python 代码按数据库状态编排，模型调用和工具接口使用 LangChain。PDF 用 Docling 逐页解析，PyMuPDF 只用来校验页数；这与提案里写的库选择不同，以实际实现为准。
 
 ## 目录
 
