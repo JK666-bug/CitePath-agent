@@ -11,6 +11,7 @@
 | `acceptance_duplicate_probe.py` | 对已完成的真实练习再次提交，核对成绩不变 | 否 |
 | `acceptance_session_probe.py` | 读取指定会话的判分、解释状态和模型/操作日志 | 否（只读日志和数据库） |
 | `acceptance_summary.py` | 把指定证据目录（默认仓库根 `evidence/`）汇总成 `summary.json` | 否 |
+| `formal_batch_manifest.py` | 从冻结数据集和运行时绑定生成 20 场景 × 3 次 × 2 系统的 120 次运行核对表 | 否 |
 
 不要在正式账户上运行 `acceptance_live_practice.py`。凭据路径作为命令行参数传入，
 脚本不会把密码、Cookie、题干、答案或提供方错误写入输出。数据库和向量库的默认
