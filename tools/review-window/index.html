@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CitePath 单复核人标注窗口</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <strong>CitePath 复核窗口</strong>
+        <small>单复核人 · 逐题标注</small>
+      </div>
+
+      <div class="progress-wrap">
+        <div class="progress-line">
+          <span id="progressText">0 / 0</span>
+          <span id="progressHint">等待载入数据</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      </div>
+
+      <div class="top-actions">
+        <label class="file-btn">载入 dataset
+          <input id="datasetFile" type="file" accept=".json,application/json">
+        </label>
+        <label class="file-btn">载入空白表
+          <input id="annotationFile" type="file" accept=".json,application/json">
+        </label>
+        <button id="loadDemo" type="button">载入准备包</button>
+        <button id="exportBtn" class="primary" type="button">导出 annotator-a.json</button>
+      </div>
+    </header>
+
+    <div class="main">
+      <aside class="sidebar">
+        <div class="sidebar-head">
+          <div class="reviewer-box sidebar-reviewer">
+            <input id="reviewerId" type="text" placeholder="复核人 ID（必填）" autocomplete="off">
+            <label><input id="independent" type="checkbox"> 独立完成，未参考他人标签</label>
+            <span class="save-status" id="saveStatus"></span>
+          </div>
+          <h2>题目列表</h2>
+          <div class="chips" id="chips">
+            <button class="chip active" data-filter="all" type="button">全部</button>
+            <button class="chip" data-filter="todo" type="button">未完成</button>
+            <button class="chip" data-filter="mcq" type="button">选择</button>
+            <button class="chip" data-filter="short" type="button">简答</button>
+            <button class="chip" data-filter="evidence" type="button">证据</button>
+          </div>
+        </div>
+        <div class="item-list" id="itemList"></div>
+      </aside>
+
+      <section class="editor-scroll">
+        <div class="load-banner" id="loadBanner">
+          正在尝试载入准备包；如果浏览器拦截了本地文件，请用右上角的
+          <code>载入 dataset</code> 和 <code>载入空白表</code> 选择
+          <code>dataset.json</code> 与 <code>annotator-a.json</code>。
+        </div>
+        <div id="editor" class="editor-card">
+          <div class="empty">正在载入…</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>
