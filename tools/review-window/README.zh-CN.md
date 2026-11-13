@@ -16,6 +16,8 @@ python -m http.server 8765 --bind 127.0.0.1
 http://127.0.0.1:8765/tools/review-window/
 ```
 
+![窗口预览](preview.png)
+
 默认自动载入 `evaluation_assets/cohorts/execution-20261112-r2` 的 `dataset.json` 和空白 `annotator-a.json`。
 
 如果使用真实运行后合并出来的 `observed-dataset.json`，可以：

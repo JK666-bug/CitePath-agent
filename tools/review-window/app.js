@@ -801,7 +801,14 @@ function initEvents() {
     if (!chip) return;
     state.filter = chip.dataset.filter;
     $$('.chip').forEach((item) => item.classList.toggle('active', item === chip));
+    const visible = filteredItems();
+    if (visible.length && !visible.some(({ index }) => index === state.current)) {
+      state.current = visible[0].index;
+      renderEditor();
+      $('.editor-scroll').scrollTop = 0;
+    }
     renderSidebar();
+    updateProgress();
   });
   editor.addEventListener('change', onEditorChange);
   editor.addEventListener('click', onEditorClick);
