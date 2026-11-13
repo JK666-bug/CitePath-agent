@@ -26,4 +26,4 @@
 
 正式 120 次运行、两位成员独立标注与裁决、引用语义支持率、真实价格成本和学习时长校准。完整协议见 [评估说明](EVALUATION.md) 和 [正式采集](FORMAL-COLLECTION.md)。
 
-如果目前只有一位复核人，见 [单复核人 pilot](SINGLE-REVIEWER-PILOT.zh-CN.md)：只能生成描述性结果，`official_accepted` 仍为 `null`，不能替代两位独立人工复核。
+如果目前只有一位复核人，见 [单复核人 pilot](SINGLE-REVIEWER-PILOT.zh-CN.md)：只能生成描述性结果，`official_accepted` 仍为 `null`，不能替代两位独立人工复核。复核时间安排见 [复核窗口](REVIEW-WINDOW.zh-CN.md) 和 `review-window.ics`。
