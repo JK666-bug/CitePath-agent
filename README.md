@@ -119,4 +119,4 @@ cache environment variables to a short writable path; deeply nested workspace pa
 can exceed the platform path limit. This smoke does not certify Milvus retrieval,
 human grading accuracy or citation support.
 
-Latest local development acceptance, remaining human review and calibration work: [2026-11-13 verification](docs/EXECUTION-2026-11-13.zh-CN.md), [18-step role acceptance](docs/ACCEPTANCE-2026-11-13.zh-CN.md), [human review](docs/HUMAN-REVIEW.zh-CN.md), [study-time calibration](docs/ESTIMATION-CALIBRATION.zh-CN.md). GitHub publication remains paused.
+Latest local development acceptance, remaining human review and calibration work: [2026-11-13 verification](docs/EXECUTION-2026-11-13.zh-CN.md), [18-step role acceptance](docs/ACCEPTANCE-2026-11-13.zh-CN.md), [formal evaluation preparation](docs/FORMAL-EVAL-PREP-2026-11-13.zh-CN.md), [human review](docs/HUMAN-REVIEW.zh-CN.md), [study-time calibration](docs/ESTIMATION-CALIBRATION.zh-CN.md). GitHub publication remains paused.
