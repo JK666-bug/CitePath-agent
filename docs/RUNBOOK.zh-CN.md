@@ -55,7 +55,7 @@ notepad .env
 
 ```env
 LLM_PROVIDER=deepseek
-DEEPSEEK_API_KEY=sk-...
+DEEPSEEK_API_KEY=<your-deepseek-key>
 DEEPSEEK_BASE_URL=https://api.deepseek.com
 DEEPSEEK_MODEL=deepseek-chat
 ```
@@ -64,7 +64,7 @@ DEEPSEEK_MODEL=deepseek-chat
 
 ```env
 LLM_PROVIDER=hku
-HKU_API_KEY=...
+HKU_API_KEY=<your-hku-key>
 HKU_DEPLOYMENT=gpt-4.1-mini
 HKU_API_VERSION=2025-04-01-preview
 ```
