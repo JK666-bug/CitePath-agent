@@ -1,12 +1,16 @@
 .env
 volumes/
 backend/.venv/
+backend/.venv-full/
 __pycache__/
 *.pyc
 frontend/node_modules/
 frontend/dist/
 backend/logs/
 backend/storage/
-
-# Local development/test account credentials; never export with evidence.
+node_modules/
+models/
+*.log
+deepseek/
+*.zip
 *.private.json

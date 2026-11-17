@@ -2,6 +2,8 @@
 
 An agent that helps a student study from course PDFs.
 
+New here? Follow the step-by-step Chinese runbook: [docs/RUNBOOK.zh-CN.md](docs/RUNBOOK.zh-CN.md).
+
 Need Docker Desktop, Python 3.12 and Node.js 24 (the tested runtimes). Commands are for PowerShell.
 
 ## First time
