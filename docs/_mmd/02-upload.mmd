@@ -1,0 +1,12 @@
+%%{init: {"flowchart": {"htmlLabels": true, "curve": "basis", "padding": 18, "nodeSpacing": 36, "rankSpacing": 48}}}%%
+flowchart LR
+  A["上传 PDF"] --> B["SHA-256<br/>去重"]
+  B --> C["Docling + clean<br/>抽页与清洗"]
+  C --> D[("MySQL<br/>documents / pages")]
+  C --> E[("PDF 落盘<br/>原文件")]
+  C --> F[("Milvus<br/>FastEmbed 向量")]
+
+  classDef step fill:#FFF8EF,stroke:#C89D7C,stroke-width:1.5px,color:#41352E
+  classDef store fill:#F5ECE0,stroke:#A46945,stroke-width:1.5px,color:#41352E
+  class A,B,C step
+  class D,E,F store

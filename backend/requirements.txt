@@ -2,11 +2,15 @@ fastapi==0.136.1
 uvicorn==0.46.0
 python-multipart==0.0.22
 pymysql==1.1.2
+cryptography==50.0.2
 pymupdf==1.26.5
 pymilvus==2.6.2
 fastembed==0.7.4
+langchain==1.5.0
 langchain-openai==1.1.7
-langchain-core==1.2.7
+langchain-core==1.8.0
+langgraph==1.2.22
 openai==2.54.0
 python-dotenv==1.2.4
 docling==2.146.0
+ddgs==9.16.1

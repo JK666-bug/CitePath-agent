@@ -1,13 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { ArrowUpRight, Check, History, MessageSquare } from 'lucide-react'
+import { Globe, Plus, Trash2 } from 'lucide-react'
 
 import type {
   CourseDetail,
   QAResponse,
 } from './types'
 
-import { askCourse, listQuestions } from './api'
+import AnswerBody from './AnswerBody'
+import { askCourse, deleteQuestionTab, listQuestions } from './api'
+import { usableMaterials } from './DocumentPicker'
+import QaPdfChip from './QaPdfChip'
 import { messageOf } from '../../shared/request'
 import { Link } from '../../shared/router'
 
@@ -15,6 +18,59 @@ import {
   Notice,
   Sources,
 } from '../../shared/components/UI'
+
+type Tab = {
+  tab_id: string
+  tab_title: string
+  messages: QAResponse[]
+  draft: boolean
+}
+
+function newTabId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID()
+  }
+  return `tab-${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
+
+function groupTabs(rows: QAResponse[]): Tab[] {
+  const order: string[] = []
+  const byId = new Map<string, Tab>()
+  const chronological = [...rows].sort(
+    (a, b) => (a.qa_id || 0) - (b.qa_id || 0),
+  )
+  for (const row of chronological) {
+    const tabId = row.tab_id || `legacy-${row.qa_id}`
+    let tab = byId.get(tabId)
+    if (!tab) {
+      tab = {
+        tab_id: tabId,
+        tab_title: row.tab_title || row.question || 'Chat',
+        messages: [],
+        draft: false,
+      }
+      byId.set(tabId, tab)
+      order.push(tabId)
+    }
+    tab.messages.push(row)
+  }
+  return order
+    .map((id) => byId.get(id)!)
+    .sort((a, b) => {
+      const aLast = a.messages.at(-1)?.qa_id || 0
+      const bLast = b.messages.at(-1)?.qa_id || 0
+      return bLast - aLast
+    })
+}
+
+function answerBadge(response: QAResponse) {
+  if (response.refused) return 'Insufficient evidence'
+  if (response.origin === 'account') return 'Answer from your account'
+  if (response.origin === 'chat') return 'Noted'
+  if (response.web_sources?.length) return 'Supplemented from the web'
+  if (response.cited_pages.length) return 'Answer from your materials'
+  return 'Answer from your study record'
+}
 
 export default function CourseQA({
   courseId,
@@ -24,39 +80,29 @@ export default function CourseQA({
   course: CourseDetail
 }) {
   const demo = courseId === 'demo'
+  const materials = usableMaterials(course.documents)
+  const usable = materials.length > 0
 
-  const usable =
-    course.documents.some(
-      (material) =>
-        material.ingest_status ===
-          'complete' &&
-        material.usable_page_count > 0,
-    )
-
-  const [question, setQuestion] =
-    useState('')
-
-  const [records, setRecords] = useState<
-    {
-      question: string
-      response: QAResponse
-    }[]
-  >([])
-
+  const [question, setQuestion] = useState('')
+  const [documentIds, setDocumentIds] = useState<number[]>(
+    () => materials.map((material) => material.id),
+  )
+  const [includeWeb, setIncludeWeb] = useState(false)
+  const [tabs, setTabs] = useState<Tab[]>([])
+  const [activeTabId, setActiveTabId] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [selectedId, setSelectedId] =
-    useState<number | null>(null)
+  const [deletingId, setDeletingId] = useState('')
+  const bottomRef = useRef<HTMLDivElement>(null)
 
-  const historyRecords = [...records].sort(
-    (a, b) => b.response.qa_id - a.response.qa_id,
-  )
-  const selectedRecord =
-    historyRecords.find(
-      (record) => record.response.qa_id === selectedId,
-    ) ?? historyRecords[0] ?? null
-  const displayedRecords =
-    !demo && selectedRecord ? [selectedRecord] : []
+  useEffect(() => {
+    const readyIds = new Set(materials.map((material) => material.id))
+    setDocumentIds((current) => {
+      if (!current.length) return []
+      const kept = current.filter((id) => readyIds.has(id))
+      return kept
+    })
+  }, [course.documents])
 
   useEffect(() => {
     if (demo) return
@@ -64,12 +110,22 @@ export default function CourseQA({
     listQuestions(course.id)
       .then((rows) => {
         if (!active) return
-        setRecords(
-          rows.map((row) => ({
-            question: row.question || '',
-            response: row,
-          })),
-        )
+        const loaded = groupTabs(rows)
+        if (!loaded.length) {
+          const id = newTabId()
+          setTabs([
+            {
+              tab_id: id,
+              tab_title: 'New chat',
+              messages: [],
+              draft: true,
+            },
+          ])
+          setActiveTabId(id)
+          return
+        }
+        setTabs(loaded)
+        setActiveTabId(loaded[0].tab_id)
       })
       .catch((reason) => {
         if (active) setError(messageOf(reason))
@@ -79,43 +135,120 @@ export default function CourseQA({
     }
   }, [course.id, demo])
 
-  async function submit(
-    event: FormEvent<HTMLFormElement>,
-  ) {
-    event.preventDefault()
+  const activeTab = useMemo(
+    () => tabs.find((tab) => tab.tab_id === activeTabId) ?? null,
+    [tabs, activeTabId],
+  )
 
-    if (busy || !usable || demo) return
+  useEffect(() => {
+    const node = bottomRef.current
+    if (!node) return
+    node.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  }, [activeTabId, activeTab?.messages.length, busy, activeTab?.messages.at(-1)?.answer])
 
-    const text = question.trim()
+  function openNewChat() {
+    const id = newTabId()
+    setTabs((current) => [
+      {
+        tab_id: id,
+        tab_title: 'New chat',
+        messages: [],
+        draft: true,
+      },
+      ...current.filter((tab) => !(tab.draft && !tab.messages.length)),
+    ])
+    setActiveTabId(id)
+    setQuestion('')
+    setError('')
+  }
 
-    if (
-      !text ||
-      Array.from(text).length > 2000
-    ) {
-      setError(
-        'Enter a question of 1–2,000 characters.',
-      )
+  function removeTabLocally(tabId: string) {
+    setTabs((current) => {
+      const next = current.filter((tab) => tab.tab_id !== tabId)
+      if (!next.length) {
+        const id = newTabId()
+        queueMicrotask(() => setActiveTabId(id))
+        return [
+          {
+            tab_id: id,
+            tab_title: 'New chat',
+            messages: [],
+            draft: true,
+          },
+        ]
+      }
+      if (activeTabId === tabId) {
+        const fallback = next[0].tab_id
+        queueMicrotask(() => setActiveTabId(fallback))
+      }
+      return next
+    })
+    setQuestion('')
+    setError('')
+  }
+
+  async function removeChat(tab: Tab) {
+    if (busy || deletingId || demo) return
+    if (tab.draft || !tab.messages.length) {
+      removeTabLocally(tab.tab_id)
       return
     }
+    setDeletingId(tab.tab_id)
+    setError('')
+    try {
+      await deleteQuestionTab(course.id, tab.tab_id)
+      removeTabLocally(tab.tab_id)
+    } catch (reason) {
+      setError(messageOf(reason))
+    } finally {
+      setDeletingId('')
+    }
+  }
 
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (busy || demo || !activeTab) return
+    const text = question.trim()
+    if (!text || Array.from(text).length > 2000) {
+      setError('Enter a question of 1–2,000 characters.')
+      return
+    }
     setBusy(true)
     setError('')
-
     try {
       const response = await askCourse(
         course.id,
         text,
+        documentIds,
+        activeTab.tab_id,
+        includeWeb,
       )
-
-      setRecords((current) => [
-        {
-          question: text,
+      const tabId = response.tab_id || activeTab.tab_id
+      setTabs((current) => {
+        const others = current.filter(
+          (tab) => tab.tab_id !== activeTab.tab_id && tab.tab_id !== tabId,
+        )
+        const existing =
+          current.find((tab) => tab.tab_id === tabId) ||
+          current.find((tab) => tab.tab_id === activeTab.tab_id)
+        const messages = [
+          ...(existing?.messages || []).filter(
+            (item) => item.qa_id !== response.qa_id,
+          ),
           response,
-        },
-        ...current,
-      ])
-      setSelectedId(response.qa_id)
-
+        ]
+        const next: Tab = {
+          tab_id: tabId,
+          tab_title:
+            existing?.tab_title && existing.tab_title !== 'New chat'
+              ? existing.tab_title
+              : response.tab_title || text.slice(0, 72),
+          messages,
+          draft: false,
+        }
+        return [next, ...others]
+      })
+      setActiveTabId(tabId)
       setQuestion('')
     } catch (reason) {
       setError(messageOf(reason))
@@ -124,162 +257,86 @@ export default function CourseQA({
     }
   }
 
+  const lastPreview = (tab: Tab) => {
+    const last = tab.messages.at(-1)
+    if (!last) return 'Empty chat'
+    return last.answer?.slice(0, 120) || last.question || ''
+  }
+
   return (
     <div className="qa-page stack">
-      <section className="panel qa-question">
-        <h2>Ask your course materials</h2>
-
-        <p className="muted">
-          Answers use this course’s uploaded
-          PDFs and include source references.
-          Questions do not change your
-          practice scores.
-        </p>
-
-        {demo && (
-          <Notice>
-            Live Q&A is available in real
-            courses. This demo shows a fixed
-            example only; submitting questions
-            is disabled.
-          </Notice>
-        )}
-
-        {!usable && (
-          <Notice>
-            No usable material is available.
-            {' '}
-            <Link
-              href={
-                `/courses/${courseId}/info`
-              }
-            >
-              Upload a readable PDF first
-            </Link>.
-          </Notice>
-        )}
-
-        <form
-          className="stack"
-          noValidate
-          onSubmit={submit}
-        >
-          <label className="field">
-            <span>Your question</span>
-
-            <textarea
-              rows={4}
-              value={question}
-              maxLength={2000}
-              disabled={busy || demo}
-              onChange={(event) => {
-                setQuestion(
-                  event.target.value,
-                )
-                setError('')
-              }}
-              placeholder="What does this lecture say about breadth-first search?"
-            />
-          </label>
-
-          {error && (
-            <Notice tone="error">
-              {error}
-            </Notice>
-          )}
-
-          <div className="actions">
-            <button
-              className="button"
-              disabled={
-                busy || !usable || demo
-              }
-            >
-              {busy
-                ? 'Searching your materials…'
-                : 'Ask question'}
-            </button>
-
-            <small className="muted">
-              Earlier questions stay on this page after you refresh.
-            </small>
-          </div>
-        </form>
-      </section>
-
-      <aside
-        className="panel qa-history"
-        aria-labelledby="qa-history-title"
-      >
+      <aside className="qa-history" aria-labelledby="qa-tabs-title">
         <header className="qa-history-header">
           <div className="qa-history-heading">
-            <span className="qa-history-heading-icon" aria-hidden="true">
-              <History size={18} strokeWidth={1.7} />
-            </span>
-            <h2 id="qa-history-title">Q&A history</h2>
+            <h2 id="qa-tabs-title">Chats</h2>
             {!demo && (
-              <span className="qa-history-count">
-                {historyRecords.length}
-              </span>
+              <button
+                type="button"
+                className="qa-history-new"
+                onClick={openNewChat}
+                title="New chat"
+              >
+                <Plus size={15} strokeWidth={2} />
+                <span>New</span>
+              </button>
             )}
           </div>
-          <p className="qa-history-description">
-            Your questions, newest first.
-          </p>
         </header>
 
         {demo ? (
           <div className="qa-history-empty">
-            <MessageSquare size={24} strokeWidth={1.5} aria-hidden="true" />
-            <p>History is available in real courses.</p>
+            <p>Chats are available in real courses.</p>
           </div>
-        ) : historyRecords.length === 0 ? (
+        ) : tabs.length === 0 ? (
           <div className="qa-history-empty">
-            <MessageSquare size={24} strokeWidth={1.5} aria-hidden="true" />
-            <strong>A place for your questions</strong>
-            <p>Ask your first question to start your history.</p>
+            <p>Ask a question to start a chat.</p>
           </div>
         ) : (
           <ul className="qa-history-list">
-            {historyRecords.map((record, index) => {
-              const id = record.response.qa_id
-              const selected =
-                selectedRecord?.response.qa_id === id
-
+            {tabs.map((tab) => {
+              const selected = tab.tab_id === activeTabId
+              const removing = deletingId === tab.tab_id
               return (
-                <li key={id}>
-                  <button
-                    type="button"
+                <li key={tab.tab_id}>
+                  <div
                     className={
                       `qa-history-item${selected ? ' is-selected' : ''}`
                     }
-                    aria-pressed={selected}
-                    aria-controls="qa-answer-panel"
-                    onClick={() => setSelectedId(id)}
                   >
-                    <span className="qa-history-item-heading">
-                      <span className="qa-history-item-label">
-                        {index === 0 ? 'Latest question' : 'Earlier question'}
+                    <button
+                      type="button"
+                      className="qa-history-open"
+                      aria-pressed={selected}
+                      onClick={() => {
+                        setActiveTabId(tab.tab_id)
+                        setError('')
+                      }}
+                    >
+                      <span className="qa-history-question">
+                        {tab.tab_title || 'New chat'}
                       </span>
-                      {selected && (
-                        <span className="qa-history-selected-icon" aria-hidden="true">
-                          <Check size={12} strokeWidth={2.5} />
-                        </span>
-                      )}
-                    </span>
-                    <span className="qa-history-question">
-                      {record.question || 'Untitled question'}
-                    </span>
-                    <span className="qa-history-preview">
-                      {record.response.answer}
-                    </span>
-                    <span className="qa-history-meta">
-                      <span>
-                        {selected ? 'Currently viewing' : 'View answer'}
+                      <span className="qa-history-preview">
+                        {tab.messages.length > 1
+                          ? `${tab.messages.length} turns`
+                          : lastPreview(tab)}
                       </span>
-                      <ArrowUpRight size={14} aria-hidden="true" />
-                    </span>
-                  </button>
+                    </button>
+                    <button
+                      type="button"
+                      className="qa-history-delete"
+                      aria-label={`Delete ${tab.tab_title || 'chat'}`}
+                      title="Delete chat"
+                      disabled={busy || Boolean(deletingId)}
+                      onClick={() => {
+                        void removeChat(tab)
+                      }}
+                    >
+                      <Trash2 size={14} strokeWidth={1.8} />
+                      <span className="sr-only">
+                        {removing ? 'Deleting…' : 'Delete'}
+                      </span>
+                    </button>
+                  </div>
                 </li>
               )
             })}
@@ -287,109 +344,192 @@ export default function CourseQA({
         )}
       </aside>
 
-      {demo && (
-        <section className="panel qa-answer">
-          <span className="badge">
-            Fixed example
-          </span>
-
-          <h3>What is a binary tree?</h3>
-
-          <p>
-            A binary tree is a tree in which a
-            node has at most two children,
-            conventionally called left and
-            right.
-          </p>
-
-          <Sources
-            sources={[
-              {
-                document_id: 101,
-                filename:
-                  'Algorithms-L6.pdf',
-                page_number: 2,
-              },
-            ]}
-          />
-        </section>
-      )}
-
-      {!demo && !selectedRecord && (
-        <section id="qa-answer-panel" className="panel qa-empty">
-          <h3>Your answer will appear here</h3>
-          <p className="muted">
-            Ask a question above, or select a saved question
-            from the history to view its answer.
-          </p>
-        </section>
-      )}
-
-      {displayedRecords.map((record) => (
-        <section
-          id="qa-answer-panel"
-          className="panel qa-answer"
-          key={record.response.qa_id}
-          aria-label="Selected question and answer"
-        >
-          <p className="eyebrow">
-            Your question
-          </p>
-
-          <h3>{record.question}</h3>
-
-          <span
-            className={
-              `badge ${
-                record.response.refused
-                  ? 'warning'
-                  : ''
-              }`
-            }
-          >
-            {record.response.refused
-              ? 'Insufficient evidence'
-              : record.response.origin === 'account'
-                ? 'Answer from your account'
-                : record.response.origin === 'chat'
-                  ? 'Noted'
-                  : record.response.web_sources?.length
-                  ? 'Supplemented from the web'
-                  : record.response.cited_pages.length
-                    ? 'Answer from your materials'
-                    : 'Answer from your study record'}
-          </span>
-
-          <p className="answer-text">
-            {record.response.answer}
-          </p>
-
-          <Sources
-            sources={
-              record.response.cited_pages
-            }
-          />
-
-          {record.response.web_sources?.map(
-            (source) => (
-              <a
-                key={source.url}
-                href={source.url}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Web: {source.title}
-              </a>
-            ),
+      <div className="qa-main">
+        <div className="qa-thread" aria-label="Conversation">
+          {demo && (
+            <section className="panel qa-answer">
+              <span className="badge">Fixed example</span>
+              <h3>What is a binary tree?</h3>
+              <p>
+                A binary tree is a tree in which a node has at most two children,
+                conventionally called left and right.
+              </p>
+              <Sources
+                sources={[
+                  {
+                    document_id: 101,
+                    filename: 'Algorithms-L6.pdf',
+                    page_number: 2,
+                  },
+                ]}
+              />
+            </section>
           )}
 
-          <small className="muted">
-            Record {record.response.qa_id}
-            {' · '}
-            {record.response.course_name}
-          </small>
+          {!demo && activeTab && activeTab.messages.length > 0 && (
+            activeTab.messages.map((message) => (
+              <section
+                className="panel qa-answer"
+                key={message.qa_id}
+              >
+                <p className="eyebrow">Your question</p>
+                <h3>{message.question || 'Question'}</h3>
+                <span
+                  className={`badge ${message.refused ? 'warning' : ''}`}
+                >
+                  {answerBadge(message)}
+                </span>
+                <AnswerBody text={message.answer} />
+                <Sources sources={message.cited_pages} />
+                {message.web_sources?.map((source) => (
+                  <a
+                    key={source.url}
+                    href={source.url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Web: {source.title}
+                  </a>
+                ))}
+              </section>
+            ))
+          )}
+
+          {!demo && activeTab && !activeTab.messages.length && !busy && (
+            <section className="panel qa-empty">
+              <h3>Your conversation will appear here</h3>
+              <p className="muted">
+                Ask a first question, then keep going with follow-ups in this chat.
+              </p>
+            </section>
+          )}
+
+          {busy && (
+            <section className="panel qa-answer qa-pending" aria-live="polite">
+              <p className="eyebrow">Working</p>
+              <h3>Thinking…</h3>
+              <p className="muted">Preparing a reply for this chat.</p>
+            </section>
+          )}
+
+          <div ref={bottomRef} className="qa-thread-end" aria-hidden="true" />
+        </div>
+
+        <section className="panel qa-question">
+          {demo && (
+            <Notice>
+              Live Q&A is available in real courses. This demo shows a fixed
+              example only.
+            </Notice>
+          )}
+
+          {!usable && (
+            <Notice>
+              No lecture PDFs are ready yet, so replies stay casual chat. You can
+              still turn on Web search. Upload materials on{' '}
+              <Link href={`/courses/${courseId}/info`}>
+                Course information
+              </Link>{' '}
+              when you want grounded answers from notes.
+            </Notice>
+          )}
+
+          {error && <Notice tone="error">{error}</Notice>}
+
+          {!demo && (
+            <form className="qa-composer" noValidate onSubmit={submit}>
+              <div className="qa-composer-attachments">
+                <QaPdfChip
+                  documents={course.documents}
+                  selectedIds={documentIds}
+                  disabled={busy}
+                  onChange={(ids) => {
+                    setDocumentIds(ids)
+                    setError('')
+                  }}
+                />
+                <button
+                  type="button"
+                  className={`qa-web-chip${includeWeb ? ' is-on' : ''}`}
+                  disabled={busy}
+                  aria-pressed={includeWeb}
+                  title={
+                    includeWeb
+                      ? 'Web search on — each ask also searches the public web once'
+                      : 'Web search off — turn on to also search the web each ask'
+                  }
+                  onClick={() => {
+                    setIncludeWeb((value) => !value)
+                    setError('')
+                  }}
+                >
+                  <Globe size={14} strokeWidth={1.8} />
+                  <span>Web</span>
+                </button>
+                {!documentIds.length && !includeWeb && (
+                  <span className="muted small">
+                    No PDF selected — casual chat. Turn on Web to search online.
+                  </span>
+                )}
+                {includeWeb && (
+                  <span className="muted small">
+                    Web on — each ask also searches once online
+                    {!documentIds.length ? ' (no PDF needed).' : '.'}
+                  </span>
+                )}
+              </div>
+
+              <div className="qa-composer-row">
+                <textarea
+                  className="qa-composer-input"
+                  rows={2}
+                  value={question}
+                  maxLength={2000}
+                  disabled={busy}
+                  onChange={(event) => {
+                    setQuestion(event.target.value)
+                    setError('')
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key !== 'Enter' || event.shiftKey) return
+                    if (event.nativeEvent.isComposing) return
+                    event.preventDefault()
+                    event.currentTarget.form?.requestSubmit()
+                  }}
+                  placeholder={
+                    !documentIds.length
+                      ? includeWeb
+                        ? 'Ask anything… (casual chat + web search)'
+                        : 'Say something… (no PDF — casual chat, or turn on Web)'
+                      : activeTab?.messages.length
+                        ? 'Ask a follow-up…'
+                        : 'Ask anything about your course materials…'
+                  }
+                />
+
+                <div className="qa-composer-actions">
+                  {activeTab?.messages.length ? (
+                    <button
+                      type="button"
+                      className="button small secondary"
+                      disabled={busy}
+                      onClick={openNewChat}
+                    >
+                      New chat
+                    </button>
+                  ) : null}
+                  <button
+                    className="button small"
+                    disabled={busy}
+                  >
+                    {busy ? '…' : 'Send'}
+                  </button>
+                </div>
+              </div>
+            </form>
+          )}
         </section>
-      ))}
+      </div>
     </div>
   )
 }

@@ -25,8 +25,8 @@ _LIST_ITEM = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+\S")
 _SENTENCE_END = re.compile(r"[.!?;](?=\s|$)|[。！？；]")
 _CLOSED_LINE = re.compile(r"[.!?。！？;；:：]['\"”’)\]]*$")
 # A sentence broken by a page break is indexed once more as a bridge piece on
-# the earlier page. Each side is capped so the whole sentence fits the
-# embedding model.
+# the earlier page. bridge_to stores the companion page number (0 = not a bridge).
+# Each side is capped so the whole sentence fits the embedding model.
 BRIDGE_HEAD_TOKENS = 60
 BRIDGE_TAIL_TOKENS = 45
 
@@ -97,7 +97,7 @@ def search(document_ids: list[int], query: str, limit: int = SEARCH_LIMIT) -> li
         reqs=[dense, sparse],
         ranker=RRFRanker(k=60),
         limit=limit,
-        output_fields=["document_id", "page_number", "chapter", "text"],
+        output_fields=["document_id", "page_number", "chapter", "text", "bridge_to"],
     )
     hits = found[0] if found else []
     rows = []
@@ -113,6 +113,7 @@ def search(document_ids: list[int], query: str, limit: int = SEARCH_LIMIT) -> li
                 "page_number": int(entity["page_number"]),
                 "chapter": entity.get("chapter") or "",
                 "text": entity.get("text") or "",
+                "bridge_to": int(entity.get("bridge_to") or 0),
                 "score": float(hit.get("distance", 0)),
             }
         )
@@ -130,7 +131,14 @@ def segments_for(document_id: int) -> list[dict]:
     rows = client.query(
         collection_name=COLLECTION,
         filter=f"document_id == {int(document_id)}",
-        output_fields=["document_id", "page_number", "chunk_index", "chapter", "text"],
+        output_fields=[
+            "document_id",
+            "page_number",
+            "chunk_index",
+            "chapter",
+            "text",
+            "bridge_to",
+        ],
         limit=10000,
     )
     return sorted(rows, key=lambda row: (row["page_number"], row["chunk_index"]))
@@ -259,20 +267,24 @@ def _pieces(document_id: int, pages: list[dict]) -> list[dict]:
         body = page.get("body") or ""
         if not page.get("usable") or not str(body).strip():
             continue
-        chunks = chunk_text(str(body))
-        next_body = by_number.get(int(page["page_number"]) + 1)
+        page_number = int(page["page_number"])
+        tagged: list[tuple[str, int]] = [
+            (chunk, 0) for chunk in chunk_text(str(body))
+        ]
+        next_body = by_number.get(page_number + 1)
         if next_body:
             bridge = bridge_text(str(body), next_body)
             if bridge:
-                chunks.append(bridge)
-        for index, chunk in enumerate(chunks):
+                tagged.append((bridge, page_number + 1))
+        for index, (chunk, bridge_to) in enumerate(tagged):
             pieces.append(
                 {
                     "document_id": int(document_id),
-                    "page_number": int(page["page_number"]),
+                    "page_number": page_number,
                     "chunk_index": index,
                     "chapter": "",
                     "text": chunk[:MAX_CHARS],
+                    "bridge_to": int(bridge_to),
                 }
             )
     return pieces
@@ -482,7 +494,7 @@ def _hybrid_ready(client: MilvusClient) -> bool:
             names.add(field.get("name"))
         else:
             names.add(getattr(field, "name", None))
-    return "sparse" in names and "vector" in names
+    return {"sparse", "vector", "bridge_to"}.issubset(names)
 
 
 def _ensure_collection(client: MilvusClient, dimension: int) -> None:
@@ -497,6 +509,8 @@ def _ensure_collection(client: MilvusClient, dimension: int) -> None:
     schema.add_field("document_id", DataType.INT64)
     schema.add_field("page_number", DataType.INT64)
     schema.add_field("chunk_index", DataType.INT64)
+    # 0 = normal chunk; otherwise the companion page to return with this hit.
+    schema.add_field("bridge_to", DataType.INT64)
     schema.add_field("chapter", DataType.VARCHAR, max_length=255)
     schema.add_field(
         "text",

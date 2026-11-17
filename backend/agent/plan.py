@@ -2,9 +2,7 @@ import json
 import re
 from datetime import date, timedelta
 
-from langchain_core.messages import HumanMessage, SystemMessage
-
-from agent.llm import chat_model
+from agent.chains import invoke_json
 from db.courses import get_course, save_course_note
 from db.plans import get_plan, load_usable_pages, save_generated_plan
 
@@ -64,16 +62,24 @@ concepts is an array of 2 to 4 short phrases that appear in those pages and can 
 These are representative concepts, not a limit on the chapter's teaching scope. Do not split a
 coherent unit just to fit all of its subtopics into the 2-to-4-concept list.
 pages is an array of {"document_id": number, "page_number": number} copied from the pages provided.
-Place every supplied page in exactly one chapter."""
+A chapter may cite several pages. The same page may appear in more than one chapter when it supports more than one theme. Do not invent pages."""
 
 
-def generate_plan(user_id: int, course_id: int, start: str, end: str, note: str) -> dict:
+def generate_plan(
+    user_id: int,
+    course_id: int,
+    start: str,
+    end: str,
+    note: str,
+    document_ids: list[int] | None = None,
+) -> dict:
     course = get_course(user_id, course_id)
     if course is None:
         raise LookupError("Course not found")
-    pages = load_usable_pages(course_id)
+    selected = _selected_document_ids(course, document_ids)
+    pages = load_usable_pages(course_id, selected)
     if not pages:
-        raise ValueError("Upload a readable PDF before generating a plan")
+        raise ValueError("Select at least one readable PDF before generating a plan")
     brief = parse_brief(save_course_note(user_id, course_id, note))
     start, end = study_window(start, end)
     chapters, reason = _split_pages(brief, pages, start, end)
@@ -81,9 +87,35 @@ def generate_plan(user_id: int, course_id: int, start: str, end: str, note: str)
     version = 1
     if previous and isinstance(previous.get("version"), int):
         version = previous["version"] + 1
-    plan = assemble_plan(chapters, start, end, reason, version)
+    plan = assemble_plan(chapters, start, end, reason, version, note=brief["note"])
     stored = save_generated_plan(course_id, plan)
     return {"status": "ready", "plan": stored}
+
+
+def _selected_document_ids(course: dict, document_ids: list[int] | None) -> list[int]:
+    ready = {
+        int(document["id"])
+        for document in course.get("documents") or []
+        if document.get("ingest_status") == "complete"
+        and int(document.get("usable_page_count") or 0) > 0
+    }
+    if not ready:
+        raise ValueError("Upload a readable PDF before generating a plan")
+    if document_ids is None:
+        return sorted(ready)
+    chosen = []
+    seen: set[int] = set()
+    for item in document_ids:
+        document_id = int(item)
+        if document_id not in ready:
+            raise ValueError("Select readable PDFs from this course")
+        if document_id in seen:
+            continue
+        seen.add(document_id)
+        chosen.append(document_id)
+    if not chosen:
+        raise ValueError("Select at least one readable PDF before generating a plan")
+    return chosen
 
 
 def parse_brief(text: str) -> dict:
@@ -121,23 +153,19 @@ def chapters_from_reply(payload: dict | None, pages: list[dict]) -> tuple[list[d
     if not isinstance(payload, dict):
         return [], "", False
     allowed = {(int(page["document_id"]), int(page["page_number"])): page for page in pages}
-    used: set[tuple[int, int]] = set()
     chapters = []
     for item in payload.get("chapters") or []:
         if not isinstance(item, dict):
             continue
-        selected = _take_pages(item.get("pages"), allowed, used)
+        selected = _take_pages(item.get("pages"), allowed)
         chapter = _chapter(len(chapters) + 1, item.get("title"), item.get("concepts"), selected)
         if chapter is None:
-            for page in selected:
-                used.discard((int(page["document_id"]), int(page["page_number"])))
             continue
         chapters.append(chapter)
     reason = str(payload.get("reason") or "").strip()
     if not reason:
         reason = "Divided from the lecture text and your course note."
-    complete = bool(chapters) and used == set(allowed)
-    return chapters, reason[:500], complete
+    return chapters, reason[:500], bool(chapters)
 
 
 def _split_pages(brief: dict, pages: list[dict], start: str, end: str) -> tuple[list[dict], str]:
@@ -167,18 +195,20 @@ def _split_document_pages(brief: dict, pages: list[dict], start: str, end: str) 
     return chapters, reason
 
 
-def schedule_tasks(chapters: list[dict], today: str, target: str) -> list[dict]:
+def schedule_tasks(
+    chapters: list[dict],
+    today: str,
+    target: str,
+    note: str = "",
+) -> list[dict]:
     count = len(chapters)
-    span = max(0, (date.fromisoformat(target) - date.fromisoformat(today)).days)
+    days = _study_days(today, target, skip_weekends=wants_no_weekends(note))
     tasks = []
     for index, chapter in enumerate(chapters):
-        if target < today or count <= 1:
-            offset = 0
+        if len(days) <= 1 or count <= 1:
+            day = days[0]
         else:
-            offset = round(index * span / (count - 1))
-        day = _add_days(today, offset)
-        if target >= today and day > target:
-            day = target
+            day = days[round(index * (len(days) - 1) / (count - 1))]
         for kind, label in (
             ("Reading", "Read"),
             ("Practice", "Practice"),
@@ -199,12 +229,87 @@ def schedule_tasks(chapters: list[dict], today: str, target: str) -> list[dict]:
     return tasks
 
 
+def wants_no_weekends(note: str) -> bool:
+    """True when the student clearly asks not to schedule weekend work."""
+    text = str(note or "").strip().lower()
+    if not text:
+        return False
+    allow = (
+        "周末也可以",
+        "周末也能",
+        "包括周末",
+        "含周末",
+        "周末也安排",
+        "include weekend",
+        "including weekend",
+        "on weekends too",
+        "weekends ok",
+        "weekends okay",
+        "also on weekend",
+    )
+    if any(marker in text for marker in allow):
+        return False
+    markers = (
+        "不想在周末",
+        "不要在周末",
+        "不要周末",
+        "别在周末",
+        "周末不要",
+        "周末别",
+        "周末不安排",
+        "周末不学",
+        "周末休息",
+        "避开周末",
+        "跳过周末",
+        "不排周末",
+        "只在工作日",
+        "仅工作日",
+        "只排工作日",
+        "工作日学习",
+        "工作日完成",
+        "no weekend",
+        "not on weekend",
+        "skip weekend",
+        "avoid weekend",
+        "without weekend",
+        "weekdays only",
+        "weekday only",
+        "only weekdays",
+        "no saturday",
+        "no sunday",
+        "don't schedule on weekend",
+        "do not schedule on weekend",
+        "dont schedule on weekend",
+    )
+    return any(marker in text for marker in markers)
+
+
+def _study_days(start: str, end: str, skip_weekends: bool) -> list[str]:
+    begin = date.fromisoformat(start)
+    finish = date.fromisoformat(end)
+    if finish < begin:
+        return [start]
+    all_days: list[str] = []
+    weekdays: list[str] = []
+    current = begin
+    while current <= finish:
+        key = current.isoformat()
+        all_days.append(key)
+        if current.weekday() < 5:
+            weekdays.append(key)
+        current += timedelta(days=1)
+    if skip_weekends and weekdays:
+        return weekdays
+    return all_days
+
+
 def assemble_plan(
     chapters: list[dict],
     today: str,
     target: str,
     reason: str,
     version: int,
+    note: str = "",
 ) -> dict:
     visible = [
         {
@@ -215,46 +320,37 @@ def assemble_plan(
         }
         for chapter in chapters
     ]
+    explanation = reason or "Planned from your course note and the uploaded lecture pages."
+    if wants_no_weekends(note):
+        suffix = " Weekend days were left free per your note."
+        if suffix.strip() not in explanation:
+            explanation = (explanation.rstrip() + suffix)[:500]
     return {
         "version": version,
         "start": today,
         "end": target,
-        "reason": reason or "Planned from your course note and the uploaded lecture pages.",
+        "reason": explanation,
         "chapters": visible,
-        "tasks": schedule_tasks(chapters, today, target),
+        "tasks": schedule_tasks(chapters, today, target, note=note),
     }
 
 
 def _ask_model(brief: dict, pages: list[dict], start: str, end: str, remind: bool) -> dict | None:
     days = max(1, (date.fromisoformat(end) - date.fromisoformat(start)).days + 1)
-    messages = [
-        SystemMessage(content=PLAN_SYSTEM),
-        HumanMessage(
-            content=(
-                f"Study window: {start} through {end}\n"
-                f"Days in the window: {days}\n"
-                f"Course deadline: {brief['deadline']}\n\n"
-                f"Student note:\n{brief['note']}\n\n"
-                + (
-                    "Place every page exactly once. Each chapter needs a title and 2 to 4 concepts from its pages.\n\n"
-                    if remind
-                    else ""
-                )
-                + f"Lecture pages:\n{_format_pages(pages)}"
-            )
-        ),
-    ]
-    try:
-        model = chat_model()
-        parsed = _json_object(str(model.invoke(messages).content))
-        if parsed is None:
-            messages.append(HumanMessage(content="Return one JSON object only."))
-            parsed = _json_object(str(model.invoke(messages).content))
-        return parsed
-    except RuntimeError:
-        raise
-    except Exception:
-        return None
+    content = (
+        f"Study window: {start} through {end}\n"
+        f"Days in the window: {days}\n"
+        f"Course deadline: {brief['deadline']}\n\n"
+        f"Student note:\n{brief['note']}\n\n"
+        + (
+            "Return at least one chapter. Each chapter needs a title, 2 to 4 concepts, and at least one real page. "
+            "A page may appear in more than one chapter.\n\n"
+            if remind
+            else ""
+        )
+        + f"Lecture pages:\n{_format_pages(pages)}"
+    )
+    return invoke_json(PLAN_SYSTEM, content)
 
 
 def _format_pages(pages: list[dict]) -> str:
@@ -268,8 +364,9 @@ def _format_pages(pages: list[dict]) -> str:
     return "\n\n".join(blocks)
 
 
-def _take_pages(refs, allowed: dict, used: set[tuple[int, int]]) -> list[dict]:
+def _take_pages(refs, allowed: dict) -> list[dict]:
     selected = []
+    seen: set[tuple[int, int]] = set()
     if not isinstance(refs, list):
         return selected
     for item in refs:
@@ -280,9 +377,9 @@ def _take_pages(refs, allowed: dict, used: set[tuple[int, int]]) -> list[dict]:
         except (TypeError, ValueError):
             continue
         page = allowed.get(key)
-        if page is None or key in used:
+        if page is None or key in seen:
             continue
-        used.add(key)
+        seen.add(key)
         selected.append(page)
     return selected
 
@@ -320,18 +417,3 @@ def _chapter(index: int, title, concepts, pages: list[dict]) -> dict | None:
 
 def _add_days(value: str, count: int) -> str:
     return (date.fromisoformat(value) + timedelta(days=count)).isoformat()
-
-
-def _json_object(text: str) -> dict | None:
-    raw = text.strip()
-    start = raw.find("{")
-    end = raw.rfind("}")
-    if start < 0 or end < start:
-        return None
-    try:
-        data = json.loads(raw[start : end + 1])
-    except json.JSONDecodeError:
-        return None
-    if not isinstance(data, dict):
-        return None
-    return data

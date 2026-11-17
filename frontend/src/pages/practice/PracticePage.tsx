@@ -5,25 +5,25 @@ import {
   navigate,
   useLocation,
 } from '../../shared/router'
-import { messageOf } from '../../shared/request'
 import { useStudy } from '../../shared/StudyProvider'
 import {
   DemoNotice,
   Empty,
   Loading,
-  Notice,
   PageHeader,
 } from '../../shared/components/UI'
 
-import { createPractice } from './api'
+import PracticeStartModal from './PracticeStartModal'
 
 import './practice.css'
 
 export default function PracticePage() {
   const { demo, courses, plans } = useStudy()
   const { search } = useLocation()
-  const [startingId, setStartingId] = useState('')
-  const [error, setError] = useState('')
+  const [target, setTarget] = useState<{
+    courseId: number
+    chapterId: number
+  } | null>(null)
 
   const filter =
     search.get('course') || 'all'
@@ -38,7 +38,7 @@ export default function PracticePage() {
       <PageHeader
         eyebrow="Practice with evidence"
         title="Chapter practice"
-        subtitle="Check your understanding, review weak concepts, and return to your plan."
+        subtitle="Check your understanding and return to your plan."
         actions={
           <label>
             <span className="sr-only">
@@ -168,7 +168,6 @@ export default function PracticePage() {
         </>
       ) : (
         <div className="stack">
-          {error && <Notice tone="error">{error}</Notice>}
           {visibleCourses.length === 0 && (
             <Empty title="No courses yet">
               <Link href="/courses">Back to my courses</Link>
@@ -214,25 +213,14 @@ export default function PracticePage() {
                       <div className="actions">
                         <button
                           className="button small"
-                          disabled={startingId === `${course.id}-${chapter.id}`}
-                          onClick={() => {
-                            setError('')
-                            setStartingId(`${course.id}-${chapter.id}`)
-                            void createPractice(course.id, Number(chapter.id))
-                              .then((created) =>
-                                navigate(
-                                  `/practice/${course.id}/sessions/${created.id}`,
-                                ),
-                              )
-                              .catch((reason) => {
-                                setError(messageOf(reason))
-                                setStartingId('')
-                              })
-                          }}
+                          onClick={() =>
+                            setTarget({
+                              courseId: course.id,
+                              chapterId: Number(chapter.id),
+                            })
+                          }
                         >
-                          {startingId === `${course.id}-${chapter.id}`
-                            ? 'Opening…'
-                            : 'Practice'}
+                          Practice
                         </button>
                         <Link
                           className="button small secondary"
@@ -249,6 +237,13 @@ export default function PracticePage() {
           })}
         </div>
       )}
+
+      <PracticeStartModal
+        open={target != null}
+        courseId={target?.courseId ?? 0}
+        chapterId={target?.chapterId ?? null}
+        onClose={() => setTarget(null)}
+      />
     </div>
   )
 }

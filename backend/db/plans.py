@@ -83,25 +83,38 @@ def ensure_plan_storage() -> None:
     _column_ready = True
 
 
-def load_usable_pages(course_id: int) -> list[dict]:
+def load_usable_pages(
+    course_id: int,
+    document_ids: list[int] | None = None,
+) -> list[dict]:
+    from db.uploads import ensure_document_kinds
+
+    ensure_document_kinds()
     connection = connect()
     try:
         with connection.cursor() as cursor:
-            cursor.execute(
-                """
+            sql = """
                 SELECT d.id AS document_id, d.filename,
                        p.page_number, p.body
                 FROM documents d
                 JOIN pages p ON p.document_id = d.id
                 WHERE d.course_id = %s
                   AND d.ingest_status = 'complete'
+                  AND (d.kind = 'lecture' OR d.kind IS NULL OR d.kind = '')
                   AND p.usable = 1
                   AND p.body IS NOT NULL
                   AND TRIM(p.body) <> ''
-                ORDER BY d.id, p.page_number
-                """,
-                (course_id,),
-            )
+                """
+            params: list[int] = [course_id]
+            if document_ids is not None:
+                ids = [int(item) for item in document_ids]
+                if not ids:
+                    return []
+                marks = ", ".join(["%s"] * len(ids))
+                sql += f" AND d.id IN ({marks})"
+                params.extend(ids)
+            sql += " ORDER BY d.id, p.page_number"
+            cursor.execute(sql, params)
             return list(cursor.fetchall())
     finally:
         connection.close()

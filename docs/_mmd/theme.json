@@ -1,0 +1,31 @@
+{
+  "theme": "base",
+  "themeVariables": {
+    "background": "#FAF7F2",
+    "fontFamily": "Arial Unicode MS, PingFang SC, Hiragino Sans GB, sans-serif",
+    "fontSize": "16px",
+    "primaryColor": "#FFF8EF",
+    "primaryTextColor": "#41352E",
+    "primaryBorderColor": "#C89D7C",
+    "secondaryColor": "#F5ECE0",
+    "secondaryTextColor": "#41352E",
+    "secondaryBorderColor": "#D6C4B2",
+    "tertiaryColor": "#FAF7F2",
+    "tertiaryTextColor": "#41352E",
+    "tertiaryBorderColor": "#E8D9C8",
+    "lineColor": "#A46945",
+    "textColor": "#41352E",
+    "mainBkg": "#FFFCF8",
+    "nodeBorder": "#C89D7C",
+    "clusterBkg": "#F5ECE0",
+    "clusterBorder": "#D6C4B2",
+    "titleColor": "#41352E",
+    "edgeLabelBackground": "#FAF7F2",
+    "actorBkg": "#FFF8EF",
+    "actorBorder": "#C89D7C",
+    "actorTextColor": "#41352E",
+    "labelBoxBkgColor": "#FFFCF8",
+    "labelBoxBorderColor": "#D6C4B2",
+    "labelTextColor": "#41352E"
+  }
+}

@@ -78,13 +78,45 @@ export type PracticeSession = {
   concepts: PracticeConcept[]
 }
 
+export type PracticePrefs = {
+  requirements?: string
+  difficulty?: 'default' | 'easy' | 'medium' | 'hard'
+  similar_to_cases?: boolean
+  preferred_kind?: 'any' | 'mcq' | 'short'
+  question_count?: number | null
+  case_document_ids?: number[]
+}
+
 export function createPractice(
   courseId: number,
   chapterId: number,
+  prefs?: PracticePrefs | null,
 ) {
+  const hasPrefs = Boolean(
+    prefs &&
+      (prefs.requirements?.trim() ||
+        (prefs.difficulty && prefs.difficulty !== 'default') ||
+        prefs.similar_to_cases ||
+        (prefs.preferred_kind && prefs.preferred_kind !== 'any') ||
+        prefs.question_count ||
+        (prefs.case_document_ids && prefs.case_document_ids.length > 0)),
+  )
   return request<PracticeSession>(
     `/api/courses/${courseId}/chapters/${chapterId}/practice`,
-    { method: 'POST' },
+    hasPrefs
+      ? {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            requirements: prefs?.requirements?.trim() || '',
+            difficulty: prefs?.difficulty || 'default',
+            similar_to_cases: Boolean(prefs?.similar_to_cases),
+            preferred_kind: prefs?.preferred_kind || 'any',
+            question_count: prefs?.question_count ?? null,
+            case_document_ids: prefs?.case_document_ids || [],
+          }),
+        }
+      : { method: 'POST' },
   )
 }
 

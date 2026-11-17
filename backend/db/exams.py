@@ -137,6 +137,7 @@ def load_chapter(user_id: int, course_id: int, chapter_id: int) -> dict:
         raise ValueError("This chapter has no concepts or readable pages to examine")
     return {
         "id": int(chapter["id"]),
+        "course_id": int(course_id),
         "title": chapter["title"],
         "concepts": concepts,
         "pages": pages,

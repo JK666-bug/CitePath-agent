@@ -1,17 +1,29 @@
 import unittest
 
-from agent.web import _public_http, _result_url
+from agent.web import _focus, _public_http, _result_url
 
-from agent.qa import _asks_about_self, _is_chat, _lecture_supported, memory_messages
+from agent.qa import (
+    _accepts_web,
+    _asks_about_self,
+    _is_greeting,
+    _lecture_supported,
+    _offers_web,
+    _rejects_web,
+    _with_web_ask,
+    memory_messages,
+)
 from agent.skills import load_skill
 from db.study_status import chapter_report, concept_report, mastery_label, wrong_report
 
 
 class SkillLoadTest(unittest.TestCase):
-    def test_qa_skill_chooses_one_tool(self):
+    def test_qa_skill_lists_tools(self):
         body = load_skill("qa")
         self.assertNotIn("name: qa", body)
         self.assertIn("latest 10 turns", body)
+        self.assertIn("whether they want a public web search", body)
+        self.assertIn("web-only", body)
+        self.assertIn("Web chip is on", body)
         for name in (
             "review_status",
             "concept_mastery",
@@ -22,6 +34,42 @@ class SkillLoadTest(unittest.TestCase):
             "search_web",
         ):
             self.assertIn(name, body)
+
+    def test_web_ask_is_appended_when_missing(self):
+        text = _with_web_ask("No panda in the notes.", include_web=False)
+        self.assertIn("search the public web", text)
+        self.assertIn("automatically", text)
+        already = _with_web_ask(
+            "Shall I search the web for this?",
+            include_web=False,
+        )
+        self.assertEqual(already, "Shall I search the web for this?")
+        enabled = _with_web_ask("No panda in the notes.", include_web=True)
+        self.assertEqual(enabled, "No panda in the notes.")
+
+    def test_yes_followup_accepts_web_offer(self):
+        self.assertTrue(_accepts_web("可以"))
+        self.assertTrue(_accepts_web("好的"))
+        self.assertTrue(_accepts_web("yes"))
+        self.assertFalse(_accepts_web("不可以"))
+        self.assertTrue(_rejects_web("不用了"))
+        self.assertTrue(
+            _offers_web(
+                "需要我帮你联网查一下神经网络训练（反向传播、激活函数）的公开资料吗？"
+            )
+        )
+        self.assertTrue(
+            _offers_web(
+                "需要我帮你上网查一份更系统的神经网络入门讲解吗？"
+            )
+        )
+
+    def test_greetings_are_not_course_questions(self):
+        self.assertTrue(_is_greeting("你好"))
+        self.assertTrue(_is_greeting("hello"))
+        self.assertTrue(_is_greeting("谢谢"))
+        self.assertFalse(_is_greeting("When is recovery funding released?"))
+        self.assertFalse(_is_greeting("你好，珊瑚白化是什么"))
 
     def test_memory_keeps_the_latest_ten_turns(self):
         turns = [
@@ -43,10 +91,27 @@ class SkillLoadTest(unittest.TestCase):
         self.assertFalse(_lecture_supported(parsed, pages))
         self.assertTrue(_asks_about_self("我名字是什么"))
         self.assertFalse(_asks_about_self("what is iPhone"))
-        self.assertTrue(_is_chat("我19岁了"))
-        self.assertFalse(_is_chat("我名字是什么"))
-        self.assertFalse(_is_chat("what is iPhone"))
-        self.assertFalse(_is_chat("二叉树"))
+
+    def test_course_framing_with_web_offer_is_still_supported(self):
+        from agent.qa import _declines
+
+        answer = (
+            "In the course's framing, machine learning is used as predictive "
+            "analytics: the model learns from labeled fraud examples (L01, p.45). "
+            "If you want a general textbook definition, I can search the web."
+        )
+        self.assertFalse(_declines(answer))
+        self.assertIn("whether they want a public web search", load_skill("qa"))
+        self.assertIn("formal textbook definition", load_skill("qa"))
+
+    def test_web_followup_is_web_only(self):
+        body = load_skill("qa")
+        self.assertIn("web-only", body)
+        self.assertIn("Do **not** restate lecture", body)
+        from agent.qa import EMPTY_WEB, WEB_FOLLOWUP_NOTE
+
+        self.assertIn("没有返回可用", EMPTY_WEB)
+        self.assertIn("Do not call search_notes", WEB_FOLLOWUP_NOTE)
 
 
 class StudyReportTest(unittest.TestCase):
@@ -94,3 +159,7 @@ class WebLinkTest(unittest.TestCase):
             _result_url("https://duckduckgo.com/l/?uddg=https%3A%2F%2Fexample.com%2Fa"),
             "https://example.com/a",
         )
+
+    def test_focus_strips_definition_wrappers(self):
+        self.assertEqual(_focus("什么是随机森林"), "随机森林")
+        self.assertEqual(_focus("what is random forest"), "random forest")

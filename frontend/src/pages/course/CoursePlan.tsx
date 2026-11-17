@@ -13,7 +13,7 @@ import type { CourseDetail, Task } from './types'
 import { decodeBrief } from '../courseEditor/brief'
 
 import { createExam } from '../exam/api'
-import { createPractice } from '../practice/api'
+import PracticeStartModal from '../practice/PracticeStartModal'
 import { messageOf } from '../../shared/request'
 import { useStudy } from '../../shared/StudyProvider'
 
@@ -41,6 +41,9 @@ import PaceLine, {
   taskTotals,
 } from '../../shared/components/PaceLine'
 
+import DocumentPicker, {
+  usableMaterials,
+} from './DocumentPicker'
 import TaskDetails from './TaskDetails'
 
 export default function CoursePlan({
@@ -64,6 +67,8 @@ export default function CoursePlan({
     useState('')
   const [examError, setExamError] =
     useState('')
+  const [practiceChapterId, setPracticeChapterId] =
+    useState<number | null>(null)
   const isDemo = courseId === 'demo'
   const numericId = Number(courseId)
   const entry = plans[numericId]
@@ -97,11 +102,8 @@ export default function CoursePlan({
     plan?.end,
   )
 
-  const ready = course.documents.some(
-    (document) =>
-      document.ingest_status === 'complete' &&
-      document.usable_page_count > 0,
-  )
+  const materials = usableMaterials(course.documents)
+  const ready = materials.length > 0
 
   function markComplete(task: Task) {
     if (isDemo) {
@@ -123,11 +125,11 @@ export default function CoursePlan({
 
         <Empty title="Generate a study plan">
           <p>
-            Choose the first and last study
-            day. The plan reads your goals and
-            lecture pages, then spreads
-            reading, practice, and review
-            across those dates.
+            Choose the PDFs this plan should
+            use, then set the first and last
+            study day. You can generate another
+            plan later from different PDFs in
+            this course.
           </p>
 
           {!ready && (
@@ -138,22 +140,24 @@ export default function CoursePlan({
           )}
 
           <PlanDates
-            key={`${windowStart}:${windowEnd}:${config.note}`}
+            key={`${windowStart}:${windowEnd}:${config.note}:${materials.map((item) => item.id).join(',')}`}
             initialStart={windowStart}
             initialEnd={windowEnd}
             initialNote={config.note}
+            documents={course.documents}
             busy={!ready || Boolean(entry?.generating)}
             label={
               entry?.generating
                 ? 'Creating your plan…'
                 : 'Generate plan'
             }
-            onGenerate={(start, end, note) =>
+            onGenerate={(start, end, note, documentIds) =>
               void generateCoursePlan(
                 numericId,
                 start,
                 end,
                 note,
+                documentIds,
               )
             }
           />
@@ -239,25 +243,25 @@ export default function CoursePlan({
           <h2>Plan dates</h2>
 
           <p className="muted small">
-            Chapters are spread from the
-            start date through the end date.
-            The study brief is saved on this
-            course. Regenerating replaces this
-            plan.
+            Choose which PDFs to include.
+            Regenerating replaces this plan, so
+            you can switch to another set of
+            PDFs in the same course.
           </p>
 
           <PlanDates
-            key={`${plan.version}:${windowStart}:${windowEnd}:${config.note}`}
+            key={`${plan.version}:${windowStart}:${windowEnd}:${config.note}:${materials.map((item) => item.id).join(',')}`}
             initialStart={windowStart}
             initialEnd={windowEnd}
             initialNote={config.note}
+            documents={course.documents}
             busy={Boolean(entry?.generating)}
             label={
               entry?.generating
                 ? 'Creating your plan…'
                 : 'Regenerate plan'
             }
-            onGenerate={(start, end, note) => {
+            onGenerate={(start, end, note, documentIds) => {
               if (
                 window.confirm(
                   'Save this study brief and generate a new plan? Completed tasks in this plan will be reset.',
@@ -268,6 +272,7 @@ export default function CoursePlan({
                   start,
                   end,
                   note,
+                  documentIds,
                 )
               }
             }}
@@ -384,118 +389,143 @@ export default function CoursePlan({
                         </p>
                       </div>
 
-                      <span className="badge">
-                        {task.status}
-                      </span>
-
-                      {task.kind ===
-                      'Practice' ? (
-                        isDemo ? (
-                          <Link
-                            className="button small secondary"
-                            href={
-                              `/practice/demo/${task.chapterId}`
-                            }
-                          >
-                            Open practice
-                          </Link>
-                        ) : (
-                          <div className="plan-task-actions">
-                            <button
-                              className="button small"
-                              disabled={
-                                startingChapter ===
-                                `practice-${task.chapterId}`
-                              }
-                              onClick={() => {
-                                setExamError('')
-                                setStartingChapter(
-                                  `practice-${task.chapterId}`,
-                                )
-                                void createPractice(
-                                  numericId,
-                                  Number(task.chapterId),
-                                )
-                                  .then((created) =>
-                                    navigate(
-                                      `/practice/${courseId}/sessions/${created.id}`,
-                                    ),
+                      <div className="plan-task-actions">
+                        {task.kind === 'Practice' ? (
+                          isDemo ? (
+                            <>
+                              <Link
+                                className="button small"
+                                href={
+                                  `/practice/demo/${task.chapterId}`
+                                }
+                              >
+                                Practice
+                              </Link>
+                              <button
+                                className="button small secondary"
+                                disabled={
+                                  task.status === 'Completed' ||
+                                  entry?.generating
+                                }
+                                onClick={() => markComplete(task)}
+                              >
+                                Done
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                className="button small"
+                                onClick={() => {
+                                  setExamError('')
+                                  setPracticeChapterId(
+                                    Number(task.chapterId),
                                   )
-                                  .catch((reason) => {
-                                    setExamError(
-                                      messageOf(reason),
+                                }}
+                              >
+                                Practice
+                              </button>
+                              <button
+                                className="button small secondary"
+                                disabled={
+                                  startingChapter ===
+                                  `exam-${task.chapterId}`
+                                }
+                                onClick={() => {
+                                  setExamError('')
+                                  setStartingChapter(
+                                    `exam-${task.chapterId}`,
+                                  )
+                                  void createExam(
+                                    numericId,
+                                    Number(task.chapterId),
+                                  )
+                                    .then((created) =>
+                                      navigate(
+                                        `/exams/${courseId}/${created.id}`,
+                                      ),
                                     )
-                                    setStartingChapter('')
-                                  })
-                              }}
-                            >
-                              {startingChapter ===
-                              `practice-${task.chapterId}`
-                                ? 'Writing question…'
-                                : 'Start practice'}
-                            </button>
+                                    .catch((reason) => {
+                                      setExamError(
+                                        messageOf(reason),
+                                      )
+                                      setStartingChapter('')
+                                    })
+                                }}
+                              >
+                                {startingChapter ===
+                                `exam-${task.chapterId}`
+                                  ? 'Wait…'
+                                  : 'Exam'}
+                              </button>
+                            </>
+                          )
+                        ) : task.kind === 'Review' ? (
+                          <>
+                            {isDemo ? (
+                              <span className="plan-task-action-slot" />
+                            ) : (
+                              <Link
+                                className="button small"
+                                href={
+                                  `/courses/${courseId}/chapters/${task.chapterId}/reports`
+                                }
+                              >
+                                Reports
+                              </Link>
+                            )}
                             <button
                               className="button small secondary"
                               disabled={
-                                startingChapter ===
-                                `exam-${task.chapterId}`
+                                task.status === 'Completed' ||
+                                entry?.generating
                               }
-                              onClick={() => {
-                                setExamError('')
-                                setStartingChapter(
-                                  `exam-${task.chapterId}`,
-                                )
-                                void createExam(
-                                  numericId,
-                                  Number(task.chapterId),
-                                )
-                                  .then((created) =>
-                                    navigate(
-                                      `/exams/${courseId}/${created.id}`,
-                                    ),
-                                  )
-                                  .catch((reason) => {
-                                    setExamError(
-                                      messageOf(reason),
-                                    )
-                                    setStartingChapter('')
-                                  })
-                              }}
+                              onClick={() => markComplete(task)}
                             >
-                              {startingChapter ===
-                              `exam-${task.chapterId}`
-                                ? 'Writing exam…'
-                                : 'Start exam'}
+                              Done
                             </button>
-                          </div>
-                        )
-                      ) : task.kind === 'Review' && !isDemo ? (
-                        <Link
-                          className="button small"
-                          href={
-                            `/courses/${courseId}/chapters/${task.chapterId}/reports`
-                          }
-                        >
-                          View reports
-                        </Link>
-                      ) : (
-                        <button
-                          className="button small secondary"
-                          disabled={
-                            task.status ===
-                              'Completed' ||
-                            entry?.generating
-                          }
-                          onClick={() =>
-                            markComplete(task)
-                          }
-                        >
-                          {task.status ===
-                          'Completed'
-                            ? 'Done'
-                            : 'Mark complete'}
-                        </button>
-                      )}
+                          </>
+                        ) : task.kind === 'Reading' && !isDemo ? (
+                          <>
+                            <Link
+                              className="button small"
+                              href={
+                                `/courses/${courseId}/read?task=` +
+                                encodeURIComponent(task.id)
+                              }
+                            >
+                              Open
+                            </Link>
+                            <button
+                              className="button small secondary"
+                              disabled={
+                                task.status === 'Completed' ||
+                                entry?.generating
+                              }
+                              onClick={() => markComplete(task)}
+                            >
+                              Done
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <span className="plan-task-action-slot" />
+                            <button
+                              className="button small secondary"
+                              disabled={
+                                task.status ===
+                                  'Completed' ||
+                                entry?.generating
+                              }
+                              onClick={() =>
+                                markComplete(task)
+                              }
+                            >
+                              Done
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </article>
                   )
                 })}
@@ -512,6 +542,15 @@ export default function CoursePlan({
         }
         onComplete={markComplete}
       />
+
+      {!isDemo && (
+        <PracticeStartModal
+          open={practiceChapterId != null}
+          courseId={numericId}
+          chapterId={practiceChapterId}
+          onClose={() => setPracticeChapterId(null)}
+        />
+      )}
     </div>
   )
 }
@@ -542,6 +581,7 @@ function PlanDates({
   initialStart,
   initialEnd,
   initialNote,
+  documents,
   busy,
   label,
   onGenerate,
@@ -549,19 +589,25 @@ function PlanDates({
   initialStart: string
   initialEnd: string
   initialNote: string
+  documents: CourseDetail['documents']
   busy: boolean
   label: string
   onGenerate: (
     start: string,
     end: string,
     note: string,
+    documentIds: number[],
   ) => void
 }) {
+  const ready = usableMaterials(documents)
   const [startDate, setStartDate] =
     useState(initialStart)
   const [endDate, setEndDate] =
     useState(initialEnd)
   const [note, setNote] = useState(initialNote)
+  const [documentIds, setDocumentIds] = useState(
+    () => ready.map((document) => document.id),
+  )
   const [error, setError] = useState('')
   const invalid =
     !/^\d{4}-\d{2}-\d{2}$/.test(startDate) ||
@@ -570,6 +616,19 @@ function PlanDates({
 
   return (
     <div className="plan-window">
+      <div className="field full">
+        <span>PDFs for this plan</span>
+        <DocumentPicker
+          documents={documents}
+          selectedIds={documentIds}
+          disabled={busy}
+          onChange={(ids) => {
+            setDocumentIds(ids)
+            setError('')
+          }}
+        />
+      </div>
+
       <div className="form-grid">
         <label className="field">
           <span>Start date</span>
@@ -628,6 +687,10 @@ function PlanDates({
           className="button"
           disabled={busy}
           onClick={() => {
+            if (!documentIds.length) {
+              setError('Select at least one PDF.')
+              return
+            }
             if (invalid) {
               setError(
                 'Choose a start date and an end date on or after it.',
@@ -635,7 +698,12 @@ function PlanDates({
               return
             }
 
-            onGenerate(startDate, endDate, note)
+            onGenerate(
+              startDate,
+              endDate,
+              note,
+              documentIds,
+            )
           }}
         >
           {label}

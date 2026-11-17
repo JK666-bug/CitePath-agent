@@ -14,7 +14,9 @@ def list_courses(user_id: int) -> list[dict]:
                        COUNT(d.id) AS document_count
                 FROM courses c
                 LEFT JOIN documents d
-                  ON d.course_id = c.id AND d.ingest_status = 'complete'
+                  ON d.course_id = c.id
+                 AND d.ingest_status = 'complete'
+                 AND (d.kind = 'lecture' OR d.kind IS NULL OR d.kind = '')
                 WHERE c.user_id = %s
                 GROUP BY c.id, c.name, c.student_brief, c.created_at
                 ORDER BY c.id DESC
@@ -130,15 +132,19 @@ def get_course(user_id: int, course_id: int) -> dict | None:
             course = cursor.fetchone()
             if course is None:
                 return None
+            from db.uploads import ensure_document_kinds
+
+            ensure_document_kinds()
             cursor.execute(
                 """
-                SELECT d.id, d.position, d.filename, d.ingest_status,
+                SELECT d.id, d.position, d.filename, d.ingest_status, d.kind,
                        COUNT(p.id) AS page_count,
                        SUM(CASE WHEN p.usable = 1 THEN 1 ELSE 0 END) AS usable_page_count
                 FROM documents d
                 LEFT JOIN pages p ON p.document_id = d.id
                 WHERE d.course_id = %s
-                GROUP BY d.id, d.position, d.filename, d.ingest_status
+                  AND (d.kind = 'lecture' OR d.kind IS NULL OR d.kind = '')
+                GROUP BY d.id, d.position, d.filename, d.ingest_status, d.kind
                 ORDER BY d.position, d.id
                 """,
                 (course_id,),
@@ -157,12 +163,20 @@ def get_course(user_id: int, course_id: int) -> dict | None:
                 "position": int(row["position"]),
                 "filename": row["filename"],
                 "ingest_status": row["ingest_status"],
+                "kind": row.get("kind") or "lecture",
                 "page_count": int(row["page_count"] or 0),
                 "usable_page_count": int(row["usable_page_count"] or 0),
+                "has_file": _document_has_file(int(course_id), int(row["id"])),
             }
             for row in documents
         ],
     }
+
+
+def _document_has_file(course_id: int, document_id: int) -> bool:
+    from db.pdf_store import has_pdf
+
+    return has_pdf(course_id, document_id)
 
 
 def owns_document(user_id: int, course_id: int, document_id: int) -> bool:
@@ -340,6 +354,9 @@ def delete_document_rows(document_id: int) -> None:
             _renumber_documents(cursor, course_id)
 
         connection.commit()
+        from db.pdf_store import delete_pdf
+
+        delete_pdf(course_id, int(document_id))
 
     except Exception:
         connection.rollback()

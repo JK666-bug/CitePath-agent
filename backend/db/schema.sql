@@ -32,10 +32,14 @@ CREATE TABLE IF NOT EXISTS documents (
   filename VARCHAR(255) NOT NULL,
   content_hash CHAR(64) NULL,
   ingest_status VARCHAR(16) NOT NULL DEFAULT 'pending',
+  kind VARCHAR(16) NOT NULL DEFAULT 'lecture',
+  parent_id INT NULL,
+  answer_mode VARCHAR(16) NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_course_document_pos (course_id, position),
   UNIQUE KEY uq_course_content_hash (course_id, content_hash),
-  CONSTRAINT fk_documents_course FOREIGN KEY (course_id) REFERENCES courses (id)
+  CONSTRAINT fk_documents_course FOREIGN KEY (course_id) REFERENCES courses (id),
+  CONSTRAINT fk_documents_parent FOREIGN KEY (parent_id) REFERENCES documents (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS pages (
@@ -161,6 +165,7 @@ CREATE TABLE IF NOT EXISTS practice_sessions (
   review_round INT NOT NULL,
   review_queue_json JSON NOT NULL,
   report_json JSON NULL,
+  prefs_json JSON NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   finished_at DATETIME NULL,
   CONSTRAINT fk_practice_sessions_course FOREIGN KEY (course_id) REFERENCES courses (id) ON DELETE CASCADE,
@@ -206,6 +211,8 @@ CREATE TABLE IF NOT EXISTS qa_records (
   cited_pages TEXT NULL,
   web_sources TEXT NULL,
   origin VARCHAR(32) NULL,
+  tab_id VARCHAR(64) NULL,
+  tab_title VARCHAR(255) NULL,
   refused TINYINT(1) NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_qa_course FOREIGN KEY (course_id) REFERENCES courses (id),

@@ -1,14 +1,32 @@
+import { useState } from 'react'
 import {
   FileText,
   Upload,
   X,
 } from 'lucide-react'
 
+import './materialPicker.css'
+
 export function fileKey(file: File) {
   return (
     `${file.name}:` +
     `${file.size}:` +
     file.lastModified
+  )
+}
+
+function isPdf(file: File) {
+  const name = file.name.toLowerCase()
+  return name.endsWith('.pdf') && file.size > 0
+}
+
+function mergeFiles(current: File[], incoming: File[]) {
+  const selected = [...current, ...incoming.filter(isPdf)]
+  return selected.filter(
+    (file, index) =>
+      selected.findIndex(
+        (item) => fileKey(item) === fileKey(file),
+      ) === index,
   )
 }
 
@@ -21,9 +39,40 @@ export default function MaterialPicker({
   onChange: (files: File[]) => void
   disabled?: boolean
 }) {
+  const [dragging, setDragging] = useState(false)
+
   return (
     <div className="material-picker">
-      <label className="upload-zone">
+      <label
+        className={
+          dragging
+            ? 'upload-zone is-dragging'
+            : 'upload-zone'
+        }
+        onDragEnter={(event) => {
+          event.preventDefault()
+          if (!disabled) setDragging(true)
+        }}
+        onDragOver={(event) => {
+          event.preventDefault()
+          if (!disabled) setDragging(true)
+        }}
+        onDragLeave={(event) => {
+          event.preventDefault()
+          setDragging(false)
+        }}
+        onDrop={(event) => {
+          event.preventDefault()
+          setDragging(false)
+          if (disabled) return
+          onChange(
+            mergeFiles(
+              files,
+              Array.from(event.dataTransfer.files || []),
+            ),
+          )
+        }}
+      >
         <Upload
           size={22}
           strokeWidth={1.4}
@@ -34,7 +83,7 @@ export default function MaterialPicker({
         </strong>
 
         <span>
-          Choose one or more PDF files
+          Choose or drop one or more PDF files
         </span>
 
         <input
@@ -43,24 +92,12 @@ export default function MaterialPicker({
           multiple
           disabled={disabled}
           onChange={(event) => {
-            const selected = [
-              ...files,
-              ...Array.from(
-                event.target.files || [],
-              ),
-            ]
-
             onChange(
-              selected.filter(
-                (file, index) =>
-                  selected.findIndex(
-                    (item) =>
-                      fileKey(item) ===
-                      fileKey(file),
-                  ) === index,
+              mergeFiles(
+                files,
+                Array.from(event.target.files || []),
               ),
             )
-
             event.target.value = ''
           }}
         />
@@ -77,9 +114,7 @@ export default function MaterialPicker({
               <small>
                 {Math.max(
                   1,
-                  Math.round(
-                    file.size / 1024,
-                  ),
+                  Math.round(file.size / 1024),
                 )}{' '}
                 KB
               </small>
@@ -87,16 +122,13 @@ export default function MaterialPicker({
               <button
                 className="icon-button"
                 type="button"
-                aria-label={
-                  `Remove ${file.name}`
-                }
+                aria-label={`Remove ${file.name}`}
                 disabled={disabled}
                 onClick={() =>
                   onChange(
                     files.filter(
                       (item) =>
-                        fileKey(item) !==
-                        fileKey(file),
+                        fileKey(item) !== fileKey(file),
                     ),
                   )
                 }

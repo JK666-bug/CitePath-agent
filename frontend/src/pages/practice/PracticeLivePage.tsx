@@ -3,7 +3,6 @@ import type { FormEvent } from 'react'
 
 import {
   Link,
-  navigate,
 } from '../../shared/router'
 import { messageOf } from '../../shared/request'
 import {
@@ -16,10 +15,10 @@ import {
 
 import {
   answerPractice,
-  createPractice,
   getPractice,
 } from './api'
 import type { PracticeSession } from './api'
+import PracticeStartModal from './PracticeStartModal'
 
 import './practice.css'
 
@@ -35,8 +34,8 @@ export default function PracticeLivePage({
   const [response, setResponse] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
-  const [starting, setStarting] = useState(false)
   const [wrongOnly, setWrongOnly] = useState(false)
+  const [practiceOpen, setPracticeOpen] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -185,8 +184,6 @@ export default function PracticeLivePage({
               </div>
               <p className="eyebrow">
                 {item.kind === 'mcq' ? 'Multiple choice' : 'Short answer'}
-                {' · '}
-                {item.phase === 'review' ? 'Review' : 'Learning'}
               </p>
               <h3>{item.prompt}</h3>
               <p>
@@ -209,26 +206,21 @@ export default function PracticeLivePage({
           <button
             className="button"
             type="button"
-            disabled={starting}
-            onClick={() => {
-              setError('')
-              setStarting(true)
-              void createPractice(Number(courseId), session.chapter_id)
-                .then((created) =>
-                  navigate(`/practice/${courseId}/sessions/${created.id}`),
-                )
-                .catch((reason) => {
-                  setError(messageOf(reason))
-                  setStarting(false)
-                })
-            }}
+            onClick={() => setPracticeOpen(true)}
           >
-            {starting ? 'Writing question…' : 'Practice again'}
+            Practice again
           </button>
           <Link href={`/courses/${courseId}/plan`}>
             Back to plan
           </Link>
         </div>
+
+        <PracticeStartModal
+          open={practiceOpen}
+          courseId={Number(courseId)}
+          chapterId={session.chapter_id}
+          onClose={() => setPracticeOpen(false)}
+        />
       </div>
     )
   }
@@ -239,18 +231,12 @@ export default function PracticeLivePage({
       onSubmit={onSubmit}
     >
       <PageHeader
-        eyebrow={
-          session.phase === 'review'
-            ? 'Chapter review'
-            : 'Chapter practice'
-        }
+        eyebrow="Chapter practice"
         title={session.chapter_title}
         subtitle={
           session.status === 'finished'
             ? 'Every concept in this chapter is mastered.'
-            : session.phase === 'review'
-              ? 'These questions mix concepts you already practiced. Each question is labeled with its concept.'
-              : 'Two correct answers in a row move this concept on. Each question is labeled with its concept.'
+            : 'Two correct answers in a row move this concept on. Each question is labeled with its concept.'
         }
       />
 

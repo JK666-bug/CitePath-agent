@@ -230,7 +230,13 @@ function useStudyValue(userId: number) {
   }, [])
 
   const generateCoursePlan = useCallback(
-    async (id: number, start: string, end: string, note: string) => {
+    async (
+      id: number,
+      start: string,
+      end: string,
+      note: string,
+      documentIds: number[],
+    ) => {
       generatingIds.current.add(id)
 
       setPlans((current) => ({
@@ -245,7 +251,13 @@ function useStudyValue(userId: number) {
       }))
 
       try {
-        const result = await createPlan(id, start, end, note)
+        const result = await createPlan(
+          id,
+          start,
+          end,
+          note,
+          documentIds,
+        )
         const savedNote = note.trim()
 
         setDetails((current) => {

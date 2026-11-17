@@ -1,0 +1,4 @@
+{
+  "executablePath": "/Users/jiangkai/.cache/puppeteer/chrome-headless-shell/mac_arm-157.0.8103.50/chrome-headless-shell-mac-arm64/chrome-headless-shell",
+  "args": ["--no-sandbox", "--disable-setuid-sandbox"]
+}

@@ -1,6 +1,7 @@
 .env
 volumes/
 backend/.venv/
+backend/data/pdfs/
 __pycache__/
 *.pyc
 frontend/node_modules/
