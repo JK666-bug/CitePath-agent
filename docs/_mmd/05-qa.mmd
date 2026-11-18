@@ -1,0 +1,14 @@
+%%{init: {"flowchart": {"htmlLabels": true, "curve": "basis", "padding": 18, "nodeSpacing": 36, "rankSpacing": 48}}}%%
+flowchart LR
+  U["CourseQA<br/>多窗口 · Enter 发送"] --> A["answer_question"]
+  A --> SK["qa SKILL.md<br/>工具选择规则"]
+  SK --> T["工具循环"]
+  T --> M[("Milvus<br/>search_notes")]
+  T --> MY[("MySQL<br/>pages / progress")]
+  T --> W["search_web"]
+  A --> R[("qa_records<br/>tab_id 隔离")]
+
+  classDef step fill:#FFF8EF,stroke:#C89D7C,stroke-width:1.5px,color:#41352E
+  classDef store fill:#F5ECE0,stroke:#A46945,stroke-width:1.5px,color:#41352E
+  class U,A,SK,T,W step
+  class M,MY,R store

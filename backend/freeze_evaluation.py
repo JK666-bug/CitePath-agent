@@ -39,6 +39,10 @@ def manifest():
     settings = {**dotenv_values(ROOT / ".env"), **os.environ}
     from agent.llm import model_configuration
     model = model_configuration(settings)
+    from vector.segments import COLLECTION
+    retrieval = {"collection": COLLECTION,
+                 "milvus_uri_sha256": hashlib.sha256(
+                     os.environ.get("MILVUS_URI", "http://127.0.0.1:19530").encode()).hexdigest()}
     from agent.telemetry import _rate
     constants = {}
     hashes = {}
@@ -56,7 +60,11 @@ def manifest():
                             except (ValueError, TypeError):
                                 pass
             constants[name] = public
-    packages = {dist.metadata["Name"]: dist.version for dist in importlib.metadata.distributions()}
+    # An overlay environment can expose more than one distribution of a name.
+    # Record the version selected by the interpreter, rather than the last one
+    # encountered on a later sys.path entry.
+    packages = {dist.metadata["Name"]: importlib.metadata.version(dist.metadata["Name"])
+                for dist in importlib.metadata.distributions()}
     try:
         git = ["git", "-c", f"safe.directory={ROOT.parent.as_posix()}"]
         commit = subprocess.check_output([*git, "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
@@ -70,6 +78,7 @@ def manifest():
         "provider": model["provider"], "model": model["model"],
         "deployment": model["model"], "api_version": model["api_version"],
         "base_url_sha256": model["base_url_sha256"],
+        "retrieval_configuration": retrieval,
         "model_key_name": model["key_name"], "model_key_configured": model["key_configured"],
         "model_temperature": 0, "model_timeout_seconds": model["timeout"], "model_max_retries": 1,
         "model_cost_configuration": {"input_per_million": _rate("MODEL_INPUT_COST_PER_MILLION"),

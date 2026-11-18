@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, File, HTTPException, Request, Response, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, ConfigDict, Field
@@ -14,7 +14,7 @@ from agent.practice import answer_practice, open_practice, save_practice_draft, 
 from agent.telemetry import usage_context
 from agent.llm import ping
 from agent.plan import generate_plan, planning_requirements
-from agent.qa import answer_question, list_questions
+from agent.qa import answer_question, delete_question_tab, list_questions
 from db.auth import authenticate, close_session, open_session, register_user, user_from_token
 from db.courses import (
     create_course,
@@ -27,6 +27,7 @@ from db.courses import (
 )
 from db.plans import complete_task, ensure_plan_storage, get_plan, get_plan_versions, get_plan_version, PlanConflict
 from db.document_files import original_pdf_path, delete_original_pdf
+from db.exam_cases import delete_exam_case, list_exam_cases, save_exam_case
 from db.practice import list_chapter_reports
 from db.uploads import existing_upload, save_document, restore_document
 from ingest.pdf_reader import read_pdf
@@ -72,12 +73,16 @@ class EvaluationContext(BaseModel):
 class QuestionBody(BaseModel):
     question: str = Field(max_length=2000)
     evaluation_context: EvaluationContext | None = None
+    document_ids: list[int] | None = Field(default=None, max_length=40)
+    tab_id: str | None = Field(default=None, max_length=64)
+    include_web: bool = False
 
 
 class PlanWindow(BaseModel):
     start: str = Field(max_length=10)
     end: str = Field(max_length=10)
     note: str = Field(default="", max_length=9000)
+    document_ids: list[int] | None = Field(default=None, max_length=40)
     profile: dict | None = None
     update_materials: bool = False
     expected_version: int | None = Field(default=None, gt=0, strict=True)
@@ -101,8 +106,26 @@ class PracticeAnswer(BaseModel):
     response: str = Field(default="", max_length=5000)
 
 
-class PracticeStart(BaseModel):
+class PracticePrefs(BaseModel):
+    requirements: str = Field(default="", max_length=2000)
+    difficulty: str = Field(default="default", max_length=16)
+    similar_to_cases: bool = False
+    preferred_kind: str = Field(default="any", max_length=16)
+    question_count: int | None = Field(default=None, ge=1, le=40)
+    case_document_ids: list[int] = Field(default_factory=list, max_length=40)
+
+
+class PracticeStart(PracticePrefs):
     passing_threshold: float = Field(default=0.8, gt=0, le=1, allow_inf_nan=False, strict=True)
+
+
+class NotesBody(BaseModel):
+    brief: str = Field(default="", max_length=2000)
+    document_ids: list[int] = Field(default_factory=list, max_length=40)
+    mode: str = Field(default="notes", max_length=16)
+    paper_size: str = Field(default="a4", max_length=16)
+    sides: str = Field(default="single", max_length=16)
+    type_size: str = Field(default="medium", max_length=16)
 
 
 def current_user(request: Request) -> dict:
@@ -181,6 +204,9 @@ def remove_course(course_id: int, user: dict = Depends(current_user)):
     document_ids = delete_course(user["id"], course_id)
     if document_ids is None:
         raise HTTPException(status_code=404, detail="Course not found")
+    from db.pdf_store import delete_course_pdfs
+
+    delete_course_pdfs(course_id)
     for document_id in document_ids:
         delete_original_pdf(document_id)
         try:
@@ -237,7 +263,8 @@ async def add_document(
 def source_document(course_id: int, document_id: int, user: dict = Depends(current_user)):
     if not owns_document(user["id"], course_id, document_id):
         raise HTTPException(status_code=404, detail="Material not found")
-    path = original_pdf_path(document_id)
+    from db.pdf_store import available_pdf_path
+    path = original_pdf_path(document_id) or available_pdf_path(course_id, document_id)
     if path is None:
         raise HTTPException(status_code=404, detail="Original PDF unavailable. Upload the same PDF again to restore it.")
     return FileResponse(
@@ -276,7 +303,7 @@ def evaluation_runtime(course_id: int, user: dict = Depends(current_user)):
         from evaluation.runtime import runtime_summary
         summary = runtime_summary()
         loaded = getattr(app.state, "runtime_identity", summary)
-        if any(loaded.get(field) != summary.get(field) for field in ("source_sha256", "provider", "model", "api_version", "base_url_sha256", "runtime_packages_sha256", "model_cost_configuration")):
+        if any(loaded.get(field) != summary.get(field) for field in ("source_sha256", "provider", "model", "api_version", "base_url_sha256", "runtime_packages_sha256", "model_cost_configuration", "retrieval_configuration")):
             raise RuntimeError("Restart the API after configuration or source changes")
         summary = loaded
     except Exception as error:
@@ -284,8 +311,51 @@ def evaluation_runtime(course_id: int, user: dict = Depends(current_user)):
     return {**summary, "course_id": course_id, "documents": [
         {"id": document["id"], "sha256": document["sha256"], "page_count": document["page_count"],
          "ingest_status": document["ingest_status"], "is_active": document["active"]}
-        for document in inventory["documents"] if document["active"]
+        for document in inventory["documents"]
+        if document["active"] and document.get("kind", "lecture") == "lecture"
     ]}
+@app.get("/api/courses/{course_id}/documents/{document_id}/segments")
+def document_segments(
+    course_id: int,
+    document_id: int,
+    user: dict = Depends(current_user),
+):
+    from vector.segments import COLLECTION, segments_for
+
+    if not owns_document(user["id"], course_id, document_id):
+        raise HTTPException(status_code=404, detail="Material not found")
+    course = get_course(user["id"], course_id)
+    filename = "material.pdf"
+    if course is not None:
+        for item in course.get("documents") or []:
+            if int(item["id"]) == document_id:
+                filename = str(item.get("filename") or filename)
+                break
+    try:
+        rows = segments_for(document_id)
+    except Exception as error:
+        raise HTTPException(
+            status_code=503,
+            detail="Vector index is unavailable. Check that Milvus is running.",
+        ) from error
+    segments = [
+        {
+            "document_id": int(row.get("document_id") or document_id),
+            "page_number": int(row.get("page_number") or 0),
+            "chunk_index": int(row.get("chunk_index") or 0),
+            "chapter": str(row.get("chapter") or ""),
+            "text": str(row.get("text") or ""),
+            "bridge_to": int(row.get("bridge_to") or 0),
+        }
+        for row in rows
+    ]
+    return {
+        "collection": COLLECTION,
+        "document_id": document_id,
+        "filename": filename,
+        "count": len(segments),
+        "segments": segments,
+    }
 
 
 @app.delete("/api/courses/{course_id}/documents/{document_id}")
@@ -297,6 +367,118 @@ def remove_document(
     if not owns_document(user["id"], course_id, document_id):
         raise HTTPException(status_code=404, detail="Material not found")
     return delete_document_rows(document_id)
+
+
+@app.post("/api/courses/{course_id}/notes")
+def create_notes(course_id: int, body: NotesBody, user: dict = Depends(current_user)):
+    from agent.notes import generate_notes_pdf
+    from fastapi.responses import Response as FastResponse
+    from urllib.parse import quote
+
+    try:
+        pdf, filename = generate_notes_pdf(
+            user["id"],
+            course_id,
+            body.brief,
+            body.document_ids,
+            body.mode,
+            body.paper_size,
+            body.sides,
+            body.type_size,
+        )
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail="Course not found") from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except RuntimeError as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
+    except Exception as error:
+        raise HTTPException(status_code=502, detail="Could not generate notes") from error
+    encoded = quote(filename)
+    return FastResponse(
+        content=pdf,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename*=UTF-8''{encoded}",
+        },
+    )
+
+
+@app.get("/api/courses/{course_id}/exam-cases")
+def course_exam_cases(course_id: int, user: dict = Depends(current_user)):
+    try:
+        return {"cases": list_exam_cases(user["id"], course_id)}
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail="Course not found") from error
+
+
+@app.post("/api/courses/{course_id}/exam-cases")
+async def add_exam_case(
+    course_id: int,
+    file: UploadFile = File(...),
+    answer_mode: str = Form("none"),
+    answer_file: UploadFile | None = File(None),
+    user: dict = Depends(current_user),
+):
+    if get_course(user["id"], course_id) is None:
+        raise HTTPException(status_code=404, detail="Course not found")
+    filename = _pdf_filename(file.filename)
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="The PDF is empty")
+    digest = hashlib.sha256(data).hexdigest()
+    try:
+        pages = read_pdf(data)
+    except Exception as error:
+        raise HTTPException(status_code=400, detail="This PDF could not be read") from error
+    if not pages:
+        raise HTTPException(status_code=400, detail="This PDF has no pages")
+    answer_filename = None
+    answer_pages = None
+    answer_hash = None
+    answer_data = None
+    if answer_file is not None and answer_file.filename:
+        answer_filename = _pdf_filename(answer_file.filename)
+        answer_data = await answer_file.read()
+        if not answer_data:
+            raise HTTPException(status_code=400, detail="The answer PDF is empty")
+        answer_hash = hashlib.sha256(answer_data).hexdigest()
+        try:
+            answer_pages = read_pdf(answer_data)
+        except Exception as error:
+            raise HTTPException(status_code=400, detail="This answer PDF could not be read") from error
+        if not answer_pages:
+            raise HTTPException(status_code=400, detail="This answer PDF has no pages")
+    try:
+        return save_exam_case(
+            user["id"],
+            course_id,
+            filename,
+            pages,
+            digest,
+            answer_mode,
+            answer_filename,
+            answer_pages,
+            answer_hash,
+            pdf_bytes=data,
+            answer_pdf_bytes=answer_data,
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
+@app.delete("/api/courses/{course_id}/exam-cases/{document_id}")
+def remove_exam_case(
+    course_id: int,
+    document_id: int,
+    user: dict = Depends(current_user),
+):
+    try:
+        delete_exam_case(user["id"], course_id, document_id)
+    except LookupError as error:
+        detail = "Course not found" if str(error) == "Course not found" else "Exam case not found"
+        raise HTTPException(status_code=404, detail=detail) from error
+    return {"ok": True}
 
 
 @app.get("/api/courses/{course_id}/plan")
@@ -314,7 +496,7 @@ def create_plan(course_id: int, body: PlanWindow, user: dict = Depends(current_u
                            user_id=user["id"], course_id=course_id):
             return generate_plan(user["id"], course_id, body.start, body.end, body.note,
                                  profile=body.profile, update_materials=body.update_materials,
-                                 expected_version=body.expected_version)
+                                 expected_version=body.expected_version, document_ids=body.document_ids)
     except LookupError as error:
         raise HTTPException(status_code=404, detail="Course not found") from error
     except PlanConflict as error:
@@ -445,7 +627,9 @@ def submit_course_exam(
 def create_practice(course_id: int, chapter_id: int, body: PracticeStart | None = None, user: dict = Depends(current_user)):
     try:
         with usage_context(operation="practice.start", user_id=user["id"], course_id=course_id, chapter_id=chapter_id):
-            return start_practice(user["id"], course_id, chapter_id, body.passing_threshold if body else 0.8)
+            return start_practice(user["id"], course_id, chapter_id,
+                                  passing_threshold=body.passing_threshold if body else 0.8,
+                                  prefs=body.model_dump(exclude={"passing_threshold"}) if body else None)
     except LookupError as error:
         detail = "Course not found" if str(error) == "Course not found" else "Chapter not found"
         raise HTTPException(status_code=404, detail=detail) from error
@@ -576,7 +760,9 @@ def create_question(
         context = body.evaluation_context.model_dump()
     try:
         with usage_context(operation="qa.answer", user_id=user["id"], course_id=course_id, **context):
-            return answer_question(user["id"], course_id, body.question)
+            return answer_question(user["id"], course_id, body.question,
+                                   document_ids=body.document_ids, tab_id=body.tab_id,
+                                   include_web=body.include_web)
     except LookupError as error:
         raise HTTPException(status_code=404, detail="Course not found") from error
     except ValueError as error:
@@ -585,6 +771,22 @@ def create_question(
         raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
         raise HTTPException(status_code=502, detail="Could not answer") from error
+
+
+@app.delete("/api/courses/{course_id}/questions/tabs/{tab_id}")
+def remove_question_tab(
+    course_id: int,
+    tab_id: str,
+    user: dict = Depends(current_user),
+):
+    try:
+        delete_question_tab(user["id"], course_id, tab_id)
+        return {"ok": True}
+    except LookupError as error:
+        detail = "Course not found" if str(error) == "Course not found" else "Chat not found"
+        raise HTTPException(status_code=404, detail=detail) from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
 
 
 def _set_session(response: Response, token: str) -> None:

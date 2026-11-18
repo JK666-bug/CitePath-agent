@@ -18,6 +18,7 @@ node tests/practice-ui-smoke.cjs
 node tests/feedback-ui-smoke.cjs
 node tests/upstream-ui-smoke.cjs
 node tests/planning-ui-smoke.cjs
+node tests/integration-compat-ui-smoke.cjs
 ```
 
 Google Chrome must be installed. To use an installed Microsoft Edge instead,
@@ -53,6 +54,7 @@ node tests/practice-ui-smoke.cjs
 node tests/feedback-ui-smoke.cjs
 node tests/upstream-ui-smoke.cjs
 node tests/planning-ui-smoke.cjs
+node tests/integration-compat-ui-smoke.cjs
 ```
 
 The upstream smoke verifies Q&A history, stable document-ID/page links after display
@@ -66,6 +68,15 @@ browser checks; they do not establish actual API or model performance.
 `node tests/restoration-ui-smoke.cjs` adds eight checks for archived/missing original
 sources, failed restore/retry, stable IDs, explicit archive wording and unchanged
 practice state. All five scripts use mocked APIs; the total is 44 browser checks.
+
+`node tests/integration-compat-ui-smoke.cjs` adds six checks for the November 18
+integration: custom practice combines the fixed pass mark and sample-case preferences;
+plan PDF selection retains profile, version and incremental-update settings; explicit
+empty QA selection stays casual chat; the reading page uses stable original PDF IDs;
+notes download uses selected lectures; and sample-case upload includes a separate
+answer PDF. The six suites total 50 mocked browser checks. The Q&A suite covers
+conversation tabs, including legacy rows without a tab ID. These checks do not call
+a real model, database or vector service.
 
 ## Read-only browser acceptance against actual services
 

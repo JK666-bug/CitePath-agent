@@ -126,6 +126,11 @@ class EvidenceCollectionTest(unittest.TestCase):
             self.assertTrue(prediction["human_review_required"])
             self.assertNotIn("supported", prediction)
         self.assertEqual([row[2]["evaluation_context"]["system"] for row in self.question_requests()], ["baseline", "full"])
+        for request in self.question_requests():
+            variant = request[2]["evaluation_context"]["system"]
+            self.assertEqual(request[2]["document_ids"], [
+                row["runtime_document_id"] for row in self.config["variants"][variant]["documents"]])
+            self.assertIs(request[2]["include_web"], False)
         exported = json.dumps({"report": result["report"], "journal": result["journal"]})
         for secret in self.secrets.values():
             self.assertNotIn(secret, exported)

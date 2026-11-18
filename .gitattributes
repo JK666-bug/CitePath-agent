@@ -1,3 +1,17 @@
-# Frozen datasets bind the exact manifest bytes, including original line endings.
-# Source hashes inside a manifest separately normalize CRLF to LF.
-evaluation_assets/**/frozen-configuration.json -text
+# Stable source line endings across Windows/Linux merges.
+*.py text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.cjs text eol=lf
+*.css text eol=lf
+*.sql text eol=lf
+*.md text eol=lf
+backend/requirements*.txt text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+# Frozen inputs/manifests retain their exact original bytes.
+evaluation_assets/** -text
+data/** -text
+*.pdf binary
+*.png binary

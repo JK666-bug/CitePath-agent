@@ -135,6 +135,7 @@ def ensure_practice_storage() -> None:
                 ("passing_threshold", "VARCHAR(64) NOT NULL DEFAULT '0.8'"),
                 ("round_results_json", "JSON NULL"),
                 ("draft_json", "JSON NULL"),
+                ("prefs_json", "JSON NULL"),
             ):
                 cursor.execute(
                     """SELECT COUNT(*) AS column_count FROM information_schema.COLUMNS
@@ -343,7 +344,7 @@ def open_session_id(user_id: int, course_id: int, chapter_id: int) -> int | None
     return int(row["id"]) if row else None
 
 
-def create_session(user_id: int, course_id: int, chapter: dict, passing_threshold=0.8) -> int:
+def create_session(user_id: int, course_id: int, chapter: dict, passing_threshold=0.8, *, prefs: dict | None = None) -> int:
     ensure_practice_storage()
     connection = connect()
     try:
@@ -352,11 +353,11 @@ def create_session(user_id: int, course_id: int, chapter: dict, passing_threshol
                 """
                 INSERT INTO practice_sessions (
                   course_id, user_id, chapter_id, chapter_title, status, phase, review_round, review_queue_json,
-                  workflow_version, passing_threshold, round_results_json, draft_json
+                  workflow_version, passing_threshold, round_results_json, draft_json, prefs_json
                 )
-                VALUES (%s, %s, %s, %s, 'open', 'learn', 1, %s, 2, %s, '[]', '{}')
+                VALUES (%s, %s, %s, %s, 'open', 'learn', 1, %s, 2, %s, '[]', '{}', %s)
                 """,
-                (course_id, user_id, chapter["id"], chapter["title"], "[]", str(passing_threshold)),
+                (course_id, user_id, chapter["id"], chapter["title"], "[]", str(passing_threshold), json.dumps(prefs or {}, ensure_ascii=False)),
             )
             session_id = int(cursor.lastrowid)
         connection.commit()
@@ -377,7 +378,7 @@ def get_owned_session(user_id: int, course_id: int, session_id: int) -> dict:
                 """
                 SELECT id, course_id, user_id, chapter_id, chapter_title, status, phase,
                        review_round, review_queue_json, report_json, created_at, finished_at,
-                       workflow_version, passing_threshold, round_results_json, draft_json
+                       workflow_version, passing_threshold, round_results_json, draft_json, prefs_json
                 FROM practice_sessions
                 WHERE id = %s AND course_id = %s AND user_id = %s
                 """,
@@ -393,6 +394,7 @@ def get_owned_session(user_id: int, course_id: int, session_id: int) -> dict:
         for item in _json_list(_json_value(row["review_queue_json"]))
         if isinstance(item, dict) and item.get("kind") in {"mcq", "short"}
     ]
+    row["prefs"] = _json_object(_json_value(row.get("prefs_json"))) or {}
     row["report"] = _json_object(_json_value(row["report_json"]))
     if row["report"] is not None:
         from agent.report_text import enrich_report
@@ -897,6 +899,7 @@ def present_session(user_id: int, course_id: int, session_id: int, concepts: lis
         "phase": session["phase"],
         "round_number": int(session["review_round"]),
         "passing_threshold": float(session["passing_threshold"]),
+        "prefs": session.get("prefs") or {},
         "round_results": session["round_results"],
         "answered_count": int(counts["answered"]),
         "round_question_count": int(counts["total"]),

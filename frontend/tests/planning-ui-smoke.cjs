@@ -68,6 +68,8 @@ async function run() {
     } else if (path === '/api/courses/1/plan') {
       if (request.method() === 'POST') {
         assert.equal(body.expected_version, plan.version)
+        if (body.update_materials) assert.deepEqual(body.document_ids, [67])
+        else assert.equal(body.document_ids, undefined)
         if (!body.profile.goal || !body.profile.prior_knowledge || !body.profile.daily_minutes) {
           result = { status: 'needs_input', questions, profile: body.profile, plan, material_update: materialUpdate }
         } else if (body.update_materials && plan.version === 1) {
@@ -99,7 +101,7 @@ async function run() {
     await estimates.getByText('55 min', { exact: true }).waitFor()
     await estimates.getByText('45 min', { exact: true }).waitFor()
     await estimates.getByText('Over your daily budget', { exact: true }).waitFor()
-    await page.getByRole('button', { name: 'Read the worked example', exact: true }).locator('..').locator('..').getByRole('button', { name: 'Mark complete', exact: true }).click()
+    await page.getByRole('button', { name: 'Read the worked example', exact: true }).locator('..').locator('..').getByRole('button', { name: 'Done', exact: true }).click()
     await estimates.getByText('30 min', { exact: true }).waitFor()
     await page.getByLabel('Include new materials when updating this plan', { exact: true }).waitFor()
     assert.equal(await page.getByLabel('Learning goal', { exact: true }).inputValue(), profile.goal)
@@ -125,7 +127,7 @@ async function run() {
     await estimates.getByText('80 min', { exact: true }).waitFor()
     assert.equal(await page.getByLabel('Study brief and preferences', { exact: true }).inputValue(), 'Keep my study preferences')
     assert.equal(await page.locator('.plan-task.completed').count(), 2)
-    assert.equal(await page.getByRole('link', { name: 'View reports', exact: true }).getAttribute('href'), '/courses/1/chapters/10/reports')
+    assert.equal(await page.getByRole('link', { name: 'Reports', exact: true }).getAttribute('href'), '/courses/1/chapters/10/reports')
     assert.equal(await page.getByLabel('Include new materials when updating this plan', { exact: true }).count(), 0)
     const updateCall = calls.filter((call) => call.path === '/api/courses/1/plan' && call.method === 'POST').at(-1)
     assert.equal(updateCall.body.expected_version, 1)

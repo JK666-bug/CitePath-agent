@@ -2,6 +2,7 @@ import json
 
 from agent.exam import _ask, _explain, _grade_shorts, _option_text, _real_option
 from agent.telemetry import usage_context
+from db.exam_cases import list_exam_cases, load_case_pages
 from db.exams import load_chapter
 from db.feedback import begin_explanation_attempt, complete_explanation_attempt, feedback_fields
 from db.practice import (
@@ -34,13 +35,70 @@ Use the requested kind.
 A multiple-choice question has exactly four options. Each option is the answer text itself, not the letter A, B, C, or D.
 answer is A, B, C, or D and points at one of those four texts.
 A short-answer question has 3 to 5 rubric points. Each point is a fact stated on the cited pages.
+If student preferences or exam-case samples are provided, match their style and difficulty where possible without inventing facts that are not on the lecture pages.
 Return one JSON object only, with the field question.
 question has concept, kind, prompt, pages, and either options plus answer, or rubric plus answer.
 kind is "mcq" or "short".
 pages is an array of {"document_id": number, "page_number": number} copied from the pages provided."""
 
 
-def start_practice(user_id: int, course_id: int, chapter_id: int, passing_threshold=0.8) -> dict:
+def normalize_practice_prefs(raw: dict | None, user_id: int, course_id: int) -> dict:
+    data = raw if isinstance(raw, dict) else {}
+    difficulty = str(data.get("difficulty") or "default").strip().lower()
+    if difficulty not in {"default", "easy", "medium", "hard"}:
+        difficulty = "default"
+    preferred_kind = str(data.get("preferred_kind") or "any").strip().lower()
+    if preferred_kind not in {"any", "mcq", "short"}:
+        preferred_kind = "any"
+    similar = bool(data.get("similar_to_cases"))
+    requirements = str(data.get("requirements") or "").strip()[:2000]
+    count_raw = data.get("question_count")
+    question_count = None
+    if isinstance(count_raw, int) and not isinstance(count_raw, bool) and 1 <= count_raw <= 40:
+        question_count = count_raw
+    case_ids: list[int] = []
+    seen: set[int] = set()
+    for item in data.get("case_document_ids") or []:
+        try:
+            case_id = int(item)
+        except (TypeError, ValueError):
+            continue
+        if case_id in seen:
+            continue
+        seen.add(case_id)
+        case_ids.append(case_id)
+    available = {
+        int(item["id"])
+        for item in list_exam_cases(user_id, course_id)
+        if item.get("ingest_status") == "complete" and int(item.get("usable_page_count") or 0) > 0
+    }
+    if similar and not case_ids:
+        case_ids = sorted(available)
+    else:
+        case_ids = [item for item in case_ids if item in available]
+        if case_ids:
+            similar = True
+    prefs = {
+        "requirements": requirements,
+        "difficulty": difficulty,
+        "similar_to_cases": similar,
+        "preferred_kind": preferred_kind,
+        "question_count": question_count,
+        "case_document_ids": case_ids,
+    }
+    if (
+        not prefs["requirements"]
+        and prefs["difficulty"] == "default"
+        and not prefs["similar_to_cases"]
+        and prefs["preferred_kind"] == "any"
+        and prefs["question_count"] is None
+        and not prefs["case_document_ids"]
+    ):
+        return {}
+    return prefs
+
+
+def start_practice(user_id: int, course_id: int, chapter_id: int, passing_threshold=0.8, *, prefs: dict | None = None) -> dict:
     threshold = validate_threshold(passing_threshold)
     chapter = load_chapter(user_id, course_id, chapter_id, require_ready=False)
     with practice_lock(user_id, course_id, chapter_id):
@@ -51,7 +109,8 @@ def start_practice(user_id: int, course_id: int, chapter_id: int, passing_thresh
                 _store_report(user_id, session_id, chapter, closing=True, session=session)
                 session_id = None
         if session_id is None:
-            session_id = create_session(user_id, course_id, chapter, threshold)
+            stored_prefs = normalize_practice_prefs(prefs, user_id, course_id) if prefs else {}
+            session_id = create_session(user_id, course_id, chapter, threshold, prefs=stored_prefs or None)
         # A resumed session always keeps its originally saved threshold.
         _ensure_question(user_id, course_id, session_id, chapter)
         return present_session(user_id, course_id, session_id, chapter["concepts"])
@@ -243,11 +302,13 @@ def _generate_round(user_id: int, course_id: int, session_id: int, chapter: dict
     # Existing questions/reports need no vector service; a NEW set must pass a
     # fresh ingestion check after acquiring the chapter lock.
     chapter = load_chapter(user_id, course_id, int(chapter["id"]), require_ready=True)
+    session = get_owned_session(user_id, course_id, session_id)
+    prefs = session.get("prefs") or {}
     questions = []
     for concept in concepts:
         miss = latest_miss(user_id, int(concept["id"])) if round_number == 2 else None
         for kind in ("mcq", "short"):
-            questions.append(_write_question(concept, chapter["pages"], kind, miss))
+            questions.append(_write_question(concept, chapter["pages"], kind, miss, prefs=prefs, course_id=course_id))
     store_round(session_id, round_number, questions)
 
 
@@ -370,7 +431,8 @@ def _grade_and_store_result(user_id: int, session: dict, question: dict, respons
         points_hit = 1 if correct else 0
         points_total = 1
     else:
-        graded = _grade_shorts([(question, response, rubric)])
+        case_answers = _case_answer_text(int(session["course_id"]), session.get("prefs") or {}) if session.get("prefs") else ""
+        graded = _grade_shorts([(question, response, rubric)], case_answers=case_answers) if case_answers else _grade_shorts([(question, response, rubric)])
         if int(question["id"]) not in graded:
             raise RuntimeError("The answer is saved, but grading is incomplete. Retry to grade it.")
         matched = graded[int(question["id"])]
@@ -417,8 +479,9 @@ def _sync_progress(user_id: int, attempts: list[dict]) -> None:
         save_progress(user_id, concept_id, 2 if mastered else 0, min(correct, 2))
 
 
-def _write_question(concept: dict, pages: list[dict], kind: str, miss: dict | None) -> dict:
-    content = _prompt(concept, pages, kind, miss)
+def _write_question(concept: dict, pages: list[dict], kind: str, miss: dict | None,
+                    prefs: dict | None = None, course_id: int | None = None) -> dict:
+    content = _prompt(concept, pages, kind, miss, prefs or {}, course_id)
     candidate = _ask(PRACTICE_SYSTEM, content)
     question = question_from_reply(candidate, concept, pages, kind)
     if question is None:
@@ -437,7 +500,14 @@ def _write_question(concept: dict, pages: list[dict], kind: str, miss: dict | No
     return question
 
 
-def _prompt(concept: dict, pages: list[dict], kind: str, miss: dict | None) -> str:
+def _prompt(
+    concept: dict,
+    pages: list[dict],
+    kind: str,
+    miss: dict | None,
+    prefs: dict,
+    course_id: int | None,
+) -> str:
     lines = [
         f"Concept: {concept['name']}",
         f"Requested kind: {kind}",
@@ -453,6 +523,12 @@ def _prompt(concept: dict, pages: list[dict], kind: str, miss: dict | None) -> s
         "Lecture pages:",
         _format_pages(pages),
     ]
+    guidance = _preference_block(prefs)
+    if guidance:
+        lines.extend(["", guidance])
+    case_pages = _case_pages_for_prefs(course_id, prefs)
+    if case_pages:
+        lines.extend(["", "Exam-case sample pages for style only:", _format_pages(case_pages)])
     if miss:
         lines.extend(
             [
@@ -466,18 +542,59 @@ def _prompt(concept: dict, pages: list[dict], kind: str, miss: dict | None) -> s
     return "\n".join(lines)
 
 
+def _preference_block(prefs: dict) -> str:
+    if not prefs:
+        return ""
+    lines = ["Student preferences for this practice session:"]
+    if prefs.get("requirements"):
+        lines.append(f"- Requirements: {prefs['requirements']}")
+    difficulty = prefs.get("difficulty") or "default"
+    if difficulty != "default":
+        lines.append(f"- Difficulty: {difficulty}")
+    preferred = prefs.get("preferred_kind") or "any"
+    if preferred in {"mcq", "short"}:
+        lines.append(
+            f"- Preferred style leans toward {preferred}, but still write the requested kind."
+        )
+    if prefs.get("question_count"):
+        lines.append(
+            f"- Aim for the tone and density of about {prefs['question_count']} questions in a short quiz."
+        )
+    if prefs.get("similar_to_cases"):
+        lines.append("- Match the style of the exam-case samples when provided.")
+    return "\n".join(lines) if len(lines) > 1 else ""
+
+
+def _case_pages_for_prefs(course_id: int | None, prefs: dict) -> list[dict]:
+    if course_id is None or not prefs.get("similar_to_cases"):
+        return []
+    case_ids = prefs.get("case_document_ids") or []
+    if not case_ids:
+        return []
+    return load_case_pages(course_id, case_ids, include_answers=False)[:12]
+
+
+def _case_answer_text(course_id: int, prefs: dict) -> str:
+    if not prefs.get("similar_to_cases"):
+        return ""
+    case_ids = prefs.get("case_document_ids") or None
+    pages = load_case_pages(course_id, case_ids, include_answers=True)
+    answer_pages = [
+        page
+        for page in pages
+        if page.get("kind") == "case_answer"
+        or (page.get("kind") == "exam_case" and page.get("answer_mode") == "in_case")
+    ]
+    if not answer_pages:
+        return ""
+    return _format_pages(answer_pages[:12])
+
+
 def _format_pages(pages: list[dict]) -> str:
     return "\n\n".join(
         f"[document_id={page['document_id']} | {page['filename']} | page {page['page_number']}]\n{str(page['body']).strip()}"
         for page in pages
     )
-
-
-def _concept(chapter: dict, concept_id: int) -> dict | None:
-    for concept in chapter["concepts"]:
-        if int(concept["id"]) == concept_id:
-            return concept
-    return None
 
 
 def _json_list(value) -> list:

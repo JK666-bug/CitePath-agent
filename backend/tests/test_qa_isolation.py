@@ -12,7 +12,7 @@ class QaIsolationTest(unittest.TestCase):
         parsed = {"supported": True, "answer": "A tree has a root.", "cited_pages": [{"document_id": 6, "page_number": 3}]}
         with patch("agent.qa.get_course", return_value=course), \
                 patch("agent.qa._choose_and_answer", return_value=([page], parsed, False, [], False)), \
-                patch("agent.qa.insert_record", return_value=8) as history, \
+                patch("agent.qa.insert_record", return_value={"qa_id": 8, "tab_id": "tab-8", "tab_title": "Trees"}) as history, \
                 patch("db.practice.save_answer") as practice_score, \
                 patch("db.practice.save_round_results") as round_state, \
                 patch("db.exams.finish_exam") as exam_score:

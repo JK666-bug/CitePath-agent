@@ -94,7 +94,7 @@ def _runtime(client, spec, manifest):
     observed = client.request("GET", f"/api/courses/{spec['course_id']}/evaluation/runtime")
     _require(isinstance(observed, dict) and observed.get("schema") == "citepath-evaluation-runtime-v1", "invalid_runtime_attestation")
     _require(observed.get("qa_policy") == QA_POLICY and observed.get("course_id") == spec["course_id"], "runtime_course_or_qa_policy_mismatch")
-    _require(all(observed.get(key) == manifest.get(key) for key in ("provider", "model", "api_version", "base_url_sha256", "source_sha256", "model_cost_configuration")),
+    _require(all(observed.get(key) == manifest.get(key) for key in ("provider", "model", "api_version", "base_url_sha256", "source_sha256", "model_cost_configuration", "retrieval_configuration")),
              "runtime_configuration_differs_from_freeze")
     _require(observed.get("python") == manifest["python"]
              and observed.get("runtime_packages_sha256") == digest(manifest["installed_packages"]),
@@ -254,7 +254,9 @@ def collect_evidence(data, config, *, run=False, checkpoint_dir=None, client_fac
                 report["inference_requested"] = True
                 started = time.perf_counter()
                 response = client.request("POST", f"/api/courses/{spec['course_id']}/questions",
-                                          {"question": item["question"], "evaluation_context": {
+                                          {"question": item["question"],
+                                            "document_ids": [row["runtime_document_id"] for row in spec["documents"]],
+                                            "include_web": False, "evaluation_context": {
                                               "evaluation_id": data["evaluation_id"], "system": variant, "item_id": item["id"]}})
                 prediction = _prediction(response, item, variant, spec, data["freeze"], synthetic,
                                          round((time.perf_counter() - started) * 1000))

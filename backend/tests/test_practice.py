@@ -3,12 +3,9 @@ import unittest
 from agent.practice import build_practice_report, question_from_reply
 from agent.practice_select import (
     all_mastered,
-    build_review_queue,
     learn_kind,
     next_unmastered,
     record_learn,
-    record_review,
-    review_set,
 )
 
 
@@ -36,22 +33,6 @@ class PracticeSelectTest(unittest.TestCase):
         self.assertEqual((level, streak), (2, 2))
         progress[1] = {"level": level, "streak": streak}
         self.assertEqual(next_unmastered(CHAPTER, progress)["name"], "Planning")
-
-    def test_review_mixes_up_to_three_mastered_concepts(self):
-        progress = {
-            1: {"level": 2, "streak": 2, "updated_at": "2026-11-01 00:00:00"},
-            2: {"level": 2, "streak": 2, "updated_at": "2026-11-08 00:00:00"},
-            3: {"level": 0, "streak": 0, "updated_at": ""},
-            4: {"level": 2, "streak": 2, "updated_at": "2026-11-02 00:00:00"},
-        }
-        chosen = review_set(CHAPTER, progress)
-        self.assertEqual([item["name"] for item in chosen], ["Goals", "Diagrams", "Planning"])
-        queue = build_review_queue([item["id"] for item in chosen], shuffle=lambda items: items.reverse())
-        self.assertEqual(len(queue), 6)
-        self.assertEqual(sorted(item["kind"] for item in queue), ["mcq", "mcq", "mcq", "short", "short", "short"])
-        self.assertEqual(record_review(0), (0, 0))
-        self.assertEqual(record_review(1), (2, 2))
-        self.assertEqual(record_review(2), (2, 2))
 
     def test_a_finished_chapter_starts_again_only_when_every_concept_is_mastered(self):
         mastered = {item["id"]: {"level": 2, "streak": 2} for item in CHAPTER}

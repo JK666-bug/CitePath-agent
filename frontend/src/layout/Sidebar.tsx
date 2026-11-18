@@ -5,7 +5,6 @@ import {
   CalendarDays,
   FolderOpen,
   LogOut,
-  PencilLine,
   Plus,
 } from 'lucide-react'
 
@@ -65,13 +64,6 @@ export default function Sidebar({
       icon: FolderOpen,
       active:
         path.startsWith('/courses'),
-    },
-    {
-      href: '/practice',
-      title: 'Chapter practice',
-      icon: PencilLine,
-      active:
-        path.startsWith('/practice'),
     },
   ]
 

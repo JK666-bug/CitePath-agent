@@ -1,3 +1,36 @@
+.practice-prefs {
+  margin-top: 10px;
+}
+
+.practice-prefs-body {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.practice-prefs-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.practice-prefs-check input {
+  margin-top: 2px;
+}
+
+.practice-prefs-cases {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.practice-prefs-cases legend {
+  padding: 0 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .practice-grid {
   display: grid;
   grid-template-columns:

@@ -2,6 +2,7 @@
 volumes/
 backend/.venv/
 backend/.venv-full/
+backend/data/pdfs/
 __pycache__/
 *.pyc
 frontend/node_modules/

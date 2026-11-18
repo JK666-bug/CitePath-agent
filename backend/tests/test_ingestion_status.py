@@ -107,14 +107,21 @@ class IngestionStorageTest(unittest.TestCase):
 
     def test_error_column_migration_keeps_existing_position_constraint(self):
         connection, cursor = connection_with_cursor()
-        cursor.fetchone.side_effect = [{"acquired": 1}, {"n": 1}, {"n": 0}, {"n": 0}, {"n": 0}]
-        with patch.object(uploads, "_numbers_ready", False), patch.object(
+        cursor.fetchone.side_effect = [
+            {"acquired": 1}, {"n": 1}, {"n": 0}, {"n": 0}, {"n": 0},
+            {"acquired": 1}, {"n": 0}, {"n": 0}, {"n": 0}, {"n": 0},
+        ]
+        with patch.object(uploads, "_numbers_ready", False), patch.object(uploads, "_kinds_ready", False), patch.object(
             uploads, "connect", return_value=connection
         ):
             uploads.ensure_document_numbers()
         sql = [str(item.args[0]) for item in cursor.execute.call_args_list]
         self.assertIn("ALTER TABLE documents ADD COLUMN ingest_error TEXT NULL", sql)
         self.assertFalse(any("ADD UNIQUE KEY" in item for item in sql))
+        self.assertIn("ALTER TABLE documents ADD COLUMN kind VARCHAR(16) NOT NULL DEFAULT 'lecture'", sql)
+        self.assertIn("ALTER TABLE documents ADD COLUMN parent_id INT NULL", sql)
+        self.assertIn("ALTER TABLE documents ADD COLUMN answer_mode VARCHAR(16) NULL", sql)
+        self.assertTrue(any("fk_documents_parent" in item and "ADD CONSTRAINT" in item for item in sql))
 
 
 class IngestionLockTest(unittest.TestCase):

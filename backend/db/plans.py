@@ -136,30 +136,35 @@ def ensure_plan_storage() -> None:
     _column_ready = True
 
 
-def load_usable_pages(course_id: int) -> list[dict]:
+def load_usable_pages(course_id: int, document_ids: list[int] | None = None) -> list[dict]:
     ensure_document_numbers()
+    ids = None if document_ids is None else list(dict.fromkeys(int(item) for item in document_ids))
+    if ids == []:
+        return []
+    if ids is not None and any(item <= 0 for item in ids):
+        raise ValueError("Select valid lecture documents")
+    selection = "" if ids is None else " AND d.id IN (" + ", ".join(["%s"] * len(ids)) + ")"
+    params = [course_id, *(ids or [])]
     connection = connect()
     try:
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT id, filename, ingest_status, ingest_error FROM documents WHERE course_id = %s AND is_active = 1",
-                (course_id,),
+                "SELECT d.id, d.filename, d.ingest_status, d.ingest_error FROM documents d "
+                "WHERE d.course_id = %s AND d.is_active = 1 "
+                "AND (d.kind = 'lecture' OR d.kind IS NULL OR d.kind = '')" + selection, params,
             )
-            require_ingested_documents(list(cursor.fetchall()))
+            documents = list(cursor.fetchall())
+            if ids is not None and {int(row["id"]) for row in documents} != set(ids):
+                raise ValueError("A selected lecture is unavailable or belongs to another course")
+            require_ingested_documents(documents)
             cursor.execute(
-                """
-                SELECT d.id AS document_id, d.filename, d.position,
-                       p.page_number, p.body
-                FROM documents d
-                JOIN pages p ON p.document_id = d.id
-                WHERE d.course_id = %s AND d.is_active = 1
-                  AND d.ingest_status = 'complete'
-                  AND p.usable = 1
-                  AND p.body IS NOT NULL
-                  AND TRIM(p.body) <> ''
-                ORDER BY d.id, p.page_number
-                """,
-                (course_id,),
+                """SELECT d.id AS document_id, d.filename, d.position, p.page_number, p.body
+                   FROM documents d JOIN pages p ON p.document_id = d.id
+                   WHERE d.course_id = %s AND d.is_active = 1
+                     AND (d.kind = 'lecture' OR d.kind IS NULL OR d.kind = '')
+                     AND d.ingest_status = 'complete' AND p.usable = 1
+                     AND p.body IS NOT NULL AND TRIM(p.body) <> ''"""
+                + selection + " ORDER BY d.id, p.page_number", params,
             )
             return list(cursor.fetchall())
     finally:
@@ -181,13 +186,14 @@ def _planning_materials(cursor, course_id: int, locked: bool = False) -> dict:
     suffix = " FOR UPDATE" if locked else ""
     cursor.execute(
         "SELECT id, filename, position, content_hash, ingest_status FROM documents "
-        "WHERE course_id = %s AND is_active = 1 ORDER BY id" + suffix, (course_id,),
+        "WHERE course_id = %s AND is_active = 1 AND (kind = 'lecture' OR kind IS NULL OR kind = '') ORDER BY id" + suffix, (course_id,),
     )
     documents = list(cursor.fetchall())
     cursor.execute(
         """SELECT d.id AS document_id, d.filename, d.position, p.page_number, p.body
            FROM documents d JOIN pages p ON p.document_id = d.id
            WHERE d.course_id = %s AND d.is_active = 1 AND d.ingest_status = 'complete'
+             AND (d.kind = 'lecture' OR d.kind IS NULL OR d.kind = '')
              AND p.usable = 1 AND p.body IS NOT NULL AND TRIM(p.body) <> ''
            ORDER BY d.id, p.page_number""" + suffix, (course_id,),
     )

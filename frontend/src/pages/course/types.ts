@@ -13,6 +13,7 @@ export type Material = {
   ingest_error?: string | null
   page_count: number
   usable_page_count: number
+  has_file?: boolean
 }
 
 export type MaterialInventory = Omit<Material, 'position'> & {
@@ -156,4 +157,7 @@ export type QAResponse = {
   web_sources?: { title: string; url: string }[]
   refused: boolean
   origin?: string
+  tab_id?: string
+  tab_title?: string
+  created_at?: string
 }

@@ -71,8 +71,9 @@ def _get_converter():
 
         options = PdfPipelineOptions()
         options.do_ocr = False
-        options.do_table_structure = True
-        options.do_formula_enrichment = True
+        # Off for speed (esp. PPT-as-PDF); plain text/layout still extracted.
+        options.do_table_structure = False
+        options.do_formula_enrichment = False
         options.generate_page_images = False
         options.generate_picture_images = False
         _converter = DocumentConverter(

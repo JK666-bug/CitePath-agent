@@ -36,19 +36,44 @@ class BridgeSentenceTest(unittest.TestCase):
 
     def test_a_retrieved_bridge_returns_both_pages(self):
         hits = [
-            {"document_id": 1, "page_number": 1, "score": 0.9, "text": "bridge"},
-            {"document_id": 1, "page_number": 4, "score": 0.8, "text": "other"},
+            {
+                "document_id": 1,
+                "page_number": 1,
+                "score": 0.9,
+                "text": "bridge",
+                "bridge_to": 2,
+            },
+            {
+                "document_id": 1,
+                "page_number": 4,
+                "score": 0.8,
+                "text": "other",
+                "bridge_to": 0,
+            },
         ]
 
         def bridge_page(hit):
-            return 2 if hit["text"] == "bridge" else None
+            to = int(hit.get("bridge_to") or 0)
+            return to if to > 0 else None
 
         self.assertEqual(select_page_keys(hits, 1, bridge_page), [(1, 1), (1, 2)])
 
     def test_a_page_hit_keeps_its_own_page(self):
         hits = [
-            {"document_id": 1, "page_number": 1, "score": 0.9, "text": "intro"},
-            {"document_id": 1, "page_number": 3, "score": 0.8, "text": "later"},
+            {
+                "document_id": 1,
+                "page_number": 1,
+                "score": 0.9,
+                "text": "intro",
+                "bridge_to": 0,
+            },
+            {
+                "document_id": 1,
+                "page_number": 3,
+                "score": 0.8,
+                "text": "later",
+                "bridge_to": 0,
+            },
         ]
         self.assertEqual(select_page_keys(hits, 2, lambda hit: None), [(1, 1), (1, 3)])
 

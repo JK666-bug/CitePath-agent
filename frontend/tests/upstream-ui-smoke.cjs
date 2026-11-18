@@ -31,27 +31,28 @@ async function run() {
       else if (path === '/api/courses/1/questions' && req.method() === 'GET') result = records
       else if (path === '/api/courses/1/questions') {
         const body = req.postDataJSON()
-        const row = { ...records[1], qa_id: 9, question: body.question, answer: 'New saved answer.' }
+        const row = { ...records[1], qa_id: 9, question: body.question, answer: 'New saved answer.', tab_id: body.tab_id, tab_title: 'Earlier tree question' }
+        assert.deepEqual(body.document_ids, [42])
         records = [...records, row]
         result = row
       } else return route.fulfill({ status: 404, json: { detail: 'Unexpected mock request' } })
       await route.fulfill({ json: result })
     })
     await page.goto(baseUrl + '/courses/1/qa')
-    await page.getByRole('heading', { name: 'Q&A history' }).waitFor()
-    const answer = page.locator('#qa-answer-panel')
+    await page.getByRole('heading', { name: 'Chats' }).waitFor()
+    const answer = page.locator('.qa-thread')
     assert.match(await answer.textContent(), /Latest hash answer/)
-    await page.getByRole('button', { name: /Earlier tree question/ }).click()
+    await page.locator('.qa-history-open').filter({ hasText: 'Earlier tree question' }).click()
     assert.match(await answer.textContent(), /Earlier tree answer/)
     await answer.getByRole('button', { name: /Doc 42/ }).click()
     const pdf = page.getByRole('link', { name: /Open original PDF/ })
     assert.equal(await pdf.getAttribute('href'), '/api/courses/1/documents/42/file#page=3')
     await page.getByRole('button', { name: 'Close dialog' }).click()
     await page.locator('textarea').fill('Another hash question')
-    await page.locator('.qa-question').getByRole('button', { name: /Ask/ }).click()
+    await page.locator('.qa-question').getByRole('button', { name: 'Send', exact: true }).click()
     await answer.getByText('New saved answer.', { exact: true }).waitFor()
     await page.reload()
-    await page.locator('#qa-answer-panel').getByText('New saved answer.', { exact: true }).waitFor()
+    await page.locator('.qa-thread').getByText('New saved answer.', { exact: true }).waitFor()
     await page.goto(baseUrl + '/courses/1/info')
     assert.equal(await page.getByRole('link', { name: 'hashing.pdf', exact: true }).getAttribute('href'), '/api/courses/1/documents/42/file')
     assert.equal(await page.getByRole('link', { name: 'trees.pdf', exact: true }).getAttribute('href'), '/api/courses/1/documents/79/file')
@@ -59,7 +60,7 @@ async function run() {
     assert.deepEqual(mutations, ['/api/courses/1/questions'])
     assert.deepEqual(errors, [])
     console.log(JSON.stringify({ result: 'PASS', mode: 'mocked_api_browser', checks: [
-      'upstream Q&A history selects the newest record', 'selecting earlier history shows its answer',
+      'Q&A tabs select the newest conversation and load legacy rows', 'selecting earlier history shows its answer',
       'citation retains stable document ID and original page after numbering changes',
       'new answer is selected and survives refresh', 'PDF links and ingestion retry errors remain available',
       'Q&A and history issue no practice-scoring requests',

@@ -22,6 +22,8 @@ import { messageOf } from '../../shared/request'
 
 import CoursePlan from './CoursePlan'
 import CourseInfo from './CourseInfo'
+import CourseExamCases from './CourseExamCases'
+import CourseNotes from './CourseNotes'
 import CourseQA from './CourseQA'
 
 import './course.css'
@@ -69,7 +71,7 @@ export default function CoursePage({
   }
 
   return (
-    <div className="course-page">
+    <div className={`course-page${tab === 'qa' ? ' is-qa' : ''}`}>
       <PageHeader
         eyebrow={
           isDemo
@@ -129,6 +131,8 @@ export default function CoursePage({
         {[
           ['plan', 'Plan'],
           ['info', 'Course information'],
+          ['cases', 'Exam cases'],
+          ['notes', 'Notes'],
           ['qa', 'Q&A'],
         ].map(([key, label]) => (
           <Link
@@ -154,6 +158,16 @@ export default function CoursePage({
         />
       ) : tab === 'info' ? (
         <CourseInfo
+          courseId={courseId}
+          course={course}
+        />
+      ) : tab === 'cases' ? (
+        <CourseExamCases
+          courseId={courseId}
+          course={course}
+        />
+      ) : tab === 'notes' ? (
+        <CourseNotes
           courseId={courseId}
           course={course}
         />

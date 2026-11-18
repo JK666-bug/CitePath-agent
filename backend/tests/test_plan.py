@@ -1,5 +1,6 @@
 import json
 import unittest
+from datetime import date
 from unittest.mock import patch
 
 from agent.plan import (
@@ -8,6 +9,7 @@ from agent.plan import (
     parse_brief,
     schedule_tasks,
     study_window,
+    _selected_document_ids,
     _split_pages,
 )
 from db.courses import brief_with_note
@@ -84,7 +86,7 @@ class PlanBuildTest(unittest.TestCase):
             _page(1, 3, "Graphs"),
         ]
 
-    def test_keeps_only_real_pages_and_requires_full_coverage(self):
+    def test_keeps_only_real_pages_and_accepts_partial_coverage(self):
         chapters, reason, complete = chapters_from_reply(
             {
                 "reason": "A beginner should meet trees before graphs.",
@@ -103,7 +105,7 @@ class PlanBuildTest(unittest.TestCase):
             self.pages,
         )
 
-        self.assertFalse(complete)
+        self.assertTrue(complete)
         self.assertEqual([item["title"] for item in chapters], ["Trees"])
         self.assertEqual(chapters[0]["concepts"], ["Binary tree", "Traversal"])
         self.assertEqual(
@@ -112,7 +114,7 @@ class PlanBuildTest(unittest.TestCase):
         )
         self.assertIn("beginner", reason)
 
-    def test_accepts_a_split_that_places_every_page(self):
+    def test_accepts_a_split_with_several_chapters(self):
         chapters, _reason, complete = chapters_from_reply(
             {
                 "reason": "Trees come before graphs.",
@@ -138,10 +140,10 @@ class PlanBuildTest(unittest.TestCase):
         self.assertTrue(complete)
         self.assertEqual([item["title"] for item in chapters], ["Trees", "Graphs"])
 
-    def test_ignores_a_page_claimed_twice(self):
+    def test_allows_the_same_page_in_more_than_one_chapter(self):
         chapters, _reason, complete = chapters_from_reply(
             {
-                "reason": "Start with the first section.",
+                "reason": "The opening page supports both themes.",
                 "chapters": [
                     {
                         "title": "First",
@@ -158,9 +160,10 @@ class PlanBuildTest(unittest.TestCase):
             self.pages,
         )
 
-        self.assertFalse(complete)
-        self.assertEqual(chapters[0]["title"], "First")
-        self.assertNotIn("Again", [item["title"] for item in chapters])
+        self.assertTrue(complete)
+        self.assertEqual([item["title"] for item in chapters], ["First", "Again"])
+        self.assertEqual(chapters[0]["sources"][0]["page_number"], 1)
+        self.assertEqual(chapters[1]["sources"][0]["page_number"], 1)
 
     def test_accepts_more_than_twelve_chapters_without_losing_pages(self):
         pages = [_page(1, number, "Topic") for number in range(1, 18)]
@@ -217,6 +220,52 @@ class PlanBuildTest(unittest.TestCase):
             "2026-11-08",
         )
 
+    def test_schedule_skips_weekends_when_note_asks(self):
+        from agent.plan import wants_no_weekends
+
+        self.assertTrue(wants_no_weekends("我不想在周末安排任务"))
+        self.assertTrue(wants_no_weekends("weekdays only please"))
+        self.assertFalse(wants_no_weekends("keep a steady pace"))
+        self.assertFalse(wants_no_weekends("周末也可以安排"))
+
+        chapters = [
+            {
+                "id": "c1",
+                "title": "Trees",
+                "concepts": ["Binary tree", "Traversal"],
+                "sources": [
+                    {"document_id": 1, "filename": "notes.pdf", "page_number": 1},
+                ],
+            },
+            {
+                "id": "c2",
+                "title": "Graphs",
+                "concepts": ["Search", "Queue"],
+                "sources": [
+                    {"document_id": 1, "filename": "notes.pdf", "page_number": 3},
+                ],
+            },
+            {
+                "id": "c3",
+                "title": "Heaps",
+                "concepts": ["Priority", "Heapify"],
+                "sources": [
+                    {"document_id": 1, "filename": "notes.pdf", "page_number": 4},
+                ],
+            },
+        ]
+        # 2026-11-13 Fri through 2026-11-16 Mon includes a weekend.
+        tasks = schedule_tasks(
+            chapters,
+            "2026-11-13",
+            "2026-11-16",
+            note="我不想在周末安排任务",
+        )
+        dates = sorted({task["date"] for task in tasks})
+        self.assertTrue(all(date.fromisoformat(day).weekday() < 5 for day in dates))
+        self.assertNotIn("2026-11-14", dates)
+        self.assertNotIn("2026-11-15", dates)
+
 
 def _proposal(pages):
     return {
@@ -230,6 +279,24 @@ def _proposal(pages):
             for page in pages
         ],
     }
+
+
+class SelectedDocumentsTest(unittest.TestCase):
+    def test_keeps_only_ready_selected_pdfs(self):
+        course = {
+            "documents": [
+                {"id": 1, "ingest_status": "complete", "usable_page_count": 3},
+                {"id": 2, "ingest_status": "complete", "usable_page_count": 0},
+                {"id": 3, "ingest_status": "pending", "usable_page_count": 4},
+                {"id": 4, "ingest_status": "complete", "usable_page_count": 2},
+            ]
+        }
+        self.assertEqual(_selected_document_ids(course, [4, 1, 4]), [4, 1])
+        self.assertEqual(_selected_document_ids(course, None), [1, 4])
+        with self.assertRaises(ValueError):
+            _selected_document_ids(course, [])
+        with self.assertRaises(ValueError):
+            _selected_document_ids(course, [2])
 
 
 class DocumentDivisionTest(unittest.TestCase):

@@ -106,7 +106,7 @@ def _deepseek_model() -> ChatOpenAI:
         callbacks=[UsageLog(model)],
         # 沿用项目现有的 Chat Completions 消息结构。
         use_responses_api=False,
-        # 当前适配使用非思考模式，兼容现有工具调用循环。
+        # 当前适配使用非思考模式，兼容 LangChain create_agent 工具调用。
         extra_body={
             "thinking": {
                 "type": "disabled",

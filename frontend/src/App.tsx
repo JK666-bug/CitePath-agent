@@ -30,6 +30,7 @@ import CoursesPage from './pages/courses/CoursesPage'
 import CourseEditorPage from './pages/courseEditor/CourseEditorPage'
 import CalendarPage from './pages/calendar/CalendarPage'
 import CoursePage from './pages/course/CoursePage'
+import CourseReading from './pages/course/CourseReading'
 
 import ExamPage from './pages/exam/ExamPage'
 import ExamReportPage from './pages/exam/ExamReportPage'
@@ -97,8 +98,21 @@ function ProtectedPages() {
     )
   }
 
+  const reading = path.match(
+    /^\/courses\/(demo|[1-9]\d*)\/read$/,
+  )
+
+  if (reading) {
+    return (
+      <CourseReading
+        key={reading[1]}
+        courseId={reading[1]}
+      />
+    )
+  }
+
   const course = path.match(
-    /^\/courses\/(demo|[1-9]\d*)(?:\/(plan|info|qa|ask))?$/,
+    /^\/courses\/(demo|[1-9]\d*)(?:\/(plan|info|qa|ask|cases|notes))?$/,
   )
 
   if (course) {

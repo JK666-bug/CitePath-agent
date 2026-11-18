@@ -28,11 +28,11 @@ class PracticeMemory:
         with self.guard:
             yield
 
-    def create(self, user, course, chapter, threshold):
+    def create(self, user, course, chapter, threshold=.8, *, prefs=None):
         self.session = {
             "id": 9, "user_id": user, "course_id": course, "chapter_id": 3,
             "status": "open", "phase": "learn", "review_round": 1,
-            "workflow_version": 2, "passing_threshold": str(threshold),
+            "workflow_version": 2, "passing_threshold": str(threshold), "prefs": copy.deepcopy(prefs or {}),
             "round_results": [], "drafts": {}, "report": None,
         }
         return 9
@@ -40,7 +40,7 @@ class PracticeMemory:
     def current(self, session_id):
         return next((copy.deepcopy(q) for q in self.questions if q["id"] not in self.answers), None)
 
-    def write(self, concept, pages, kind, miss):
+    def write(self, concept, pages, kind, miss, **kwargs):
         return {
             "concept_id": concept["id"], "concept_name": concept["name"],
             "kind": kind, "prompt": f"Explain {concept['name']}",

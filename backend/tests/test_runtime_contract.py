@@ -76,7 +76,8 @@ class FrozenRuntimeTest(unittest.TestCase):
         manifest = {"working_tree_dirty": False, "created_at": data["freeze"]["created_at"],
             "git_commit": data["freeze"]["git_commit"], "provider": "hku", "model": "test-model",
             "base_url_sha256": "c" * 64, "source_sha256": {"main.py": "d" * 64},
-            "installed_packages": {"package": "1.0"}, "python": "3.12.0"}
+            "installed_packages": {"package": "1.0"}, "python": "3.12.0",
+            "retrieval_configuration": {"collection": "notes_v2", "milvus_uri_sha256": "e" * 64}}
         data["freeze"].update(provider="hku", base_url_sha256="c" * 64)
         for item in data["items"]:
             item["predictions"] = {"baseline": None, "full": None}
@@ -88,7 +89,7 @@ class FrozenRuntimeTest(unittest.TestCase):
             observed = {"schema": "citepath-evaluation-runtime-v1", **manifest,
                         "runtime_packages_sha256": digest(manifest["installed_packages"])}
             self.assertEqual(verify_observed_runtime(data, manifest, observed)["model"], "test-model")
-            for field in ("source_sha256", "model", "base_url_sha256", "runtime_packages_sha256", "python"):
+            for field in ("source_sha256", "model", "base_url_sha256", "runtime_packages_sha256", "python", "retrieval_configuration"):
                 changed = copy.deepcopy(observed)
                 changed[field] = "drift"
                 with self.subTest(field=field), self.assertRaises(ValueError):

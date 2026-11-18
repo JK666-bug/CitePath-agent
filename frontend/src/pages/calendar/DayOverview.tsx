@@ -3,15 +3,12 @@ import { X } from 'lucide-react'
 import type { CalendarTask } from '../course/types'
 
 import { parseDate } from '../../shared/format'
-import { messageOf } from '../../shared/request'
-import { createPractice } from '../practice/api'
+import PracticeStartModal from '../practice/PracticeStartModal'
 
 import {
   Link,
-  navigate,
 } from '../../shared/router'
 import {
-  Notice,
   Sources,
 } from '../../shared/components/UI'
 
@@ -26,9 +23,11 @@ export default function DayOverview({
   onClose: () => void
   onComplete: (task: CalendarTask) => void
 }) {
-  const [startingId, setStartingId] = useState('')
-  const [errorTaskId, setErrorTaskId] = useState('')
-  const [error, setError] = useState('')
+  const [practiceTarget, setPracticeTarget] = useState<{
+    courseId: number
+    chapterId: number
+  } | null>(null)
+
   return (
     <aside
       className="day-overview"
@@ -54,58 +53,26 @@ export default function DayOverview({
 
         <button
           className="icon-button"
-          onClick={onClose}
           aria-label="Close day overview"
+          onClick={onClose}
         >
-          <X size={16} />
+          <X size={18} />
         </button>
       </header>
 
-      <p className="muted small">
-        {tasks.length}{' '}
-        {tasks.length === 1
-          ? 'task'
-          : 'tasks'}
-      </p>
-
-      {!tasks.length && (
-        <p className="day-empty muted">
-          Nothing scheduled. A little
-          breathing room for your day.
-        </p>
-      )}
-
-      <div className="day-task-list">
+      <div className="stack">
         {tasks.map((task) => (
-          <article
-            key={`${task.courseId}-${task.id}`}
-            className="day-task"
-          >
-            <div className="actions spread">
-              <span className="badge">
-                {task.kind}
-              </span>
-            </div>
-
-            <h3>{task.title}</h3>
-
-            <p className="muted small">
+          <article key={task.id} className="panel">
+            <p className="eyebrow">
               {task.courseName}
             </p>
-
-            <Sources
-              courseId={task.courseId}
-              sources={task.sources}
-            />
-
+            <h3>{task.title}</h3>
+            <Sources courseId={task.courseId} sources={task.sources} />
             <p className="small muted">
               {task.status}
             </p>
 
             <div className="actions">
-              {error && errorTaskId === task.id && task.kind === 'Practice' && (
-                <Notice tone="error">{error}</Notice>
-              )}
               {task.kind === 'Practice' ? (
                 task.courseId === 'demo' ? (
                   <Link
@@ -119,31 +86,26 @@ export default function DayOverview({
                 ) : (
                   <button
                     className="button small"
-                    disabled={startingId === task.id}
-                    onClick={() => {
-                      setError('')
-                      setErrorTaskId(task.id)
-                      setStartingId(task.id)
-                      void createPractice(
-                        Number(task.courseId),
-                        Number(task.chapterId),
-                      )
-                        .then((created) =>
-                          navigate(
-                            `/practice/${task.courseId}/sessions/${created.id}`,
-                          ),
-                        )
-                        .catch((reason) => {
-                          setError(messageOf(reason))
-                          setStartingId('')
-                        })
-                    }}
+                    onClick={() =>
+                      setPracticeTarget({
+                        courseId: Number(task.courseId),
+                        chapterId: Number(task.chapterId),
+                      })
+                    }
                   >
-                    {startingId === task.id
-                      ? 'Writing question…'
-                      : 'Start practice'}
+                    Start practice
                   </button>
                 )
+              ) : task.kind === 'Reading' && task.courseId !== 'demo' ? (
+                <Link
+                  className="button small"
+                  href={
+                    `/courses/${task.courseId}/read?task=` +
+                    encodeURIComponent(task.id)
+                  }
+                >
+                  Open reading
+                </Link>
               ) : task.kind === 'Review' && task.courseId !== 'demo' ? (
                 <Link
                   className="button small"
@@ -185,6 +147,13 @@ export default function DayOverview({
           </article>
         ))}
       </div>
+
+      <PracticeStartModal
+        open={practiceTarget != null}
+        courseId={practiceTarget?.courseId ?? 0}
+        chapterId={practiceTarget?.chapterId ?? null}
+        onClose={() => setPracticeTarget(null)}
+      />
     </aside>
   )
 }

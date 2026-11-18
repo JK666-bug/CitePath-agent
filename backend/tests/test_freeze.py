@@ -4,6 +4,7 @@ import unittest
 import subprocess
 import sys
 import tempfile
+from types import SimpleNamespace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -11,6 +12,17 @@ from freeze_evaluation import manifest
 
 
 class FreezeManifestTest(unittest.TestCase):
+    def test_overlay_records_the_active_package_not_a_shadowed_version(self):
+        import importlib.metadata
+        real_version = importlib.metadata.version
+        distributions = [SimpleNamespace(metadata={"Name": "overlay-example"}, version=value)
+                         for value in ("2.0", "1.0")]
+        with patch("freeze_evaluation.importlib.metadata.distributions", return_value=distributions), \
+                patch("freeze_evaluation.importlib.metadata.version", side_effect=lambda name:
+                      "2.0" if name == "overlay-example" else real_version(name)):
+            result = manifest()
+        self.assertEqual(result["installed_packages"], {"overlay-example": "2.0"})
+
     def test_manifest_writer_uses_portable_lf_bytes(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "manifest.json"

@@ -111,17 +111,49 @@ export type PracticeSession = {
   concepts: PracticeConcept[]
 }
 
+export type PracticePrefs = {
+  requirements?: string
+  difficulty?: 'default' | 'easy' | 'medium' | 'hard'
+  similar_to_cases?: boolean
+  preferred_kind?: 'any' | 'mcq' | 'short'
+  question_count?: number | null
+  case_document_ids?: number[]
+}
+
+export type PracticeStartOptions = {
+  passingThreshold?: number
+  prefs?: PracticePrefs | null
+}
+
 export function createPractice(
   courseId: number,
   chapterId: number,
-  passingThreshold = 0.8,
+  options: number | PracticeStartOptions | PracticePrefs | null = {},
 ) {
+  const threshold = typeof options === 'number'
+    ? options
+    : options && 'passingThreshold' in options
+      ? options.passingThreshold ?? 0.8
+      : 0.8
+  const prefs: PracticePrefs | null = typeof options === 'number' || !options
+    ? null
+    : 'prefs' in options || 'passingThreshold' in options
+      ? (options as PracticeStartOptions).prefs ?? null
+      : options as PracticePrefs
   return request<PracticeSession>(
     `/api/courses/${courseId}/chapters/${chapterId}/practice`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ passing_threshold: passingThreshold }),
+      body: JSON.stringify({
+        passing_threshold: threshold,
+        requirements: prefs?.requirements?.trim() || '',
+        difficulty: prefs?.difficulty || 'default',
+        similar_to_cases: Boolean(prefs?.similar_to_cases),
+        preferred_kind: prefs?.preferred_kind || 'any',
+        question_count: prefs?.question_count ?? null,
+        case_document_ids: prefs?.case_document_ids || [],
+      }),
     },
   )
 }

@@ -126,8 +126,10 @@ async function run() {
     assert.equal(await page.getByText(/Round 3/).count(), 0)
     assert.equal(await page.getByText('0%', { exact: true }).count(), 2)
     if (process.env.CITEPATH_SCREENSHOT) await page.screenshot({ path: process.env.CITEPATH_SCREENSHOT, fullPage: true })
-    await page.getByLabel('Chapter pass mark for a new session').selectOption('0.9')
-    await page.getByRole('button', { name: 'Start new session', exact: true }).click()
+    await page.getByRole('button', { name: 'Practice again', exact: true }).click()
+    const startModal = page.getByRole('dialog', { name: 'Start practice', exact: true })
+    await startModal.getByLabel('Chapter pass mark for a new session').selectOption('0.9')
+    await startModal.getByRole('button', { name: 'Default chapter practice', exact: true }).click()
     await page.waitForURL('**/practice/1/sessions/3')
     assert.equal(createdThreshold, 0.9)
 

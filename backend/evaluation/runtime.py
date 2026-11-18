@@ -15,6 +15,7 @@ def runtime_summary():
             "git_commit": value["git_commit"], "python": value["python"],
             "runtime_packages_sha256": digest(value["installed_packages"]),
             "model_cost_configuration": value.get("model_cost_configuration"),
+            "retrieval_configuration": value.get("retrieval_configuration"),
             "qa_policy": "production_qa_shared_v1"}
 
 
@@ -42,7 +43,7 @@ def load_frozen_manifest(data, manifest_path):
 
 def verify_observed_runtime(data, manifest, observed):
     require(isinstance(observed, dict) and observed.get("schema") == "citepath-evaluation-runtime-v1", "Unknown runtime configuration schema")
-    for field in ("provider", "model", "api_version", "base_url_sha256", "source_sha256", "python", "model_cost_configuration"):
+    for field in ("provider", "model", "api_version", "base_url_sha256", "source_sha256", "python", "model_cost_configuration", "retrieval_configuration"):
         require(observed.get(field) == manifest.get(field), "Running service differs from frozen configuration")
     packages = digest(manifest["installed_packages"])
     require(observed.get("runtime_packages_sha256") == packages, "Running package versions differ from frozen environment")

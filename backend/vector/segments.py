@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pymilvus import MilvusClient
 
-COLLECTION = "lecture_segments"
+COLLECTION = os.environ.get("MILVUS_COLLECTION", "lecture_segments")
 MAX_CHARS = 60000
 MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 # The embedding model keeps only the first 128 tokens. A structural piece that
@@ -22,8 +22,8 @@ _LIST_ITEM = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+\S")
 _SENTENCE_END = re.compile(r"[.!?;](?=\s|$)|[。！？；]")
 _CLOSED_LINE = re.compile(r"[.!?。！？;；:：]['\"”’)\]]*$")
 # A sentence broken by a page break is indexed once more as a bridge piece on
-# the earlier page. Each side is capped so the whole sentence fits the
-# embedding model.
+# the earlier page. bridge_to stores the companion page number (0 = not a bridge).
+# Each side is capped so the whole sentence fits the embedding model.
 BRIDGE_HEAD_TOKENS = 60
 BRIDGE_TAIL_TOKENS = 45
 
@@ -41,13 +41,21 @@ def sync_pages(document_id: int, pages: list[dict]) -> int:
     vectors = _embed([piece["text"] for piece in pieces])
     _ensure_collection(client, len(vectors[0]))
     _delete_document(client, document_id)
+    supports_bridge = "bridge_to" in _field_names(client)
     rows = []
     for piece, vector in zip(pieces, vectors):
+        # Legacy schemas cannot represent a cross-page citation. Keep normal
+        # chunks for both pages and add bridges only after explicit migration.
+        if not supports_bridge and int(piece.get("bridge_to") or 0):
+            continue
         row = dict(piece)
         row["vector"] = vector
+        if not supports_bridge:
+            row.pop("bridge_to", None)
         rows.append(row)
-    client.insert(collection_name=COLLECTION, data=rows)
-    client.flush(COLLECTION)
+    if rows:
+        client.insert(collection_name=COLLECTION, data=rows)
+        client.flush(COLLECTION)
     return len(rows)
 
 
@@ -96,7 +104,7 @@ def search(document_ids: list[int], query: str, limit: int = SEARCH_LIMIT) -> li
         reqs=[dense, sparse],
         ranker=RRFRanker(k=60),
         limit=limit,
-        output_fields=["document_id", "page_number", "chapter", "text"],
+        output_fields=_output_fields(client, ["document_id", "page_number", "chapter", "text", "bridge_to"]),
     )
     hits = found[0] if found else []
     rows = []
@@ -112,6 +120,7 @@ def search(document_ids: list[int], query: str, limit: int = SEARCH_LIMIT) -> li
                 "page_number": int(entity["page_number"]),
                 "chapter": entity.get("chapter") or "",
                 "text": entity.get("text") or "",
+                "bridge_to": int(entity.get("bridge_to") or 0),
                 "score": float(hit.get("distance", 0)),
             }
         )
@@ -129,9 +138,18 @@ def segments_for(document_id: int) -> list[dict]:
     rows = client.query(
         collection_name=COLLECTION,
         filter=f"document_id == {int(document_id)}",
-        output_fields=["document_id", "page_number", "chunk_index", "chapter", "text"],
+        output_fields=_output_fields(client, [
+            "document_id",
+            "page_number",
+            "chunk_index",
+            "chapter",
+            "text",
+            "bridge_to",
+        ]),
         limit=10000,
     )
+    for row in rows:
+        row.setdefault("bridge_to", 0)
     return sorted(rows, key=lambda row: (row["page_number"], row["chunk_index"]))
 
 
@@ -258,20 +276,24 @@ def _pieces(document_id: int, pages: list[dict]) -> list[dict]:
         body = page.get("body") or ""
         if not page.get("usable") or not str(body).strip():
             continue
-        chunks = chunk_text(str(body))
-        next_body = by_number.get(int(page["page_number"]) + 1)
+        page_number = int(page["page_number"])
+        tagged: list[tuple[str, int]] = [
+            (chunk, 0) for chunk in chunk_text(str(body))
+        ]
+        next_body = by_number.get(page_number + 1)
         if next_body:
             bridge = bridge_text(str(body), next_body)
             if bridge:
-                chunks.append(bridge)
-        for index, chunk in enumerate(chunks):
+                tagged.append((bridge, page_number + 1))
+        for index, (chunk, bridge_to) in enumerate(tagged):
             pieces.append(
                 {
                     "document_id": int(document_id),
-                    "page_number": int(page["page_number"]),
+                    "page_number": page_number,
                     "chunk_index": index,
                     "chapter": "",
                     "text": chunk[:MAX_CHARS],
+                    "bridge_to": int(bridge_to),
                 }
             )
     return pieces
@@ -467,23 +489,27 @@ def _client() -> MilvusClient:
 
 
 def _usable_collection(client: MilvusClient) -> bool:
+    # A read must never remove an index. Legacy hybrid collections remain usable.
     if not client.has_collection(COLLECTION):
         return False
-    if _hybrid_ready(client):
-        return True
-    client.drop_collection(COLLECTION)
-    return False
+    if not _hybrid_ready(client):
+        raise RuntimeError("Milvus index schema is incompatible. Rebuild into a new collection with tools/rebuild_vector_index.py; the existing collection is retained.")
+    return True
+
+
+def _field_names(client: MilvusClient) -> set[str]:
+    description = client.describe_collection(COLLECTION)
+    return {field.get("name") if isinstance(field, dict) else getattr(field, "name", None)
+            for field in description.get("fields") or []}
 
 
 def _hybrid_ready(client: MilvusClient) -> bool:
-    description = client.describe_collection(COLLECTION)
-    names = set()
-    for field in description.get("fields") or []:
-        if isinstance(field, dict):
-            names.add(field.get("name"))
-        else:
-            names.add(getattr(field, "name", None))
-    return "sparse" in names and "vector" in names
+    return {"sparse", "vector"}.issubset(_field_names(client))
+
+
+def _output_fields(client: MilvusClient, fields: list[str]) -> list[str]:
+    # bridge_to is additive; old dense+BM25 collections have no such field.
+    return [name for name in fields if name != "bridge_to" or "bridge_to" in _field_names(client)]
 
 
 def _ensure_collection(client: MilvusClient, dimension: int) -> None:
@@ -492,7 +518,7 @@ def _ensure_collection(client: MilvusClient, dimension: int) -> None:
     if client.has_collection(COLLECTION):
         if _hybrid_ready(client):
             return
-        client.drop_collection(COLLECTION)
+        raise RuntimeError("Milvus schema upgrade requires a new collection; existing vectors were retained")
     schema = client.create_schema(auto_id=True, enable_dynamic_field=False)
     schema.add_field("id", DataType.INT64, is_primary=True, auto_id=True)
     schema.add_field("vector", DataType.FLOAT_VECTOR, dim=dimension)
@@ -500,6 +526,8 @@ def _ensure_collection(client: MilvusClient, dimension: int) -> None:
     schema.add_field("document_id", DataType.INT64)
     schema.add_field("page_number", DataType.INT64)
     schema.add_field("chunk_index", DataType.INT64)
+    # 0 = normal chunk; otherwise the companion page to return with this hit.
+    schema.add_field("bridge_to", DataType.INT64)
     schema.add_field("chapter", DataType.VARCHAR, max_length=255)
     schema.add_field(
         "text",
@@ -534,8 +562,7 @@ def _delete_document(client: MilvusClient, document_id: int) -> None:
     if not client.has_collection(COLLECTION):
         return
     if not _hybrid_ready(client):
-        client.drop_collection(COLLECTION)
-        return
+        raise RuntimeError("Milvus schema is incompatible; refusing to delete the collection")
     rows = client.query(
         collection_name=COLLECTION,
         filter=f"document_id == {int(document_id)}",

@@ -15,6 +15,7 @@ from evaluation.core import VARIANTS, require, validate_dataset
 
 RUNTIME_MODULES = {"pymysql": "pymysql", "pymilvus": "pymilvus", "fitz": "fitz",
                    "docling": "docling.document_converter", "fastembed": "fastembed", "llm": "agent.llm",
+                   "qa_agent": "langchain.agents", "qa_graph": "langgraph.types", "web_search": "ddgs",
                    "mysql_rsa": "cryptography.hazmat.primitives.asymmetric.rsa"}
 
 

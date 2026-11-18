@@ -3,7 +3,6 @@ import type { FormEvent } from 'react'
 
 import {
   Link,
-  navigate,
 } from '../../shared/router'
 import { messageOf } from '../../shared/request'
 import {
@@ -16,17 +15,17 @@ import {
 
 import {
   answerPractice,
-  createPractice,
   getPractice,
   practiceOutcome,
   retryPracticeExplanation,
   savePracticeDraft,
 } from './api'
 import type { PracticeSession } from './api'
-import RoundSummary, { PassThreshold } from './RoundSummary'
+import RoundSummary from './RoundSummary'
 import ExplanationFeedback from '../../shared/components/ExplanationFeedback'
 import ReportNarrative from '../../shared/components/ReportNarrative'
 import MarkingPoints from '../../shared/components/MarkingPoints'
+import PracticeStartModal from './PracticeStartModal'
 
 import './practice.css'
 
@@ -42,7 +41,6 @@ export default function PracticeLivePage({
   const [response, setResponse] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
-  const [starting, setStarting] = useState(false)
   const [wrongOnly, setWrongOnly] = useState(false)
   const [savedResponse, setSavedResponse] = useState('')
   const [saveError, setSaveError] = useState('')
@@ -51,6 +49,7 @@ export default function PracticeLivePage({
   const [feedbackError, setFeedbackError] = useState('')
   const draftQueue = useRef<Promise<void>>(Promise.resolve())
   const currentQuestionId = useRef(0)
+  const [practiceOpen, setPracticeOpen] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -283,8 +282,6 @@ export default function PracticeLivePage({
               </div>
               <p className="eyebrow">
                 {item.kind === 'mcq' ? 'Multiple choice' : 'Short answer'}
-                {' · '}
-                {item.phase === 'review' ? 'Review' : 'Learning'}
               </p>
               <h3>{item.prompt}</h3>
               <p>
@@ -300,7 +297,7 @@ export default function PracticeLivePage({
                 <ExplanationFeedback
                   {...item}
                   busy={retryingQuestion === item.question_id}
-                  disabled={retryingQuestion !== null || starting}
+                  disabled={retryingQuestion !== null || practiceOpen}
                   onRetry={() => { void retryExplanation(item.question_id) }}
                 />
               )}
@@ -316,32 +313,28 @@ export default function PracticeLivePage({
           <p className="muted small">
             This report stays saved. A new session starts at round 1 and has its own two-round limit.
           </p>
-          <PassThreshold value={newThreshold} onChange={setNewThreshold} disabled={starting} />
         <div className="actions">
           <button
             className="button"
             type="button"
-            disabled={starting || retryingQuestion !== null}
-            onClick={() => {
-              setError('')
-              setStarting(true)
-              void createPractice(Number(courseId), session.chapter_id, newThreshold)
-                .then((created) =>
-                  navigate(`/practice/${courseId}/sessions/${created.id}`),
-                )
-                .catch((reason) => {
-                  setError(messageOf(reason))
-                  setStarting(false)
-                })
-            }}
+            disabled={retryingQuestion !== null}
+            onClick={() => setPracticeOpen(true)}
           >
-            {starting ? 'Preparing session…' : 'Start new session'}
+            Practice again
           </button>
           <Link href={`/courses/${courseId}/plan`}>
             Back to plan
           </Link>
         </div>
         </section>
+
+        <PracticeStartModal
+          open={practiceOpen}
+          courseId={Number(courseId)}
+          chapterId={session.chapter_id}
+          initialThreshold={newThreshold}
+          onClose={() => setPracticeOpen(false)}
+        />
       </div>
     )
   }

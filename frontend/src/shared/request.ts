@@ -76,6 +76,18 @@ const messages: Record<string, string> = {
   'Could not divide these lecture pages into chapters. Try again.':
     'Could not divide these lecture pages into chapters. Try again.',
 
+  'Select at least one readable PDF before generating a plan':
+    'Select at least one readable PDF before generating a plan.',
+
+  'Select readable PDFs from this course':
+    'Select readable PDFs from this course.',
+
+  'Select at least one readable PDF':
+    'Select at least one readable PDF.',
+
+  'Upload a readable PDF before asking':
+    'Upload a readable PDF before asking a question.',
+
   'Add a learning deadline before generating a plan':
     'Add a learning deadline before generating a plan.',
 
@@ -87,6 +99,9 @@ const messages: Record<string, string> = {
 
   'Task not found':
     'This task could not be found.',
+
+  'The model API has no remaining tokens. Check your API quota or switch LLM_PROVIDER.':
+    'The model API has no remaining tokens. Check your API quota or switch the model provider.',
 
   'Could not create a study plan':
     'Unable to create a study plan. Please try again.',
@@ -129,6 +144,15 @@ const messages: Record<string, string> = {
 
   'Could not answer':
     'Unable to answer this question. Please try again.',
+
+  'Could not generate notes':
+    'Unable to generate notes. Please try again.',
+
+  'Select at least one readable lecture PDF':
+    'Select at least one readable lecture PDF.',
+
+  'Original PDF is not stored. Re-upload this file on Course information.':
+    'Original PDF is not stored. Re-upload this file on Course information.',
 }
 
 function errorMessage(

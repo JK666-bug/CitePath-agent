@@ -17,6 +17,7 @@ def list_courses(user_id: int) -> list[dict]:
                 FROM courses c
                 LEFT JOIN documents d
                   ON d.course_id = c.id AND d.ingest_status = 'complete' AND d.is_active = 1
+                 AND (d.kind = 'lecture' OR d.kind IS NULL OR d.kind = '')
                 WHERE c.user_id = %s
                 GROUP BY c.id, c.name, c.student_brief, c.created_at
                 ORDER BY c.id DESC
@@ -134,13 +135,14 @@ def get_course(user_id: int, course_id: int) -> dict | None:
                 return None
             cursor.execute(
                 """
-                SELECT d.id, d.position, d.filename, d.ingest_status, d.ingest_error,
+                SELECT d.id, d.position, d.filename, d.ingest_status, d.ingest_error, d.kind,
                        COUNT(p.id) AS page_count,
                        SUM(CASE WHEN p.usable = 1 THEN 1 ELSE 0 END) AS usable_page_count
                 FROM documents d
                 LEFT JOIN pages p ON p.document_id = d.id
                 WHERE d.course_id = %s AND d.is_active = 1
-                GROUP BY d.id, d.position, d.filename, d.ingest_status, d.ingest_error
+                  AND (d.kind = 'lecture' OR d.kind IS NULL OR d.kind = '')
+                GROUP BY d.id, d.position, d.filename, d.ingest_status, d.ingest_error, d.kind
                 ORDER BY d.position, d.id
                 """,
                 (course_id,),
@@ -160,12 +162,20 @@ def get_course(user_id: int, course_id: int) -> dict | None:
                 "filename": row["filename"],
                 "ingest_status": row["ingest_status"],
                 "ingest_error": row["ingest_error"],
+                "kind": row.get("kind") or "lecture",
                 "page_count": int(row["page_count"] or 0),
                 "usable_page_count": int(row["usable_page_count"] or 0),
+                "has_file": _document_has_file(int(course_id), int(row["id"])),
             }
             for row in documents
         ],
     }
+
+
+def _document_has_file(course_id: int, document_id: int) -> bool:
+    from db.pdf_store import has_pdf
+
+    return has_pdf(course_id, document_id)
 
 
 def owns_document(user_id: int, course_id: int, document_id: int) -> bool:
@@ -374,10 +384,10 @@ def document_inventory(user_id: int, course_id: int) -> dict:
             if cursor.fetchone() is None:
                 raise LookupError("Course not found")
             cursor.execute(
-                "SELECT d.id, d.position, d.filename, d.is_active, d.removed_at, d.content_hash, d.ingest_status, d.ingest_error, "
+                "SELECT d.id, d.position, d.filename, d.is_active, d.removed_at, d.content_hash, d.ingest_status, d.ingest_error, d.kind, d.parent_id, d.answer_mode, "
                 "COUNT(p.id) AS page_count, SUM(CASE WHEN p.usable = 1 THEN 1 ELSE 0 END) AS usable_page_count "
                 "FROM documents d LEFT JOIN pages p ON p.document_id = d.id WHERE d.course_id = %s "
-                "GROUP BY d.id, d.position, d.filename, d.is_active, d.removed_at, d.content_hash, d.ingest_status, d.ingest_error "
+                "GROUP BY d.id, d.position, d.filename, d.is_active, d.removed_at, d.content_hash, d.ingest_status, d.ingest_error, d.kind, d.parent_id, d.answer_mode "
                 "ORDER BY d.is_active DESC, d.position, d.id", (course_id,),
             )
             documents = list(cursor.fetchall())
@@ -389,10 +399,10 @@ def document_inventory(user_id: int, course_id: int) -> dict:
         connection.close()
     return {"documents": [{
         "id": int(row["id"]), "position": int(row["position"]) if row["position"] is not None else None,
-        "filename": row["filename"], "active": bool(row["is_active"]), "removed_at": _time(row["removed_at"]),
+        "filename": row["filename"], "kind": row.get("kind") or "lecture", "parent_id": row.get("parent_id"), "answer_mode": row.get("answer_mode"), "active": bool(row["is_active"]), "removed_at": _time(row["removed_at"]),
         "sha256": row["content_hash"], "ingest_status": row["ingest_status"], "ingest_error": row["ingest_error"],
         "page_count": int(row["page_count"] or 0), "usable_page_count": int(row["usable_page_count"] or 0),
-        "original_pdf_available": original_pdf_path(int(row["id"])) is not None,
+        "original_pdf_available": _document_has_file(course_id, int(row["id"])),
         "page_numbers": pages.get(int(row["id"]), []),
     } for row in documents]}
 

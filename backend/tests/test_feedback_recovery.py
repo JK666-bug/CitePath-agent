@@ -48,6 +48,7 @@ class FeedbackGradeIsolationTest(unittest.TestCase):
         with patch.object(exam, "exam_lock", side_effect=lambda *args: nullcontext()), \
                 patch("db.exams.get_owned_exam", return_value=source), \
                 patch.object(exam, "_save_drafts"), \
+                patch.object(exam, "_exam_case_answers", return_value=""), \
                 patch.object(exam, "_grade_shorts", return_value={7: []}) as grader, \
                 patch.object(exam, "finish_exam", side_effect=lambda *args: events.append("finished") or result), \
                 patch.object(exam, "begin_explanation_attempt", side_effect=lambda *args: events.append("feedback began")), \

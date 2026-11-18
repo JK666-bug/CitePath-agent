@@ -146,11 +146,17 @@ async function run() {
   await navigate(page, `/courses/${courseId}/info`)
   await page.getByRole('heading', { level: 1, name: course.name, exact: true }).waitFor()
   const inventory = await json(page.request, baseUrl + base + '/documents/inventory')
-  const active = inventory.documents.filter((document) => document.active)
+  // Inventory now includes sample cases and answer files. The course materials
+  // section intentionally lists active lectures; samples have a separate tab.
+  const active = inventory.documents.filter((document) => document.active && (document.kind || 'lecture') === 'lecture')
   assert(active.length > 0)
+  assert.deepEqual(course.documents.map((document) => Number(document.id)).sort((a, b) => a - b),
+    active.map((document) => Number(document.id)).sort((a, b) => a - b))
   for (const document of active) {
-    await page.getByRole('link', { name: document.filename, exact: true }).waitFor()
-    await page.getByText(new RegExp(`Document ID ${document.id}\\b`)).first().waitFor()
+    const expectedHref = `/api/courses/${courseId}/documents/${document.id}/file`
+    const materialRow = page.locator('.materials-list > li').filter({ has: page.locator(`a[href="${expectedHref}"]`) })
+    await materialRow.getByRole('link', { name: document.filename, exact: true }).waitFor()
+    await materialRow.getByText(new RegExp(`Document ID ${document.id}\\b`)).waitFor()
   }
   passed('real_course_materials_and_stable_document_ids_render')
   await screenshot(page, 'live-course-information')
@@ -191,7 +197,7 @@ async function run() {
   await historyDialog.getByText(/Saved schedules are read-only/).waitFor()
   await historyDialog.getByRole('button', { name: `View version ${oldest}`, exact: true }).click()
   await historyDialog.getByRole('heading', { name: `Saved plan v${oldest}`, exact: true }).waitFor()
-  assert.equal(await historyDialog.getByRole('button', { name: /Reschedule|Mark complete|Start practice|Include new/ }).count(), 0)
+  assert.equal(await historyDialog.getByRole('button', { name: /Reschedule|Mark complete|Done|Start practice|Include new/ }).count(), 0)
   await historyDialog.getByRole('button', { name: 'Close dialog', exact: true }).click()
   assert.equal(fingerprint((await json(page.request, baseUrl + base + '/plan')).plan), initialPlanHash)
   passed('saved_plan_history_opens_read_only_without_replacing_current_plan')
@@ -203,7 +209,7 @@ async function run() {
   const day = page.getByRole('complementary', { name: 'Selected day overview', exact: true })
   await day.waitFor()
   const dayTasks = initialPlan.plan.tasks.filter((task) => task.date === firstTask.date)
-  assert.equal(await day.locator('.day-task').count(), dayTasks.length)
+  assert.equal(await day.locator('article.panel').count(), dayTasks.length)
   for (const task of dayTasks) await day.getByRole('heading', { name: task.title, exact: true }).waitFor()
   passed('real_calendar_day_contains_the_saved_scheduled_tasks')
 
@@ -212,8 +218,19 @@ async function run() {
   phase = 'real_practice_index.heading'
   await page.getByRole('heading', { name: 'Chapter practice', exact: true }).waitFor()
   phase = 'real_practice_index.filter'
-  assert.equal(await page.getByLabel('Filter practice by course', { exact: true }).inputValue(), String(courseId))
-  assert.equal(await page.locator('.practice-grid .practice-chapter').count(), initialPlan.plan.chapters.length)
+  // Match the explicit accessible select name independently of option labels.
+  const practiceFilter = page.getByRole('combobox', { name: 'Filter practice by course', exact: true })
+  assert.equal(await practiceFilter.count(), 1)
+  assert.equal(await practiceFilter.inputValue(), String(courseId))
+  phase = 'real_practice_index.chapters'
+  const chapterCards = page.locator('.practice-page .practice-grid .practice-chapter')
+  assert.equal(await chapterCards.count(), initialPlan.plan.chapters.length)
+  for (const chapter of initialPlan.plan.chapters) {
+    const card = chapterCards.filter({ has: page.getByRole('heading', { name: chapter.title, exact: true }) })
+    await card.getByRole('heading', { name: chapter.title, exact: true }).waitFor()
+    assert.equal(await card.getByRole('link', { name: 'View reports', exact: true }).getAttribute('href'),
+      `/courses/${courseId}/chapters/${chapter.id}/reports`)
+  }
   passed('real_practice_index_preserves_generated_chapters_without_starting_sessions')
 
   phase = 'saved_practice_report'
@@ -247,14 +264,29 @@ async function run() {
   const qa = await json(page.request, baseUrl + base + '/questions')
   const records = Array.isArray(qa) ? qa : qa.questions
   assert(Array.isArray(records) && records.length > 0, 'An actual integration Q&A record is required')
+  const tabs = new Map()
+  for (const record of [...records].sort((a, b) => Number(a.qa_id) - Number(b.qa_id))) {
+    const tabId = record.tab_id || `legacy-${record.qa_id}`
+    tabs.set(tabId, [...(tabs.get(tabId) || []), record])
+  }
+  const orderedTabs = [...tabs.values()].sort((a, b) => Number(b.at(-1).qa_id) - Number(a.at(-1).qa_id))
   await navigate(page, `/courses/${courseId}/qa`)
-  await page.getByRole('heading', { name: 'Q&A history', exact: true }).waitFor()
-  assert.equal(await page.locator('.qa-history-item').count(), records.length)
-  await page.locator('.qa-history-item').last().click()
-  assert.equal(await page.locator('.qa-history-item[aria-pressed="true"]').count(), 1)
+  await page.getByRole('heading', { name: 'Chats', exact: true }).waitFor()
+  assert.equal(await page.locator('.qa-history-open').count(), tabs.size)
+  await page.locator('.qa-history-open').last().click()
+  assert.equal(await page.locator('.qa-history-open[aria-pressed="true"]').count(), 1)
+  assert.equal(await page.locator('.qa-history-open').last().getAttribute('aria-pressed'), 'true')
+  const oldestMessages = orderedTabs.at(-1)
+  const answerPanels = page.locator('.qa-thread .qa-answer')
+  assert.equal(await answerPanels.count(), oldestMessages.length)
+  for (let index = 0; index < oldestMessages.length; index += 1) {
+    await answerPanels.nth(index).getByRole('heading', { name: oldestMessages[index].question || 'Question', exact: true }).waitFor()
+  }
   await page.reload()
-  await page.locator('.qa-history-item').first().waitFor()
-  assert.equal(await page.locator('.qa-history-item').count(), records.length)
+  await page.locator('.qa-history-open').first().waitFor()
+  assert.equal(await page.locator('.qa-history-open').count(), tabs.size)
+  assert.equal(await page.locator('.qa-history-open').first().getAttribute('aria-pressed'), 'true')
+  assert.equal(await answerPanels.count(), orderedTabs[0].length)
   passed('real_qa_history_survives_refresh_without_new_question_submission')
   await screenshot(page, 'live-qa-history')
 

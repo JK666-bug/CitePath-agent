@@ -20,13 +20,15 @@ class PracticeApiTest(unittest.TestCase):
         with patch("main.start_practice", return_value={"id": 9}) as start:
             response = self.client.post("/api/courses/2/chapters/3/practice")
             self.assertEqual(response.status_code, 200)
-            start.assert_called_once_with(11, 2, 3, 0.8)
+            start.assert_called_once_with(11, 2, 3, passing_threshold=0.8, prefs=None)
 
     def test_configured_threshold_and_invalid_requests(self):
         with patch("main.start_practice", return_value={"id": 9}) as start:
             response = self.client.post("/api/courses/2/chapters/3/practice", json={"passing_threshold": 0.9})
             self.assertEqual(response.status_code, 200)
-            start.assert_called_once_with(11, 2, 3, 0.9)
+            self.assertEqual(start.call_args.args, (11, 2, 3))
+            self.assertEqual(start.call_args.kwargs["passing_threshold"], 0.9)
+            self.assertNotIn("passing_threshold", start.call_args.kwargs["prefs"])
         for threshold in (-1, 0, 1.1, True):
             with patch("main.start_practice") as start:
                 response = self.client.post("/api/courses/2/chapters/3/practice", json={"passing_threshold": threshold})

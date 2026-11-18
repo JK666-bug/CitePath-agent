@@ -79,6 +79,7 @@ class ModelGradeValidationTest(unittest.TestCase):
         answers = [{"question_id": 7, "response": "answer"}]
         with patch("db.exams.get_owned_exam", return_value=exam), \
                 patch("agent.exam._save_drafts") as drafts, \
+                patch("agent.exam._exam_case_answers", return_value=""), \
                 patch("agent.exam._ask", return_value=None), \
                 patch("agent.exam.finish_exam") as finish:
             with self.assertRaises(RuntimeError):

@@ -8,6 +8,71 @@ from db.document_files import original_pdf_path, save_original_pdf
 
 
 _numbers_ready = False
+_kinds_ready = False
+
+
+def ensure_document_kinds() -> None:
+    global _kinds_ready
+    if _kinds_ready:
+        return
+    connection = connect()
+    schema_locked = False
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT GET_LOCK('citepath:documents:schema', 30) AS acquired")
+            schema_locked = cursor.fetchone()["acquired"] == 1
+            if not schema_locked:
+                raise RuntimeError("Document kinds are being initialized. Retry shortly.")
+            _add_column(cursor, "kind", "VARCHAR(16) NOT NULL DEFAULT 'lecture'")
+            _add_column(cursor, "parent_id", "INT NULL")
+            _add_column(cursor, "answer_mode", "VARCHAR(16) NULL")
+            cursor.execute(
+                """
+                SELECT COUNT(*) AS n
+                FROM information_schema.TABLE_CONSTRAINTS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = 'documents'
+                  AND CONSTRAINT_NAME = 'fk_documents_parent'
+                """
+            )
+            if int(cursor.fetchone()["n"]) == 0:
+                cursor.execute(
+                    """
+                    ALTER TABLE documents
+                    ADD CONSTRAINT fk_documents_parent
+                    FOREIGN KEY (parent_id) REFERENCES documents (id) ON DELETE CASCADE
+                    """
+                )
+            cursor.execute(
+                "UPDATE documents SET kind = 'lecture' WHERE kind IS NULL OR kind = ''"
+            )
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        try:
+            if schema_locked:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT RELEASE_LOCK('citepath:documents:schema')")
+        finally:
+            connection.close()
+    _kinds_ready = True
+
+
+def _add_column(cursor, name: str, definition: str) -> None:
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS n
+        FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'documents'
+          AND COLUMN_NAME = %s
+        """,
+        (name,),
+    )
+    if int(cursor.fetchone()["n"]) == 0:
+        cursor.execute(f"ALTER TABLE documents ADD COLUMN {name} {definition}")
 
 
 def has_segments(document_id: int) -> bool:
@@ -25,6 +90,7 @@ def sync_pages(document_id: int, pages: list[dict]) -> int:
 def ensure_document_numbers() -> None:
     global _numbers_ready
     if _numbers_ready:
+        ensure_document_kinds()
         return
     connection = connect()
     schema_locked = False
@@ -95,13 +161,17 @@ def ensure_document_numbers() -> None:
         finally:
             connection.close()
     _numbers_ready = True
+    ensure_document_kinds()
 
 
-def existing_upload(course_id: int, content_hash: str, pdf_data: bytes | None = None) -> dict | None:
+def existing_upload(course_id: int, content_hash: str, pdf_data: bytes | None = None, *,
+                    kind: str = "lecture", parent_id: int | None = None) -> dict | None:
     ensure_document_numbers()
     row = _hash_row(course_id, content_hash)
     if row is None:
         return None
+    if str(row.get("kind") or "lecture") != kind or row.get("parent_id") != parent_id:
+        raise ValueError("This PDF is already stored with another role or sample case; use its existing identity")
     if not row.get("is_active", True):
         return _restore_upload(course_id, row, pdf_data)
     _store_original_pdf(int(row["id"]), pdf_data)
@@ -119,8 +189,17 @@ def existing_upload(course_id: int, content_hash: str, pdf_data: bytes | None = 
     return _payload(row, count, True)
 
 
-def save_document(course_id: int, filename: str, pages: list[dict], content_hash: str, pdf_data: bytes | None = None) -> dict:
+def save_document(course_id: int, filename: str, pages: list[dict], content_hash: str,
+                  pdf_data: bytes | None = None, *, kind: str = "lecture",
+                  parent_id: int | None = None, answer_mode: str | None = None,
+                  pdf_bytes: bytes | None = None) -> dict:
     ensure_document_numbers()
+    if pdf_data is not None and pdf_bytes is not None and pdf_data != pdf_bytes:
+        raise ValueError("Conflicting PDF byte arguments")
+    pdf_data = pdf_data if pdf_data is not None else pdf_bytes
+    chosen_kind = str(kind or "lecture").strip() or "lecture"
+    if chosen_kind not in {"lecture", "exam_case", "case_answer"}:
+        raise ValueError("Unsupported document kind")
     connection = connect()
     try:
         with connection.cursor() as cursor:
@@ -147,10 +226,21 @@ def save_document(course_id: int, filename: str, pages: list[dict], content_hash
             position = int(cursor.fetchone()["n"])
             cursor.execute(
                 """
-                INSERT INTO documents (course_id, position, filename, content_hash, ingest_status)
-                VALUES (%s, %s, %s, %s, 'pending')
+                INSERT INTO documents (
+                  course_id, position, filename, content_hash, ingest_status,
+                  kind, parent_id, answer_mode
+                )
+                VALUES (%s, %s, %s, %s, 'pending', %s, %s, %s)
                 """,
-                (course_id, position, filename, content_hash),
+                (
+                    course_id,
+                    position,
+                    filename,
+                    content_hash,
+                    chosen_kind,
+                    parent_id,
+                    answer_mode,
+                ),
             )
             document_id = cursor.lastrowid
             cursor.executemany(
@@ -171,7 +261,11 @@ def save_document(course_id: int, filename: str, pages: list[dict], content_hash
         connection.commit()
     except pymysql.err.IntegrityError:
         connection.rollback()
-        existing = existing_upload(course_id, content_hash, pdf_data=pdf_data)
+        row = _hash_row(course_id, content_hash)
+        if row is not None and (str(row.get("kind") or "lecture") != chosen_kind
+                                or row.get("parent_id") != parent_id):
+            raise ValueError("This PDF is already stored with another role or sample case; use its existing identity")
+        existing = existing_upload(course_id, content_hash, pdf_data=pdf_data, kind=chosen_kind, parent_id=parent_id)
         if existing is not None:
             return existing
         raise
@@ -181,6 +275,7 @@ def save_document(course_id: int, filename: str, pages: list[dict], content_hash
     finally:
         connection.close()
     _store_original_pdf(int(document_id), pdf_data)
+    has_file = original_pdf_path(int(document_id)) is not None
     usable = sum(1 for page in pages if page["usable"])
     return {
         "document_id": document_id,
@@ -191,6 +286,9 @@ def save_document(course_id: int, filename: str, pages: list[dict], content_hash
         "ingest_status": "complete",
         "ingest_error": None,
         "duplicate": False,
+        "kind": chosen_kind,
+        "answer_mode": answer_mode,
+        "has_file": has_file,
     }
 
 
@@ -289,18 +387,19 @@ def require_ingested_documents(documents: list[dict]) -> None:
 
 
 def _hash_row(course_id: int, content_hash: str) -> dict | None:
+    ensure_document_kinds()
     connection = connect()
     try:
         with connection.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT d.id, d.filename, d.ingest_status, d.ingest_error, d.is_active, d.content_hash,
+                SELECT d.id, d.course_id, d.filename, d.kind, d.parent_id, d.answer_mode, d.ingest_status, d.ingest_error, d.is_active, d.content_hash,
                        COUNT(p.id) AS page_count,
                        SUM(CASE WHEN p.usable = 1 THEN 1 ELSE 0 END) AS usable_page_count
                 FROM documents d
                 LEFT JOIN pages p ON p.document_id = d.id
                 WHERE d.course_id = %s AND d.content_hash = %s
-                GROUP BY d.id, d.filename, d.ingest_status, d.ingest_error, d.is_active, d.content_hash
+                GROUP BY d.id, d.course_id, d.filename, d.kind, d.parent_id, d.answer_mode, d.ingest_status, d.ingest_error, d.is_active, d.content_hash
                 """,
                 (course_id, content_hash),
             )
@@ -328,8 +427,17 @@ def _load_pages(document_id: int) -> list[dict]:
 
 
 def _payload(row: dict, segments: int, duplicate: bool) -> dict:
+    from db.pdf_store import has_pdf
+
+    course_id = int(row["course_id"]) if row.get("course_id") is not None else None
+    document_id = int(row["id"])
+    file_ready = False
+    if course_id is not None:
+        file_ready = has_pdf(course_id, document_id)
+    else:
+        file_ready = original_pdf_path(document_id) is not None
     return {
-        "document_id": row["id"],
+        "document_id": document_id,
         "filename": row["filename"],
         "page_count": int(row["page_count"] or 0),
         "usable_page_count": int(row["usable_page_count"] or 0),
@@ -337,6 +445,9 @@ def _payload(row: dict, segments: int, duplicate: bool) -> dict:
         "ingest_status": "complete",
         "ingest_error": None,
         "duplicate": duplicate,
+        "kind": row.get("kind") or "lecture",
+        "answer_mode": row.get("answer_mode"),
+        "has_file": file_ready,
     }
 
 
@@ -372,7 +483,8 @@ def _restore_upload(course_id: int, row: dict, pdf_data: bytes | None = None) ->
         expected_hash = str(row.get("content_hash") or "")
         if not re.fullmatch(r"[0-9a-f]{64}", expected_hash):
             raise ValueError("This legacy document has no verifiable original hash. Its historical references cannot be reassigned to another upload.")
-        path = original_pdf_path(document_id)
+        from db.pdf_store import available_pdf_path
+        path = original_pdf_path(document_id) or available_pdf_path(course_id, document_id)
         data = pdf_data if pdf_data is not None else (path.read_bytes() if path is not None else None)
         if data is None:
             raise ValueError("Original PDF unavailable. Upload the exact same PDF to restore this document.")

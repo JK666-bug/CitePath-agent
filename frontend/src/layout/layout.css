@@ -162,6 +162,19 @@
   outline: none;
 }
 
+.main-content:has(.course-page.is-qa) {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.main-content:has(.course-page.is-qa) > .course-page.is-qa {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .skip-link {
   position: fixed;
   top: -60px;
