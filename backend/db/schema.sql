@@ -6,6 +6,9 @@ CREATE TABLE IF NOT EXISTS users (
   UNIQUE KEY uq_users_username (username)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Scheduling migrations are also performed lazily for existing installations.
+-- plan_versions and planner_runs are created after courses below.
+
 CREATE TABLE IF NOT EXISTS login_sessions (
   id INT PRIMARY KEY AUTO_INCREMENT,
   user_id INT NOT NULL,
@@ -35,6 +38,11 @@ CREATE TABLE IF NOT EXISTS documents (
   kind VARCHAR(16) NOT NULL DEFAULT 'lecture',
   parent_id INT NULL,
   answer_mode VARCHAR(16) NULL,
+  chapter_plan_status VARCHAR(16) NOT NULL DEFAULT 'unplanned',
+  chapter_planned_at DATETIME NULL,
+  chapterization_locked_at DATETIME NULL,
+  chapterization_locked_reason VARCHAR(64) NULL,
+
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uq_course_document_pos (course_id, position),
   UNIQUE KEY uq_course_content_hash (course_id, content_hash),
@@ -217,4 +225,26 @@ CREATE TABLE IF NOT EXISTS qa_records (
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_qa_course FOREIGN KEY (course_id) REFERENCES courses (id),
   CONSTRAINT fk_qa_user FOREIGN KEY (user_id) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS plan_versions (
+  course_id INT NOT NULL,
+  version INT NOT NULL,
+  change_type VARCHAR(32) NOT NULL,
+  plan_json JSON NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (course_id, version),
+  CONSTRAINT fk_chapterization_version_course FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS planner_runs (
+  id CHAR(36) PRIMARY KEY,
+  course_id INT NOT NULL,
+  user_id INT NOT NULL,
+  request_id VARCHAR(64) NOT NULL,
+  status VARCHAR(32) NOT NULL,
+  result_json JSON NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_planner_request (course_id, request_id),
+  CONSTRAINT fk_planner_course FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

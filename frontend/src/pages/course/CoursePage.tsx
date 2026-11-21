@@ -110,14 +110,6 @@ export default function CoursePage({
               </button>
             )}
 
-            <Link
-              className="button secondary"
-              href={
-                `/courses/${courseId}/edit`
-              }
-            >
-              Edit course
-            </Link>
           </>
         }
       />

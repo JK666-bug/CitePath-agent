@@ -5,6 +5,7 @@ import {
   Link,
 } from '../../shared/router'
 import { messageOf } from '../../shared/request'
+import { useStudy } from '../../shared/StudyProvider'
 import {
   Empty,
   Loading,
@@ -29,6 +30,7 @@ export default function PracticeLivePage({
   courseId: string
   sessionId: string
 }) {
+  const { loadPlan } = useStudy()
   const [session, setSession] =
     useState<PracticeSession | null>(null)
   const [response, setResponse] = useState('')
@@ -70,6 +72,9 @@ export default function PracticeLivePage({
         response,
       )
       setSession(next)
+      if (next.status === 'finished') {
+        await loadPlan(Number(courseId))
+      }
       setResponse('')
     } catch (reason) {
       setError(messageOf(reason))

@@ -32,7 +32,11 @@ export default function CourseReading({
     retry,
     isDemo,
   } = useCourse(courseId)
-  const { plans, loadPlan } = useStudy()
+  const {
+    plans,
+    loadPlan,
+    finishPlanTask,
+  } = useStudy()
   const numericId = Number(courseId)
   const plan = isDemo ? null : plans[numericId]?.plan
   const planLoaded = isDemo || Boolean(plans[numericId]?.loaded)
@@ -125,12 +129,25 @@ export default function CourseReading({
         title={task.title.replace(/^Read:\s*/i, '') || task.title}
         subtitle="Open the original lecture PDF for this reading step."
         actions={
-          <Link
-            className="button secondary"
-            href={`/courses/${courseId}/plan`}
-          >
-            Back to plan
-          </Link>
+          <>
+            <button
+              className="button"
+              disabled={task?.status === 'Completed'}
+              onClick={() => {
+                if (task) {
+                  void finishPlanTask(numericId, task.id)
+                }
+              }}
+            >
+              {task?.status === 'Completed' ? 'Completed' : 'Mark done'}
+            </button>
+            <Link
+              className="button secondary"
+              href={`/courses/${courseId}/plan`}
+            >
+              Back to plan
+            </Link>
+          </>
         }
       />
 

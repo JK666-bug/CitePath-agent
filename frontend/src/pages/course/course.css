@@ -194,6 +194,23 @@
   margin-bottom: 5px;
 }
 
+.chapter-statuses {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.chapter-card-source {
+  flex-shrink: 0;
+  max-width: 42%;
+}
+
+.chapter-section > header .chapter-card-source p {
+  margin: 0;
+}
+
 .plan-task {
   display: flex;
   align-items: center;
@@ -248,6 +265,18 @@
   white-space: nowrap;
 }
 
+.plan-practice-actions {
+  grid-template-columns: minmax(8.75rem, max-content) 5.75rem;
+}
+
+.plan-practice-actions > .button:first-child {
+  padding-inline: 8px;
+}
+
+.plan-review-actions {
+  grid-template-columns: 5.75rem;
+}
+
 .plan-task-action-slot {
   display: block;
   width: 100%;
@@ -288,6 +317,30 @@
 
 .plan-task.completed .task-title:hover {
   text-decoration: none;
+}
+
+.course-schedule-summary {
+  display: grid;
+  gap: 10px 18px;
+  grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
+  margin: 8px 0 16px;
+}
+
+.course-schedule-summary div {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.course-schedule-summary dt {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.course-schedule-summary dd {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .course-facts {
@@ -890,6 +943,10 @@
   .chapter-section > header {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .chapter-card-source {
+    max-width: 100%;
   }
 
   .plan-version {

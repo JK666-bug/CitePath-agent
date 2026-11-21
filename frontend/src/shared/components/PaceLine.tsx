@@ -13,9 +13,11 @@ import type {
 } from '../../pages/course/types'
 
 export function taskTotals(tasks: Task[]) {
-  const total = tasks.length
+  // A multi-day task remains one learning task, even in calendar summaries.
+  const unique = [...new Map(tasks.map((task) => [task.id, task])).values()]
+  const total = unique.length
 
-  const done = tasks.filter(
+  const done = unique.filter(
     (task) => task.status === 'Completed',
   ).length
 
@@ -89,6 +91,12 @@ export default function PaceLine({
   config: CourseConfig
   compact?: boolean
 }) {
+  const dates = plan.tasks.flatMap((task) => task.schedule?.length
+    ? task.schedule.map((slot) => slot.date)
+    : task.date ? [task.date] : [])
+  if (!plan.start || !dates.length) {
+    return <p className="muted small">Tasks are ready but have not been scheduled.</p>
+  }
   const target =
     plan.end ||
     addDays(
@@ -102,8 +110,7 @@ export default function PaceLine({
       : plan.end || config.deadline
 
   const forecast =
-    plan.tasks
-      .map((task) => task.date)
+    dates
       .sort()
       .at(-1) || plan.start
 

@@ -1,0 +1,163 @@
+.calendar-dates {
+  container: date-editor / inline-size;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--bg);
+}
+
+.calendar-dates-header,
+.calendar-dates-heading,
+.calendar-dates-actions {
+  display: flex;
+  align-items: center;
+}
+
+.calendar-dates-header {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px 16px;
+  margin-bottom: 14px;
+}
+
+.calendar-dates-heading {
+  gap: 11px;
+  min-width: 0;
+}
+
+.calendar-dates-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--soft);
+  color: var(--hover);
+}
+
+.calendar-dates-heading h3,
+.calendar-dates-heading p {
+  margin: 0;
+}
+
+.calendar-dates-heading h3 {
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.calendar-dates-heading p {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.calendar-dates-actions {
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.calendar-dates .calendar-dates-add {
+  color: var(--hover);
+  font-weight: 600;
+}
+
+.calendar-dates-table {
+  padding: 8px 10px 3px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+}
+
+.calendar-dates-columns,
+.calendar-dates-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(140px, 32%, 182px) 36px;
+  gap: 9px;
+}
+
+.calendar-dates-columns {
+  padding: 2px 0 5px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.calendar-dates-columns span {
+  padding-inline: 10px;
+}
+
+.calendar-dates-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.calendar-dates-row {
+  align-items: center;
+  padding: 6px 0;
+}
+
+.calendar-dates-row + .calendar-dates-row {
+  border-top: 1px solid var(--line);
+}
+
+.calendar-dates-row .field {
+  min-width: 0;
+}
+
+.calendar-dates-row .field input {
+  height: 36px;
+  padding: 6px 9px;
+  border-radius: 7px;
+}
+
+.calendar-dates-day input {
+  font-variant-numeric: tabular-nums;
+}
+
+.calendar-dates .calendar-dates-remove {
+  width: 36px;
+  height: 36px;
+  border-color: transparent;
+  background: transparent;
+}
+
+.calendar-dates-remove:hover:not(:disabled),
+.calendar-dates-remove:focus-visible {
+  border-color: var(--line);
+  background: #fff4f0;
+  color: var(--error);
+}
+
+.calendar-dates-empty {
+  margin: 0;
+  padding: 13px 15px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@container date-editor (max-width: 370px) {
+  .calendar-dates-columns {
+    display: none;
+  }
+
+  .calendar-dates-row {
+    grid-template-columns: minmax(0, 1fr) 40px;
+    gap: 7px;
+    padding: 9px 0;
+  }
+
+  .calendar-dates-title {
+    grid-column: 1 / -1;
+  }
+
+  .calendar-dates-row .field input,
+  .calendar-dates .calendar-dates-remove {
+    height: 40px;
+  }
+}
