@@ -116,6 +116,58 @@ def save_course_note(user_id: int, course_id: int, note: str) -> str:
     return updated
 
 
+def update_course_settings(user_id: int, course_id: int, name: str, note: str, deadline: str, early_days: int, events: list, start_date: str = "") -> None:
+    from datetime import date, timedelta
+    name, note = name.strip(), note.strip()
+    if not name or len(name) > 255 or len(note) > 9000:
+        raise ValueError("Enter a course name and a note of at most 9000 characters")
+    if start_date:
+        date.fromisoformat(start_date)
+    if deadline:
+        target = date.fromisoformat(deadline) - timedelta(days=early_days)
+        if early_days < 0 or target < date.today() or (start_date and target < date.fromisoformat(start_date)):
+            raise ValueError("The planned finish date must be today or later")
+    elif early_days:
+        raise ValueError("Enter a deadline before choosing early days")
+    if len(events) > 100:
+        raise ValueError("At most 100 calendar events are allowed")
+    cleaned = []
+    for item in events:
+        if not isinstance(item, dict) or not str(item.get("title", "")).strip():
+            raise ValueError("Each calendar event needs a title and date")
+        day = date.fromisoformat(str(item.get("date", ""))).isoformat()
+        title = str(item["title"]).strip()[:255]
+        if {"title": title, "date": day} not in cleaned:
+            cleaned.append({"title": title, "date": day})
+    connection = connect()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT student_brief FROM courses WHERE id=%s AND user_id=%s FOR UPDATE", (course_id, user_id))
+            row = cursor.fetchone()
+            if not row:
+                raise LookupError("Course not found")
+            try:
+                brief = json.loads(row["student_brief"])
+            except (TypeError, ValueError):
+                brief = {}
+            if not isinstance(brief, dict):
+                brief = {}
+            brief.update(schema="citepath-course-v1", note=note, deadline=deadline, earlyDays=early_days, events=cleaned)
+            if start_date:
+                brief["startDate"] = start_date
+            payload = json.dumps(brief, ensure_ascii=False)
+            if len(payload) > 10000:
+                raise ValueError("Course settings are too long")
+            cursor.execute("UPDATE courses SET name=%s, student_brief=%s WHERE id=%s AND user_id=%s", (name, payload, course_id, user_id))
+            cursor.execute("UPDATE study_plans SET student_brief=%s WHERE course_id=%s", (payload, course_id))
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
 def get_course(user_id: int, course_id: int) -> dict | None:
     ensure_document_numbers()
     connection = connect()
@@ -300,70 +352,41 @@ def _renumber_documents(cursor, course_id: int) -> None:
             (new_position, row["id"], course_id),
         )
 
-def delete_document_rows(document_id: int) -> None:
-    ensure_document_numbers()
-    connection = connect()
+def delete_document_rows(user_id: int, course_id: int, document_id: int) -> None:
+    from db.plan_sync import lock_learning_course
+    from db.scheduling import ensure_scheduling_storage, reconcile_active_plan
 
+    ensure_document_numbers()
+    ensure_scheduling_storage()
+    connection = connect()
     try:
         with connection.cursor() as cursor:
-            # 先找到文档所属课程。
+            lock_learning_course(cursor, user_id, course_id)
             cursor.execute(
-                """
-                SELECT course_id
-                FROM documents
-                WHERE id = %s
-                """,
-                (document_id,),
-            )
-            document = cursor.fetchone()
-
-            # 文档已经不存在时，直接结束。
-            if document is None:
-                connection.rollback()
-                return
-
-            course_id = int(document["course_id"])
-
-            # 对同一课程的文档增删使用同一把数据库行锁。
-            cursor.execute(
-                """
-                SELECT id
-                FROM courses
-                WHERE id = %s
-                FOR UPDATE
-                """,
-                (course_id,),
+                "SELECT id FROM documents WHERE course_id=%s AND id=%s FOR UPDATE",
+                (course_id, document_id),
             )
             if cursor.fetchone() is None:
-                connection.rollback()
-                return
-
+                raise LookupError("Material not found")
+            cursor.execute("DELETE FROM plan_chapter_pages WHERE document_id=%s", (document_id,))
+            cursor.execute("DELETE FROM pages WHERE document_id=%s", (document_id,))
             cursor.execute(
-                "DELETE FROM pages WHERE document_id = %s",
-                (document_id,),
-            )
-            cursor.execute(
-                """
-                DELETE FROM documents
-                WHERE id = %s AND course_id = %s
-                """,
+                "DELETE FROM documents WHERE id=%s AND course_id=%s",
                 (document_id, course_id),
             )
-
-            # 删除和重排序在同一事务中完成。
             _renumber_documents(cursor, course_id)
-
+            reconcile_active_plan(cursor, user_id, course_id)
         connection.commit()
-        from db.pdf_store import delete_pdf
-
-        delete_pdf(course_id, int(document_id))
-
     except Exception:
         connection.rollback()
         raise
-
     finally:
         connection.close()
+
+    from db.pdf_store import delete_pdf
+
+    delete_pdf(course_id, document_id)
+
 
 def _course_summary(row: dict) -> dict:
     return {

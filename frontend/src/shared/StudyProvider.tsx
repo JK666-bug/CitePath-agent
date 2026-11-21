@@ -211,6 +211,7 @@ function useStudyValue(userId: number) {
           generating: false,
         },
       }))
+      return result
     } catch (error) {
       if (generatingIds.current.has(id)) {
         return

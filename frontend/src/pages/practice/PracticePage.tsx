@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import {
   Link,
@@ -13,12 +13,13 @@ import {
   PageHeader,
 } from '../../shared/components/UI'
 
+import { PracticeEntry, PracticeMastery } from './PracticeEntry'
 import PracticeStartModal from './PracticeStartModal'
 
 import './practice.css'
 
 export default function PracticePage() {
-  const { demo, courses, plans } = useStudy()
+  const { demo, courses, plans, loadPlan } = useStudy()
   const { search } = useLocation()
   const [target, setTarget] = useState<{
     courseId: number
@@ -32,6 +33,13 @@ export default function PracticePage() {
       filter === 'all' ||
       String(course.id) === filter,
   )
+
+  useEffect(() => {
+    if (filter === 'demo') return
+    for (const course of courses) {
+      if (filter === 'all' || String(course.id) === filter) void loadPlan(course.id)
+    }
+  }, [courses, filter, loadPlan])
 
   return (
     <div className="practice-page">
@@ -210,18 +218,13 @@ export default function PracticePage() {
                       <p className="muted small">
                         {chapter.concepts.join(' · ')}
                       </p>
+                      <PracticeMastery progress={chapter.practice_progress} />
                       <div className="actions">
-                        <button
-                          className="button small"
-                          onClick={() =>
-                            setTarget({
-                              courseId: course.id,
-                              chapterId: Number(chapter.id),
-                            })
-                          }
-                        >
-                          Practice
-                        </button>
+                        <PracticeEntry
+                          courseId={course.id}
+                          progress={chapter.practice_progress}
+                          onStart={() => setTarget({ courseId: course.id, chapterId: Number(chapter.id) })}
+                        />
                         <Link
                           className="button small secondary"
                           href={`/courses/${course.id}/chapters/${chapter.id}/reports`}

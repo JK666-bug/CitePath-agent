@@ -2,7 +2,11 @@ import json
 
 from db.connection import connect
 from db.courses import get_course
-
+from db.plan_sync import (
+    ensure_learning_sync_storage,
+    lock_learning_course,
+    sync_learning_state,
+)
 _ready = False
 
 
@@ -145,10 +149,16 @@ def load_chapter(user_id: int, course_id: int, chapter_id: int) -> dict:
 
 
 def save_exam(user_id: int, course_id: int, chapter: dict, questions: list[dict]) -> dict:
-    ensure_exam_storage()
+    ensure_learning_sync_storage()
     connection = connect()
     try:
         with connection.cursor() as cursor:
+            lock_learning_course(
+                cursor,
+                user_id,
+                course_id,
+            )
+
             cursor.execute(
                 """
                 INSERT INTO exams (course_id, user_id, chapter_id, chapter_title, status)
@@ -180,6 +190,13 @@ def save_exam(user_id: int, course_id: int, chapter: dict, questions: list[dict]
                     ),
                 )
                 question["id"] = int(cursor.lastrowid)
+
+            sync_learning_state(
+                cursor,
+                user_id,
+                course_id,
+            )
+
         connection.commit()
     except Exception:
         connection.rollback()
@@ -227,9 +244,16 @@ def get_owned_exam(user_id: int, course_id: int, exam_id: int) -> dict:
 
 
 def finish_exam(user_id: int, course_id: int, exam_id: int, report: dict, graded: list[dict]) -> dict:
+    ensure_learning_sync_storage()
     connection = connect()
     try:
         with connection.cursor() as cursor:
+            lock_learning_course(
+                cursor,
+                user_id,
+                course_id,
+            )
+
             cursor.execute(
                 """
                 SELECT status
@@ -242,8 +266,18 @@ def finish_exam(user_id: int, course_id: int, exam_id: int, report: dict, graded
             if row is None:
                 raise LookupError("Exam not found")
             if row["status"] != "open":
-                connection.rollback()
-                stored = get_owned_exam(user_id, course_id, exam_id)
+                sync_learning_state(
+                    cursor,
+                    user_id,
+                    course_id,
+                )
+                connection.commit()
+
+                stored = get_owned_exam(
+                    user_id,
+                    course_id,
+                    exam_id,
+                )
                 return public_exam(stored)
             cursor.executemany(
                 """
@@ -290,6 +324,13 @@ def finish_exam(user_id: int, course_id: int, exam_id: int, report: dict, graded
                     exam_id,
                 ),
             )
+
+            sync_learning_state(
+                cursor,
+                user_id,
+                course_id,
+            )
+
         connection.commit()
     except Exception:
         connection.rollback()

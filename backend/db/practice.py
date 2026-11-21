@@ -199,6 +199,39 @@ def save_progress(user_id: int, concept_id: int, level: int, streak: int) -> Non
         connection.close()
 
 
+def chapter_practice_progress(cursor, user_id: int, course_id: int) -> dict[str, dict]:
+    """Read resumable sessions and current mastery for chapters with practice history."""
+    cursor.execute(
+        """
+        SELECT h.id AS chapter_id, sessions.open_session_id, sessions.has_finished,
+               COUNT(c.id) AS total, SUM(CASE WHEN p.level >= 2 THEN 1 ELSE 0 END) AS mastered
+        FROM plan_chapters h
+        JOIN (
+            SELECT chapter_id,
+                   MAX(CASE WHEN status = 'open' THEN id END) AS open_session_id,
+                   MAX(CASE WHEN status = 'finished' THEN 1 ELSE 0 END) AS has_finished
+            FROM practice_sessions
+            WHERE user_id = %s AND course_id = %s
+            GROUP BY chapter_id
+        ) sessions ON sessions.chapter_id = h.id
+        LEFT JOIN plan_concepts c ON c.chapter_id = h.id
+        LEFT JOIN concept_progress p ON p.concept_id = c.id AND p.user_id = %s
+        WHERE h.course_id = %s
+        GROUP BY h.id, sessions.open_session_id, sessions.has_finished
+        """,
+        (user_id, course_id, user_id, course_id),
+    )
+    return {
+        str(row["chapter_id"]): {
+            "open_session_id": int(row["open_session_id"]) if row["open_session_id"] is not None else None,
+            "has_finished": bool(row["has_finished"]),
+            "mastered": int(row["mastered"]),
+            "total": int(row["total"]),
+        }
+        for row in cursor.fetchall()
+    }
+
+
 def open_session_id(user_id: int, course_id: int, chapter_id: int) -> int | None:
     ensure_practice_storage()
     connection = connect()
@@ -219,24 +252,41 @@ def open_session_id(user_id: int, course_id: int, chapter_id: int) -> int | None
         connection.close()
     return int(row["id"]) if row else None
 
-
 def create_session(
     user_id: int,
     course_id: int,
     chapter: dict,
     prefs: dict | None = None,
 ) -> int:
-    ensure_practice_storage()
+    from db.plan_sync import (
+        ensure_learning_sync_storage,
+        lock_learning_course,
+        sync_learning_state,
+    )
+
+    ensure_learning_sync_storage()
     connection = connect()
+
     try:
         with connection.cursor() as cursor:
+            lock_learning_course(
+                cursor,
+                user_id,
+                course_id,
+            )
+
             cursor.execute(
                 """
                 INSERT INTO practice_sessions (
-                  course_id, user_id, chapter_id, chapter_title, status, phase,
-                  review_round, review_queue_json, prefs_json
+                  course_id, user_id, chapter_id,
+                  chapter_title, status, phase,
+                  review_round, review_queue_json,
+                  prefs_json
                 )
-                VALUES (%s, %s, %s, %s, 'open', 'learn', 0, %s, %s)
+                VALUES (
+                    %s, %s, %s, %s,
+                    'open', 'learn', 0, %s, %s
+                )
                 """,
                 (
                     course_id,
@@ -244,18 +294,30 @@ def create_session(
                     chapter["id"],
                     chapter["title"],
                     "[]",
-                    json.dumps(prefs, ensure_ascii=False) if prefs else None,
+                    json.dumps(
+                        prefs,
+                        ensure_ascii=False,
+                    ) if prefs else None,
                 ),
             )
             session_id = int(cursor.lastrowid)
+
+            sync_learning_state(
+                cursor,
+                user_id,
+                course_id,
+            )
+
         connection.commit()
+
     except Exception:
         connection.rollback()
         raise
+
     finally:
         connection.close()
-    return session_id
 
+    return session_id
 
 def get_owned_session(user_id: int, course_id: int, session_id: int) -> dict:
     ensure_practice_storage()
@@ -514,23 +576,91 @@ def _attempt(row: dict) -> dict:
         "sources": _json_list(_json_value(row["sources_json"])),
     }
 
+def mark_session_finished(
+    session_id: int,
+    user_id: int,
+) -> None:
+    from db.plan_sync import (
+        ensure_learning_sync_storage,
+        lock_learning_course,
+        sync_learning_state,
+    )
 
-def mark_session_finished(session_id: int, user_id: int) -> None:
+    ensure_learning_sync_storage()
+
+    # First discover the owned session's course.
     connection = connect()
+
     try:
         with connection.cursor() as cursor:
             cursor.execute(
                 """
+                SELECT course_id
+                FROM practice_sessions
+                WHERE id = %s AND user_id = %s
+                """,
+                (session_id, user_id),
+            )
+            row = cursor.fetchone()
+
+    finally:
+        connection.close()
+
+    if row is None:
+        raise LookupError("Practice not found")
+
+    course_id = int(row["course_id"])
+    connection = connect()
+
+    try:
+        with connection.cursor() as cursor:
+            lock_learning_course(
+                cursor,
+                user_id,
+                course_id,
+            )
+
+            cursor.execute(
+                """
+                SELECT id
+                FROM practice_sessions
+                WHERE id = %s
+                  AND user_id = %s
+                  AND course_id = %s
+                FOR UPDATE
+                """,
+                (session_id, user_id, course_id),
+            )
+
+            if cursor.fetchone() is None:
+                raise LookupError("Practice not found")
+
+            cursor.execute(
+                """
                 UPDATE practice_sessions
-                SET status = 'finished', review_queue_json = %s, finished_at = CURRENT_TIMESTAMP
-                WHERE id = %s AND user_id = %s AND status = 'open'
+                SET
+                    status = 'finished',
+                    review_queue_json = %s,
+                    finished_at = CURRENT_TIMESTAMP
+                WHERE id = %s
+                  AND user_id = %s
+                  AND status = 'open'
                 """,
                 ("[]", session_id, user_id),
             )
+
+            sync_learning_state(
+                cursor,
+                user_id,
+                course_id,
+            )
+
         connection.commit()
+
     except Exception:
         connection.rollback()
         raise
+
     finally:
         connection.close()
 

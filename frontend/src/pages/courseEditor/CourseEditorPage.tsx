@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 
 import {
@@ -7,16 +7,13 @@ import {
 } from '../../shared/StudyProvider'
 
 import { Link } from '../../shared/router'
+import { addDays, dateKey } from '../../shared/format'
 
 import {
   ApiError,
   messageOf,
 } from '../../shared/request'
 
-import {
-  addDays,
-  dateKey,
-} from '../../shared/format'
 
 import {
   DemoNotice,
@@ -38,6 +35,10 @@ import {
   encodeBrief,
 } from './brief'
 
+import ImportantDates from './ImportantDates'
+import { updateNoteDates } from './noteCalendar'
+import { analyzeNewDocuments } from '../course/chapterActions'
+import SchedulePanel from '../course/SchedulePanel'
 import CourseForm from './CourseForm'
 import type { CourseFormValue } from './CourseForm'
 
@@ -63,6 +64,8 @@ function Editor({
     editDemo,
     refreshCourses,
     loadCourse,
+    loadPlan,
+    plans,
   } = useStudy()
 
   const [value, setValue] =
@@ -73,11 +76,10 @@ function Editor({
             course.student_brief,
           )
         : {
-            deadline: addDays(
-              dateKey(),
-              30,
-            ),
-            earlyDays: 2,
+            startDate: dateKey(),
+            deadline: '',
+            earlyDays: 0,
+            events: [],
             note: '',
           }),
     }))
@@ -89,9 +91,11 @@ function Editor({
     useState<Record<string, string>>({})
 
   const [busy, setBusy] = useState(false)
+  const [creationComplete, setCreationComplete] = useState(false)
   const [open, setOpen] = useState(false)
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
+  const scheduleSection = useRef<HTMLDivElement>(null)
 
   const [createdId, setCreatedId] =
     useState<number | null>(null)
@@ -114,6 +118,7 @@ function Editor({
 
     if (
       busy ||
+      creationComplete ||
       realEdit ||
       uncertainCreate
     ) {
@@ -127,31 +132,16 @@ function Editor({
         'Please enter a course name.'
     }
 
-    if (
-      !/^\d{4}-\d{2}-\d{2}$/.test(
-        value.deadline,
-      ) ||
-      value.deadline < dateKey()
-    ) {
-      next.deadline =
-        'Choose today or a future date.'
+    if (!value.startDate || value.startDate < dateKey()) next.startDate = 'Choose today or a future start date.'
+    if (!value.deadline || value.deadline < dateKey()) next.deadline = 'Choose today or a future date.'
+    if (!Number.isInteger(value.earlyDays) || value.earlyDays < 0 || value.earlyDays > 365 || (value.deadline && value.startDate && addDays(value.deadline, -value.earlyDays) < value.startDate)) next.earlyDays = 'The planned finish must be on or after the start date.'
+
+    if ((value.events || []).some((item) => !item.title.trim() || !item.date)) {
+      next.note = 'Give every important date a title and full date, or remove the incomplete row.'
     }
 
-    if (
-      !Number.isInteger(
-        value.earlyDays,
-      ) ||
-      value.earlyDays < 0 ||
-      (
-        value.deadline &&
-        addDays(
-          value.deadline,
-          -value.earlyDays,
-        ) < dateKey()
-      )
-    ) {
-      next.earlyDays =
-        'Choose a whole number that keeps your target date on or after today.'
+    if (!files.length && !createdId && !isDemo) {
+      next.files = 'Choose at least one PDF to analyze.'
     }
 
     if (
@@ -176,9 +166,11 @@ function Editor({
     }
 
     const brief = encodeBrief({
+      startDate: value.startDate,
       deadline: value.deadline,
       earlyDays: value.earlyDays,
       note: value.note,
+      events: value.events || [],
     })
 
     if (
@@ -230,6 +222,7 @@ function Editor({
         }
 
         const duplicates: string[] = []
+        let newUploads = 0
 
         for (const file of files) {
           if (
@@ -247,6 +240,7 @@ function Editor({
           const result =
             await uploadMaterial(id, file)
 
+          if (!result.duplicate) newUploads += 1
           if (result.duplicate) {
             duplicates.push(
               duplicateMessage(
@@ -262,13 +256,16 @@ function Editor({
           ])
         }
 
-        await loadCourse(id)
-        await refreshCourses()
+        setStatus('Analyzing new materials into chapters…')
+        const analyzed = await analyzeNewDocuments(id)
+        if (newUploads && !analyzed) throw new Error('PDFs were saved but are not ready for chapter analysis. Check Course info and retry Rebuild chapters.')
+        await Promise.all([loadCourse(id), loadPlan(id), refreshCourses()])
+        setCreationComplete(true)
 
         setStatus(
           duplicates.length
-            ? `Course settings saved. ${duplicates.join(' ')} Automatic analysis is awaiting the planning service.`
-            : 'Course settings and selected PDF materials have been saved. Automatic analysis is awaiting the planning service.',
+            ? duplicates.join(' ')
+            : 'Your materials have been processed.',
         )
       }
     } catch (reason) {
@@ -301,6 +298,19 @@ function Editor({
     }
   }
 
+  const planEntry = createdId ? plans[createdId] : undefined
+  const createdPlan = planEntry?.plan
+  const scheduleReady = Boolean(creationComplete && createdPlan?.chapters.length)
+  const remainingUploads = files.some(file => !uploaded.includes(fileKey(file)))
+
+  function continueToSchedule() {
+    setOpen(false)
+    requestAnimationFrame(() => {
+      scheduleSection.current?.focus({ preventScroll: true })
+      scheduleSection.current?.scrollIntoView({ block: 'start' })
+    })
+  }
+
   const retryBlocked = Boolean(
     createdId &&
     error &&
@@ -310,29 +320,12 @@ function Editor({
   return (
     <div className="course-editor-page">
       <PageHeader
-        eyebrow={
-          course
-            ? 'Course settings'
-            : 'A new learning path'
-        }
-        title={
-          course
-            ? 'Edit course'
-            : 'Create a course'
-        }
-        subtitle="Keep your materials, goals, and available time together."
-        actions={
-          <Link
-            className="button secondary"
-            href={
-              courseId
-                ? `/courses/${courseId}/info`
-                : '/courses'
-            }
-          >
-            Back
-          </Link>
-        }
+        eyebrow={creationComplete ? 'Course saved' : course ? 'Course settings' : 'A new learning path'}
+        title={creationComplete ? value.name.trim() : course ? 'Edit course' : 'Create a course'}
+        subtitle={creationComplete ? undefined : 'Keep your materials and study dates together.'}
+        actions={!creationComplete && (
+          <Link className="button secondary" href={courseId ? `/courses/${courseId}/info` : '/courses'}>Back</Link>
+        )}
       />
 
       {isDemo && <DemoNotice />}
@@ -347,7 +340,7 @@ function Editor({
         </Notice>
       )}
 
-      <form
+      {!creationComplete && <form
         className="panel editor-form stack"
         noValidate
         onSubmit={save}
@@ -355,7 +348,12 @@ function Editor({
         <CourseForm
           value={value}
           onChange={(next) => {
-            setValue(next)
+            setValue(current => ({
+              ...next,
+              events: next.note === current.note
+                ? current.events
+                : updateNoteDates(next.note, current.events || [], next, dateKey(), current.note),
+            }))
             setErrors({})
           }}
           errors={errors}
@@ -366,6 +364,11 @@ function Editor({
           }
         />
 
+        <ImportantDates
+          value={value.events || []}
+          onChange={(events) => setValue(current => ({ ...current, events }))}
+          disabled={busy || createdId !== null || realEdit}
+        />
         <section>
           <h2>Course materials</h2>
 
@@ -427,26 +430,15 @@ function Editor({
                 )
               }
             />
-            I checked saved materials and
-            removed files that were already
-            uploaded.
+            I checked which files were already saved.
           </label>
         )}
 
-        {createdId && (
+        {createdId && error && (
           <p className="muted small">
-            Course #{createdId} is saved.
-            {' '}{uploaded.length} upload
-            requests have completed.
-            {' '}
-            <Link
-              href={
-                `/courses/${createdId}/info`
-              }
-              target="_blank"
-              rel="noreferrer"
-            >
-              Check saved materials
+            Your course is saved.{' '}
+            <Link href={`/courses/${createdId}/info`} target="_blank" rel="noreferrer">
+              Check uploaded materials
             </Link>
           </p>
         )}
@@ -476,20 +468,38 @@ function Editor({
               : isDemo
                 ? 'Save and update sample plan'
                 : createdId
-                  ? 'Retry remaining uploads'
+                  ? remainingUploads ? 'Retry uploads' : 'Retry chapter analysis'
                   : 'Save course'}
           </button>
-
-          <span className="muted small">
-            {realEdit
-              ? 'Saving requires a course update endpoint.'
-              : isDemo
-                ? 'Saved locally in this browser.'
-                : 'Saved to your account.'}
-          </span>
         </div>
-      </form>
+      </form>}
 
+      {creationComplete && createdId && !scheduleReady && (
+        <div className="editor-form">
+          {planEntry?.loading ? (
+            <Loading text="Loading chapters…" />
+          ) : planEntry?.error ? (
+            <Notice tone="error">
+              {planEntry.error}{' '}
+              <button className="text-button" type="button" onClick={() => void loadPlan(createdId)}>Try again</button>
+            </Notice>
+          ) : (
+            <Notice>
+              Finish analyzing your PDFs in <Link href={`/courses/${createdId}/info`}>Course settings</Link> to enable daily scheduling.
+            </Notice>
+          )}
+        </div>
+      )}
+
+      {createdId && createdPlan && scheduleReady && (
+        <div className="editor-form" ref={scheduleSection} tabIndex={-1} role="region" aria-label="Daily learning schedule">
+          <SchedulePanel
+            course={{ id: createdId, name: value.name, student_brief: encodeBrief(value), created_at: '', documents: [] }}
+            plan={createdPlan}
+            hideStudyDates
+          />
+        </div>
+      )}
       <AnalysisDialog
         open={open}
         busy={busy}
@@ -502,6 +512,7 @@ function Editor({
             : courseId || ''
         }
         onClose={() => setOpen(false)}
+        onSchedule={scheduleReady ? continueToSchedule : undefined}
       />
     </div>
   )

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 import { navigate } from '../../shared/router'
 import { messageOf } from '../../shared/request'
+import { useStudy } from '../../shared/StudyProvider'
 import {
   Modal,
   Notice,
@@ -28,6 +29,7 @@ export default function PracticeStartModal({
   chapterId: number | null
   onClose: () => void
 }) {
+  const { loadPlan } = useStudy()
   const [mode, setMode] = useState<Mode>('choose')
   const [prefs, setPrefs] = useState<PracticePrefsDraft>(emptyPracticePrefs())
   const [busy, setBusy] = useState(false)
@@ -48,6 +50,7 @@ export default function PracticeStartModal({
     setError('')
     try {
       const created = await createPractice(courseId, chapterId, nextPrefs)
+      await loadPlan(courseId)
       onClose()
       navigate(`/practice/${courseId}/sessions/${created.id}`)
     } catch (reason) {

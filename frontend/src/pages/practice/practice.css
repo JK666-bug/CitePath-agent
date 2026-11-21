@@ -54,6 +54,22 @@
   padding-top: 5px;
 }
 
+.practice-resume-progress {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  color: var(--hover);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.practice-resume-progress progress {
+  width: 48px;
+  height: 7px;
+  accent-color: var(--primary);
+}
+
 .chapter-score {
   font-size: 12px;
   color: var(--muted);

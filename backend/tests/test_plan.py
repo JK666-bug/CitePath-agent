@@ -208,8 +208,6 @@ class PlanBuildTest(unittest.TestCase):
             [
                 "2026-11-08",
                 "2026-11-08",
-                "2026-11-08",
-                "2026-11-10",
                 "2026-11-10",
                 "2026-11-10",
             ],
@@ -313,7 +311,7 @@ class DocumentDivisionTest(unittest.TestCase):
         self.assertEqual([call.args[1] for call in ask.call_args_list], [first, second])
         self.assertEqual([chapter["id"] for chapter in combined], [f"c{i}" for i in range(1, 18)])
         plan = assemble_plan(combined, *args[1:], "Per-document division", 1)
-        self.assertEqual(len({task["id"] for task in plan["tasks"]}), 51)
+        self.assertEqual(len({task["id"] for task in plan["tasks"]}), 34)
 
     @patch("agent.plan._ask_model")
     def test_retries_only_the_incomplete_document(self, ask):

@@ -1,0 +1,1398 @@
+{
+  "at": "2026-11-19T10:29:54.471336+00:00",
+  "model_mode": "live",
+  "scope": "Synthetic one-chapter fixtures on connection-local temporary tables; not a formal learning-quality evaluation.",
+  "records": [
+    {
+      "scenario": "feasible",
+      "mode": "baseline",
+      "status": "saved",
+      "duration_ms": 31,
+      "task_identity_preserved": true,
+      "completed_tasks_preserved": true,
+      "tools": [
+        "get_planning_snapshot",
+        "estimate_task_time",
+        "propose_daily_schedule",
+        "validate_daily_schedule",
+        "save_schedule"
+      ],
+      "trace": [
+        {
+          "step": 1,
+          "tool": "get_planning_snapshot",
+          "arguments": {},
+          "ok": true,
+          "observation": {
+            "today_timezone": "Asia/Hong_Kong",
+            "profile": {
+              "start": "2026-11-19",
+              "end": "2026-11-29",
+              "daily_minutes": 60,
+              "weekdays": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
+              ],
+              "off_dates": [],
+              "priority_chapter_ids": [],
+              "strategy": "auto",
+              "note": ""
+            },
+            "version": 3,
+            "chapters": [
+              {
+                "id": "4",
+                "title": "Sorting",
+                "chapter_status": "planned",
+                "review_status": "not_assessed",
+                "reports_available": []
+              }
+            ],
+            "tasks": [
+              {
+                "id": "reading-4",
+                "chapterId": "4",
+                "kind": "Reading",
+                "status": "Not started",
+                "date": "2026-11-19"
+              },
+              {
+                "id": "practice-4",
+                "chapterId": "4",
+                "kind": "Practice",
+                "status": "Not started",
+                "date": "2026-11-19"
+              },
+              {
+                "id": "review-4",
+                "chapterId": "4",
+                "kind": "Review",
+                "status": "Not started",
+                "date": "2026-11-19"
+              }
+            ],
+            "new_materials": []
+          },
+          "duration_ms": 14
+        },
+        {
+          "step": 2,
+          "tool": "estimate_task_time",
+          "arguments": {},
+          "ok": true,
+          "observation": {
+            "estimates": {
+              "reading-4": {
+                "minutes": 5,
+                "basis": "Heuristic: text at 180 units/minute, concept overheads; active practice uses 75% of the initial estimate.",
+                "has_learning_report": false
+              },
+              "practice-4": {
+                "minutes": 10,
+                "basis": "Heuristic: text at 180 units/minute, concept overheads; active practice uses 75% of the initial estimate.",
+                "has_learning_report": false
+              },
+              "review-4": {
+                "minutes": 5,
+                "basis": "Heuristic: text at 180 units/minute, concept overheads; active practice uses 75% of the initial estimate.",
+                "has_learning_report": false
+              }
+            },
+            "assumptions": "Heuristic minutes, not measured time. Large tasks can span several days."
+          },
+          "duration_ms": 0
+        },
+        {
+          "step": 3,
+          "tool": "propose_daily_schedule",
+          "arguments": {
+            "strategy": "auto"
+          },
+          "ok": true,
+          "observation": {
+            "candidate_id": "1",
+            "strategy": "new_first",
+            "slots": [
+              {
+                "task_id": "reading-4",
+                "date": "2026-11-19",
+                "minutes": 5
+              },
+              {
+                "task_id": "practice-4",
+                "date": "2026-11-19",
+                "minutes": 10
+              },
+              {
+                "task_id": "review-4",
+                "date": "2026-11-19",
+                "minutes": 5
+              }
+            ],
+            "unallocated": [],
+            "estimated_minutes": 20,
+            "available_minutes": 660
+          },
+          "duration_ms": 0
+        },
+        {
+          "step": 4,
+          "tool": "validate_daily_schedule",
+          "arguments": {
+            "candidate_id": "1"
+          },
+          "ok": true,
+          "observation": {
+            "valid": true,
+            "errors": [],
+            "daily_minutes": {
+              "2026-11-19": 20
+            }
+          },
+          "duration_ms": 0
+        },
+        {
+          "step": 5,
+          "tool": "save_schedule",
+          "arguments": {
+            "candidate_id": "1"
+          },
+          "ok": true,
+          "observation": {
+            "status": "saved",
+            "run_id": "19ee85fa-1a48-4f28-a588-5f436bb6b31d",
+            "version": 4,
+            "message": "Scheduled unfinished tasks using new_first; completed work preserved.",
+            "trace": []
+          },
+          "duration_ms": 7
+        }
+      ]
+    },
+    {
+      "scenario": "feasible",
+      "mode": "agent",
+      "status": "saved",
+      "duration_ms": 10603,
+      "task_identity_preserved": true,
+      "completed_tasks_preserved": true,
+      "tools": [
+        "get_planning_snapshot",
+        "estimate_task_time",
+        "propose_daily_schedule",
+        "validate_daily_schedule",
+        "save_schedule"
+      ],
+      "trace": [
+        {
+          "step": 1,
+          "tool": "get_planning_snapshot",
+          "arguments": {},
+          "ok": true,
+          "observation": {
+            "today_timezone": "Asia/Hong_Kong",
+            "profile": {
+              "start": "2026-11-19",
+              "end": "2026-11-29",
+              "daily_minutes": 60,
+              "weekdays": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
+              ],
+              "off_dates": [],
+              "priority_chapter_ids": [],
+              "strategy": "auto",
+              "note": ""
+            },
+            "version": 3,
+            "chapters": [
+              {
+                "id": "4",
+                "title": "Sorting",
+                "chapter_status": "planned",
+                "review_status": "not_assessed",
+                "reports_available": []
+              }
+            ],
+            "tasks": [
+              {
+                "id": "reading-4",
+                "chapterId": "4",
+                "kind": "Reading",
+                "status": "Not started",
+                "date": "2026-11-19"
+              },
+              {
+                "id": "practice-4",
+                "chapterId": "4",
+                "kind": "Practice",
+                "status": "Not started",
+                "date": "2026-11-19"
+              },
+              {
+                "id": "review-4",
+                "chapterId": "4",
+                "kind": "Review",
+                "status": "Not started",
+                "date": "2026-11-19"
+              }
+            ],
+            "new_materials": []
+          },
+          "duration_ms": 11
+        },
+        {
+          "step": 2,
+          "tool": "estimate_task_time",
+          "arguments": {},
+          "ok": true,
+          "observation": {
+            "estimates": {
+              "reading-4": {
+                "minutes": 5,
+                "basis": "Heuristic: text at 180 units/minute, concept overheads; active practice uses 75% of the initial estimate.",
+                "has_learning_report": false
+              },
+              "practice-4": {
+                "minutes": 10,
+                "basis": "Heuristic: text at 180 units/minute, concept overheads; active practice uses 75% of the initial estimate.",
+                "has_learning_report": false
+              },
+              "review-4": {
+                "minutes": 5,
+                "basis": "Heuristic: text at 180 units/minute, concept overheads; active practice uses 75% of the initial estimate.",
+                "has_learning_report": false
+              }
+            },
+            "assumptions": "Heuristic minutes, not measured time. Large tasks can span several days."
+          },
+          "duration_ms": 0
+        },
+        {
+          "step": 3,
+          "tool": "propose_daily_schedule",
+          "arguments": {
+            "strategy": "new_first"
+          },
+          "ok": true,
+          "observation": {
+            "candidate_id": "1",
+            "strategy": "new_first",
+            "slots": [
+              {
+                "task_id": "reading-4",
+                "date": "2026-11-19",
+                "minutes": 5
+              },
+              {
+                "task_id": "practice-4",
+                "date": "2026-11-19",
+                "minutes": 10
+              },
+              {
+                "task_id": "review-4",
+                "date": "2026-11-19",
+                "minutes": 5
+              }
+            ],
+            "unallocated": [],
+            "estimated_minutes": 20,
+            "available_minutes": 660
+          },
+          "duration_ms": 0
+        },
+        {
+          "step": 4,
+          "tool": "validate_daily_schedule",
+          "arguments": {
+            "candidate_id": "1"
+          },
+          "ok": true,
+          "observation": {
+            "valid": true,
+            "errors": [],
+            "daily_minutes": {
+              "2026-11-19": 20
+            }
+          },
+          "duration_ms": 1
+        },
+        {
+          "step": 5,
+          "tool": "save_schedule",
+          "arguments": {
+            "candidate_id": "1"
+          },
+          "ok": true,
+          "observation": {
+            "status": "saved",
+            "run_id": "1597a4b2-6e04-4124-b019-fa6ab438c188",
+            "version": 4,
+            "message": "Scheduled unfinished tasks using new_first; completed work preserved.",
+            "trace": []
+          },
+          "duration_ms": 13
+        }
+      ]
+    },
+    {
+      "scenario": "insufficient_capacity",
+      "mode": "baseline",
+      "status": "needs_input",
+      "duration_ms": 15,
+      "task_identity_preserved": true,
+      "completed_tasks_preserved": true,
+      "tools": [
+        "get_planning_snapshot",
+        "estimate_task_time",
+        "propose_daily_schedule",
+        "validate_daily_schedule",
+        "request_clarification"
+      ],
+      "trace": [
+        {
+          "step": 1,
+          "tool": "get_planning_snapshot",
+          "arguments": {},
+          "ok": true,
+          "observation": {
+            "today_timezone": "Asia/Hong_Kong",
+            "profile": {
+              "start": "2026-11-19",
+              "end": "2026-11-19",
+              "daily_minutes": 1,
+              "weekdays": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
+              ],
+              "off_dates": [],
+              "priority_chapter_ids": [],
+              "strategy": "auto",
+              "note": ""
+            },
+            "version": 3,
+            "chapters": [
+              {
+                "id": "4",
+                "title": "Sorting",
+                "chapter_status": "planned",
+                "review_status": "not_assessed",
+                "reports_available": []
+              }
+            ],
+            "tasks": [
+              {
+                "id": "reading-4",
+                "chapterId": "4",
+                "kind": "Reading",
+                "status": "Not started",
+                "date": "2026-11-19"
+              },
+              {
+                "id": "practice-4",
+                "chapterId": "4",
+                "kind": "Practice",
+                "status": "Not started",
+                "date": "2026-11-19"
+              },
+              {
+                "id": "review-4",
+                "chapterId": "4",
+                "kind": "Review",
+                "status": "Not started",
+                "date": "2026-11-19"
+              }
+            ],
+            "new_materials": []
+          },
+          "duration_ms": 7
+        },
+        {
+          "step": 2,
+          "tool": "estimate_task_time",
+          "arguments": {},
+          "ok": true,
+          "observation": {
+            "estimates": {
+              "reading-4": {
+                "minutes": 5,
+                "basis": "Heuristic: text at 180 units/minute, concept overheads; active practice uses 75% of the initial estimate.",
+                "has_learning_report": false
+              },
+              "practice-4": {
+                "minutes": 10,
+                "basis": "Heuristic: text at 180 units/minute, concept overheads; active practice uses 75% of the initial estimate.",
+                "has_learning_report": false
+              },
+              "review-4": {
+                "minutes": 5,
+                "basis": "Heuristic: text at 180 units/minute, concept overheads; active practice uses 75% of the initial estimate.",
+                "has_learning_report": false
+              }
+            },
+            "assumptions": "Heuristic minutes, not measured time. Large tasks can span several days."
+          },
+          "duration_ms": 0
+        },
+        {
+          "step": 3,
+          "tool": "propose_daily_schedule",
+          "arguments": {
+            "strategy": "auto"
+          },
+          "ok": true,
+          "observation": {
+            "candidate_id": "1",
+            "strategy": "new_first",
+            "slots": [
+              {
+                "task_id": "reading-4",
+                "date": "2026-11-19",
+                "minutes": 1
+              }
+            ],
+            "unallocated": [
+              {
+                "task_id": "reading-4",
+                "minutes": 4
+              },
+              {
+                "task_id": "practice-4",
+                "minutes": 10
+              },
+              {
+                "task_id": "review-4",
+                "minutes": 5
+              }
+            ],
+            "estimated_minutes": 20,
+            "available_minutes": 1
+          },
+          "duration_ms": 0
+        },
+        {
+          "step": 4,
+          "tool": "validate_daily_schedule",
+          "arguments": {
+            "candidate_id": "1"
+          },
+          "ok": true,
+          "observation": {
+            "valid": false,
+            "errors": [
+              "Task reading-4 is not fully allocated",
+              "Task practice-4 is not fully allocated",
+              "Task review-4 is not fully allocated",
+              "Not enough study time before the deadline"
+            ],
+            "daily_minutes": {
+              "2026-11-19": 1
+            }
+          },
+          "duration_ms": 0
+        },
+        {
+          "step": 5,
+          "tool": "request_clarification",
+          "arguments": {
+            "question": "Not enough study time. Extend the dates or increase daily minutes."
+          },
+          "ok": true,
+          "observation": {
+            "status": "needs_input",
+            "run_id": "5b663e5f-fd93-455e-bffc-88d30ae0f684",
+            "message": "Not enough study time. Extend the dates or increase daily minutes."
+          },
+          "duration_ms": 0
+        }
+      ]
+    },
+    {
+      "scenario": "insufficient_capacity",
+      "mode": "agent",
+      "status": "needs_input",
+      "duration_ms": 127659,
+      "task_identity_preserved": true,
+      "completed_tasks_preserved": true,
+      "tools": [
+        "get_planning_snapshot",
+        "estimate_task_time",
+        "propose_daily_schedule",
+        "validate_daily_schedule",
+        "request_clarification"
+      ],
+      "trace": [
+        {
+          "step": 1,
+          "tool": "get_planning_snapshot",
+          "arguments": {},
+          "ok": true,
+          "observation": {
+            "today_timezone": "Asia/Hong_Kong",
+            "profile": {
+              "start": "2026-11-19",
+              "end": "2026-11-19",
+              "daily_minutes": 1,
+              "weekdays": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
+              ],
+              "off_dates": [],
+              "priority_chapter_ids": [],
+              "strategy": "auto",
+              "note": ""
+            },
+            "version": 3,
+            "chapters": [
+              {
+                "id": "4",
+                "title": "Sorting",
+                "chapter_status": "planned",
+                "review_status": "not_assessed",
+                "reports_available": []
+              }
+            ],
+            "tasks": [
+              {
+                "id": "reading-4",
+                "chapterId": "4",
+                "kind": "Reading",
+                "status": "Not started",
+                "date": "2026-11-19"
+              },
+              {
+                "id": "practice-4",
+                "chapterId": "4",
+                "kind": "Practice",
+                "status": "Not started",
+                "date": "2026-11-19"
+              },
+              {
+                "id": "review-4",
+                "chapterId": "4",
+                "kind": "Review",
+                "status": "Not started",
+                "date": "2026-11-19"
+              }
+            ],
+            "new_materials": []
+          },
+          "duration_ms": 11
+        },
+        {
+          "step": 2,
+          "tool": "estimate_task_time",
+          "arguments": {},
+          "ok": true,
+          "observation": {
+            "estimates": {
+              "reading-4": {
+                "minutes": 5,
+                "basis": "Heuristic: text at 180 units/minute, concept overheads; active practice uses 75% of the initial estimate.",
+                "has_learning_report": false
+              },
+              "practice-4": {
+                "minutes": 10,
+                "basis": "Heuristic: text at 180 units/minute, concept overheads; active practice uses 75% of the initial estimate.",
+                "has_learning_report": false
+              },
+              "review-4": {
+                "minutes": 5,
+                "basis": "Heuristic: text at 180 units/minute, concept overheads; active practice uses 75% of the initial estimate.",
+                "has_learning_report": false
+              }
+            },
+            "assumptions": "Heuristic minutes, not measured time. Large tasks can span several days."
+          },
+          "duration_ms": 0
+        },
+        {
+          "step": 3,
+          "tool": "propose_daily_schedule",
+          "arguments": {
+            "strategy": "new_first"
+          },
+          "ok": true,
+          "observation": {
+            "candidate_id": "1",
+            "strategy": "new_first",
+            "slots": [
+              {
+                "task_id": "reading-4",
+                "date": "2026-11-19",
+                "minutes": 1
+              }
+            ],
+            "unallocated": [
+              {
+                "task_id": "reading-4",
+                "minutes": 4
+              },
+              {
+                "task_id": "practice-4",
+                "minutes": 10
+              },
+              {
+                "task_id": "review-4",
+                "minutes": 5
+              }
+            ],
+            "estimated_minutes": 20,
+            "available_minutes": 1
+          },
+          "duration_ms": 1
+        },
+        {
+          "step": 4,
+          "tool": "validate_daily_schedule",
+          "arguments": {
+            "candidate_id": "1"
+          },
+          "ok": true,
+          "observation": {
+            "valid": false,
+            "errors": [
+              "Task reading-4 is not fully allocated",
+              "Task practice-4 is not fully allocated",
+              "Task review-4 is not fully allocated",
+              "Not enough study time before the deadline"
+            ],
+            "daily_minutes": {
+              "2026-11-19": 1
+            }
+          },
+          "duration_ms": 2
+        },
+        {
+          "step": 5,
+          "tool": "request_clarification",
+          "arguments": {
+            "question": "Your current plan allows only 1 minute on 2026-11-19, but the pending tasks for chapter 4 (Sorting) need about 20 minutes total (Reading ~5, Practice ~10, Review ~5). Please either raise daily_minutes to at least ~20, or extend the end date (e.g., to 2026-11-20 or later) so the work can be scheduled. Which would you prefer?"
+          },
+          "ok": true,
+          "observation": {
+            "status": "needs_input",
+            "run_id": "56d53468-5c18-4b2f-8f5d-fa83927a9cb4",
+            "message": "Your current plan allows only 1 minute on 2026-11-19, but the pending tasks for chapter 4 (Sorting) need about 20 minutes total (Reading ~5, Practice ~10, Review ~5). Please either raise daily_minutes to at least ~20, or extend the end date (e.g., to 2026-11-20 or later) so the work can be scheduled. Which would you prefer?"
+          },
+          "duration_ms": 0
+        }
+      ]
+    },
+    {
+      "scenario": "weak_chapter",
+      "mode": "baseline",
+      "status": "saved",
+      "duration_ms": 23,
+      "task_identity_preserved": true,
+      "completed_tasks_preserved": true,
+      "tools": [
+        "get_planning_snapshot",
+        "estimate_task_time",
+        "propose_daily_schedule",
+        "validate_daily_schedule",
+        "save_schedule"
+      ],
+      "trace": [
+        {
+          "step": 1,
+          "tool": "get_planning_snapshot",
+          "arguments": {},
+          "ok": true,
+          "observation": {
+            "today_timezone": "Asia/Hong_Kong",
+            "profile": {
+              "start": "2026-11-19",
+              "end": "2026-11-29",
+              "daily_minutes": 60,
+              "weekdays": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
+              ],
+              "off_dates": [],
+              "priority_chapter_ids": [],
+              "strategy": "auto",
+              "note": ""
+            },
+            "version": 3,
+            "chapters": [
+              {
+                "id": "4",
+                "title": "Sorting",
+                "chapter_status": "exam_pending",
+                "review_status": "required",
+                "reports_available": [
+                  "exam"
+                ]
+              }
+            ],
+            "tasks": [
+              {
+                "id": "reading-4",
+                "chapterId": "4",
+                "kind": "Reading",
+                "status": "Not started",
+                "date": "2026-11-19"
+              },
+              {
+                "id": "practice-4",
+                "chapterId": "4",
+                "kind": "Practice",
+                "status": "Not started",
+                "date": "2026-11-19"
+              },
+              {
+                "id": "review-4",
+                "chapterId": "4",
+                "kind": "Review",
+                "status": "Not started",
+                "date": "2026-11-19"
+              }
+            ],
+            "new_materials": []
+          },
+          "duration_ms": 8
+        },
+        {
+          "step": 2,
+          "tool": "estimate_task_time",
+          "arguments": {},
+          "ok": true,
+          "observation": {
+            "estimates": {
+              "reading-4": {
+                "minutes": 5,
+                "basis": "Heuristic: text at 180 units/minute, concept overheads; active practice uses 75% of the initial estimate.",
+                "has_learning_report": true
+              },
+              "practice-4": {
+                "minutes": 10,
+                "basis": "Heuristic: text at 180 units/minute, concept overheads; active practice uses 75% of the initial estimate.",
+                "has_learning_report": true
+              },
+              "review-4": {
+                "minutes": 5,
+                "basis": "Heuristic: text at 180 units/minute, concept overheads; active practice uses 75% of the initial estimate.",
+                "has_learning_report": true
+              }
+            },
+            "assumptions": "Heuristic minutes, not measured time. Large tasks can span several days."
+          },
+          "duration_ms": 0
+        },
+        {
+          "step": 3,
+          "tool": "propose_daily_schedule",
+          "arguments": {
+            "strategy": "auto"
+          },
+          "ok": true,
+          "observation": {
+            "candidate_id": "1",
+            "strategy": "new_first",
+            "slots": [
+              {
+                "task_id": "reading-4",
+                "date": "2026-11-19",
+                "minutes": 5
+              },
+              {
+                "task_id": "practice-4",
+                "date": "2026-11-19",
+                "minutes": 10
+              },
+              {
+                "task_id": "review-4",
+                "date": "2026-11-19",
+                "minutes": 5
+              }
+            ],
+            "unallocated": [],
+            "estimated_minutes": 20,
+            "available_minutes": 660
+          },
+          "duration_ms": 0
+        },
+        {
+          "step": 4,
+          "tool": "validate_daily_schedule",
+          "arguments": {
+            "candidate_id": "1"
+          },
+          "ok": true,
+          "observation": {
+            "valid": true,
+            "errors": [],
+            "daily_minutes": {
+              "2026-11-19": 20
+            }
+          },
+          "duration_ms": 0
+        },
+        {
+          "step": 5,
+          "tool": "save_schedule",
+          "arguments": {
+            "candidate_id": "1"
+          },
+          "ok": true,
+          "observation": {
+            "status": "saved",
+            "run_id": "1e141cfa-b619-4130-a5b7-531e0d43de6a",
+            "version": 4,
+            "message": "Scheduled unfinished tasks using new_first; completed work preserved.",
+            "trace": []
+          },
+          "duration_ms": 8
+        }
+      ]
+    },
+    {
+      "scenario": "weak_chapter",
+      "mode": "agent",
+      "status": "saved",
+      "duration_ms": 12525,
+      "task_identity_preserved": true,
+      "completed_tasks_preserved": true,
+      "tools": [
+        "get_planning_snapshot",
+        "get_learning_report",
+        "estimate_task_time",
+        "propose_daily_schedule",
+        "validate_daily_schedule",
+        "save_schedule"
+      ],
+      "trace": [
+        {
+          "step": 1,
+          "tool": "get_planning_snapshot",
+          "arguments": {},
+          "ok": true,
+          "observation": {
+            "today_timezone": "Asia/Hong_Kong",
+            "profile": {
+              "start": "2026-11-19",
+              "end": "2026-11-29",
+              "daily_minutes": 60,
+              "weekdays": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
+              ],
+              "off_dates": [],
+              "priority_chapter_ids": [],
+              "strategy": "auto",
+              "note": ""
+            },
+            "version": 3,
+            "chapters": [
+              {
+                "id": "4",
+                "title": "Sorting",
+                "chapter_status": "exam_pending",
+                "review_status": "required",
+                "reports_available": [
+                  "exam"
+                ]
+              }
+            ],
+            "tasks": [
+              {
+                "id": "reading-4",
+                "chapterId": "4",
+                "kind": "Reading",
+                "status": "Not started",
+                "date": "2026-11-19"
+              },
+              {
+                "id": "practice-4",
+                "chapterId": "4",
+                "kind": "Practice",
+                "status": "Not started",
+                "date": "2026-11-19"
+              },
+              {
+                "id": "review-4",
+                "chapterId": "4",
+                "kind": "Review",
+                "status": "Not started",
+                "date": "2026-11-19"
+              }
+            ],
+            "new_materials": []
+          },
+          "duration_ms": 12
+        },
+        {
+          "step": 2,
+          "tool": "get_learning_report",
+          "arguments": {
+            "chapter_id": "4"
+          },
+          "ok": true,
+          "observation": {
+            "exam": {
+              "score": 0,
+              "passed": false
+            }
+          },
+          "duration_ms": 0
+        },
+        {
+          "step": 3,
+          "tool": "estimate_task_time",
+          "arguments": {},
+          "ok": true,
+          "observation": {
+            "estimates": {
+              "reading-4": {
+                "minutes": 5,
+                "basis": "Heuristic: text at 180 units/minute, concept overheads; active practice uses 75% of the initial estimate.",
+                "has_learning_report": true
+              },
+              "practice-4": {
+                "minutes": 10,
+                "basis": "Heuristic: text at 180 units/minute, concept overheads; active practice uses 75% of the initial estimate.",
+                "has_learning_report": true
+              },
+              "review-4": {
+                "minutes": 5,
+                "basis": "Heuristic: text at 180 units/minute, concept overheads; active practice uses 75% of the initial estimate.",
+                "has_learning_report": true
+              }
+            },
+            "assumptions": "Heuristic minutes, not measured time. Large tasks can span several days."
+          },
+          "duration_ms": 0
+        },
+        {
+          "step": 4,
+          "tool": "propose_daily_schedule",
+          "arguments": {
+            "strategy": "weak_first"
+          },
+          "ok": true,
+          "observation": {
+            "candidate_id": "1",
+            "strategy": "weak_first",
+            "slots": [
+              {
+                "task_id": "reading-4",
+                "date": "2026-11-19",
+                "minutes": 5
+              },
+              {
+                "task_id": "practice-4",
+                "date": "2026-11-19",
+                "minutes": 10
+              },
+              {
+                "task_id": "review-4",
+                "date": "2026-11-19",
+                "minutes": 5
+              }
+            ],
+            "unallocated": [],
+            "estimated_minutes": 20,
+            "available_minutes": 660
+          },
+          "duration_ms": 0
+        },
+        {
+          "step": 5,
+          "tool": "validate_daily_schedule",
+          "arguments": {
+            "candidate_id": "1"
+          },
+          "ok": true,
+          "observation": {
+            "valid": true,
+            "errors": [],
+            "daily_minutes": {
+              "2026-11-19": 20
+            }
+          },
+          "duration_ms": 0
+        },
+        {
+          "step": 6,
+          "tool": "save_schedule",
+          "arguments": {
+            "candidate_id": "1"
+          },
+          "ok": true,
+          "observation": {
+            "status": "saved",
+            "run_id": "4e10e67a-5fb7-4024-b0c6-21fef9ee23fe",
+            "version": 4,
+            "message": "Scheduled unfinished tasks using weak_first; completed work preserved.",
+            "trace": []
+          },
+          "duration_ms": 11
+        }
+      ]
+    },
+    {
+      "scenario": "completed_read",
+      "mode": "baseline",
+      "status": "saved",
+      "duration_ms": 99,
+      "task_identity_preserved": true,
+      "completed_tasks_preserved": true,
+      "tools": [
+        "get_planning_snapshot",
+        "estimate_task_time",
+        "propose_daily_schedule",
+        "validate_daily_schedule",
+        "save_schedule"
+      ],
+      "trace": [
+        {
+          "step": 1,
+          "tool": "get_planning_snapshot",
+          "arguments": {},
+          "ok": true,
+          "observation": {
+            "today_timezone": "Asia/Hong_Kong",
+            "profile": {
+              "start": "2026-11-19",
+              "end": "2026-11-29",
+              "daily_minutes": 60,
+              "weekdays": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
+              ],
+              "off_dates": [],
+              "priority_chapter_ids": [],
+              "strategy": "auto",
+              "note": ""
+            },
+            "version": 3,
+            "chapters": [
+              {
+                "id": "4",
+                "title": "Sorting",
+                "chapter_status": "learned",
+                "review_status": "not_assessed",
+                "reports_available": []
+              }
+            ],
+            "tasks": [
+              {
+                "id": "reading-4",
+                "chapterId": "4",
+                "kind": "Reading",
+                "status": "Completed",
+                "date": "2026-11-19"
+              },
+              {
+                "id": "practice-4",
+                "chapterId": "4",
+                "kind": "Practice",
+                "status": "Not started",
+                "date": "2026-11-19"
+              },
+              {
+                "id": "review-4",
+                "chapterId": "4",
+                "kind": "Review",
+                "status": "Not started",
+                "date": "2026-11-19"
+              }
+            ],
+            "new_materials": []
+          },
+          "duration_ms": 10
+        },
+        {
+          "step": 2,
+          "tool": "estimate_task_time",
+          "arguments": {},
+          "ok": true,
+          "observation": {
+            "estimates": {
+              "practice-4": {
+                "minutes": 10,
+                "basis": "Heuristic: text at 180 units/minute, concept overheads; active practice uses 75% of the initial estimate.",
+                "has_learning_report": false
+              },
+              "review-4": {
+                "minutes": 5,
+                "basis": "Heuristic: text at 180 units/minute, concept overheads; active practice uses 75% of the initial estimate.",
+                "has_learning_report": false
+              }
+            },
+            "assumptions": "Heuristic minutes, not measured time. Large tasks can span several days."
+          },
+          "duration_ms": 0
+        },
+        {
+          "step": 3,
+          "tool": "propose_daily_schedule",
+          "arguments": {
+            "strategy": "auto"
+          },
+          "ok": true,
+          "observation": {
+            "candidate_id": "1",
+            "strategy": "new_first",
+            "slots": [
+              {
+                "task_id": "practice-4",
+                "date": "2026-11-19",
+                "minutes": 10
+              },
+              {
+                "task_id": "review-4",
+                "date": "2026-11-19",
+                "minutes": 5
+              }
+            ],
+            "unallocated": [],
+            "estimated_minutes": 15,
+            "available_minutes": 660
+          },
+          "duration_ms": 0
+        },
+        {
+          "step": 4,
+          "tool": "validate_daily_schedule",
+          "arguments": {
+            "candidate_id": "1"
+          },
+          "ok": true,
+          "observation": {
+            "valid": true,
+            "errors": [],
+            "daily_minutes": {
+              "2026-11-19": 15
+            }
+          },
+          "duration_ms": 0
+        },
+        {
+          "step": 5,
+          "tool": "save_schedule",
+          "arguments": {
+            "candidate_id": "1"
+          },
+          "ok": true,
+          "observation": {
+            "status": "saved",
+            "run_id": "277b447c-caff-45ce-96dd-4606d70750bd",
+            "version": 4,
+            "message": "Scheduled unfinished tasks using new_first; completed work preserved.",
+            "trace": []
+          },
+          "duration_ms": 7
+        }
+      ]
+    },
+    {
+      "scenario": "completed_read",
+      "mode": "agent",
+      "status": "saved",
+      "duration_ms": 5172,
+      "task_identity_preserved": true,
+      "completed_tasks_preserved": true,
+      "tools": [
+        "get_planning_snapshot",
+        "get_learning_report",
+        "estimate_task_time",
+        "propose_daily_schedule",
+        "validate_daily_schedule",
+        "save_schedule"
+      ],
+      "trace": [
+        {
+          "step": 1,
+          "tool": "get_planning_snapshot",
+          "arguments": {},
+          "ok": true,
+          "observation": {
+            "today_timezone": "Asia/Hong_Kong",
+            "profile": {
+              "start": "2026-11-19",
+              "end": "2026-11-29",
+              "daily_minutes": 60,
+              "weekdays": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
+              ],
+              "off_dates": [],
+              "priority_chapter_ids": [],
+              "strategy": "auto",
+              "note": ""
+            },
+            "version": 3,
+            "chapters": [
+              {
+                "id": "4",
+                "title": "Sorting",
+                "chapter_status": "learned",
+                "review_status": "not_assessed",
+                "reports_available": []
+              }
+            ],
+            "tasks": [
+              {
+                "id": "reading-4",
+                "chapterId": "4",
+                "kind": "Reading",
+                "status": "Completed",
+                "date": "2026-11-19"
+              },
+              {
+                "id": "practice-4",
+                "chapterId": "4",
+                "kind": "Practice",
+                "status": "Not started",
+                "date": "2026-11-19"
+              },
+              {
+                "id": "review-4",
+                "chapterId": "4",
+                "kind": "Review",
+                "status": "Not started",
+                "date": "2026-11-19"
+              }
+            ],
+            "new_materials": []
+          },
+          "duration_ms": 11
+        },
+        {
+          "step": 2,
+          "tool": "get_learning_report",
+          "arguments": {
+            "chapter_id": "4"
+          },
+          "ok": true,
+          "observation": {},
+          "duration_ms": 0
+        },
+        {
+          "step": 3,
+          "tool": "estimate_task_time",
+          "arguments": {},
+          "ok": true,
+          "observation": {
+            "estimates": {
+              "practice-4": {
+                "minutes": 10,
+                "basis": "Heuristic: text at 180 units/minute, concept overheads; active practice uses 75% of the initial estimate.",
+                "has_learning_report": false
+              },
+              "review-4": {
+                "minutes": 5,
+                "basis": "Heuristic: text at 180 units/minute, concept overheads; active practice uses 75% of the initial estimate.",
+                "has_learning_report": false
+              }
+            },
+            "assumptions": "Heuristic minutes, not measured time. Large tasks can span several days."
+          },
+          "duration_ms": 0
+        },
+        {
+          "step": 4,
+          "tool": "propose_daily_schedule",
+          "arguments": {
+            "strategy": "new_first"
+          },
+          "ok": true,
+          "observation": {
+            "candidate_id": "1",
+            "strategy": "new_first",
+            "slots": [
+              {
+                "task_id": "practice-4",
+                "date": "2026-11-19",
+                "minutes": 10
+              },
+              {
+                "task_id": "review-4",
+                "date": "2026-11-19",
+                "minutes": 5
+              }
+            ],
+            "unallocated": [],
+            "estimated_minutes": 15,
+            "available_minutes": 660
+          },
+          "duration_ms": 0
+        },
+        {
+          "step": 5,
+          "tool": "validate_daily_schedule",
+          "arguments": {
+            "candidate_id": "1"
+          },
+          "ok": true,
+          "observation": {
+            "valid": true,
+            "errors": [],
+            "daily_minutes": {
+              "2026-11-19": 15
+            }
+          },
+          "duration_ms": 0
+        },
+        {
+          "step": 6,
+          "tool": "save_schedule",
+          "arguments": {
+            "candidate_id": "1"
+          },
+          "ok": true,
+          "observation": {
+            "status": "saved",
+            "run_id": "bd626ffc-243a-4912-ab8a-02c32e41ecc5",
+            "version": 4,
+            "message": "Scheduled unfinished tasks using new_first; completed work preserved.",
+            "trace": []
+          },
+          "duration_ms": 13
+        }
+      ]
+    }
+  ]
+}

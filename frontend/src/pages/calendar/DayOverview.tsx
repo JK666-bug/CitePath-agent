@@ -3,25 +3,26 @@ import { X } from 'lucide-react'
 import type { CalendarTask } from '../course/types'
 
 import { parseDate } from '../../shared/format'
+import { PracticeEntry, PracticeMastery } from '../practice/PracticeEntry'
 import PracticeStartModal from '../practice/PracticeStartModal'
 
 import {
   Link,
 } from '../../shared/router'
-import {
-  Sources,
-} from '../../shared/components/UI'
+import SourceSummary from '../course/SourceSummary'
 
 export default function DayOverview({
   date,
   tasks,
   onClose,
   onComplete,
+  events,
 }: {
   date: string
   tasks: CalendarTask[]
   onClose: () => void
   onComplete: (task: CalendarTask) => void
+  events: { date: string; title: string; courseName: string }[]
 }) {
   const [practiceTarget, setPracticeTarget] = useState<{
     courseId: number
@@ -61,16 +62,20 @@ export default function DayOverview({
       </header>
 
       <div className="stack">
+        {events.map((event, i) => <article className="panel" key={`event-${i}`}><p className="eyebrow">{event.courseName} · Important date</p><h3>{event.title}</h3></article>)}
         {tasks.map((task) => (
           <article key={task.id} className="panel">
             <p className="eyebrow">
               {task.courseName}
             </p>
+            <p className={`calendar-kind kind-${task.kind.toLowerCase()}`}>{task.kind === 'Reading' ? 'Read' : task.kind}</p>
             <h3>{task.title}</h3>
-            <Sources sources={task.sources} />
+            <SourceSummary sources={task.sources} />
             <p className="small muted">
               {task.status}
+              {task.minutes ? ` · ${task.minutes} min today` : ''}
             </p>
+            {task.kind === 'Practice' && <PracticeMastery progress={task.practice_progress} />}
 
             <div className="actions">
               {task.kind === 'Practice' ? (
@@ -84,28 +89,36 @@ export default function DayOverview({
                     Open practice
                   </Link>
                 ) : (
-                  <button
-                    className="button small"
-                    onClick={() =>
-                      setPracticeTarget({
-                        courseId: Number(task.courseId),
-                        chapterId: Number(task.chapterId),
-                      })
-                    }
-                  >
-                    Start practice
-                  </button>
+                  <PracticeEntry
+                    courseId={task.courseId}
+                    progress={task.practice_progress}
+                    onStart={() => setPracticeTarget({
+                      courseId: Number(task.courseId),
+                      chapterId: Number(task.chapterId),
+                    })}
+                  />
                 )
               ) : task.kind === 'Reading' && task.courseId !== 'demo' ? (
-                <Link
-                  className="button small"
-                  href={
-                    `/courses/${task.courseId}/read?task=` +
-                    encodeURIComponent(task.id)
-                  }
-                >
-                  Open reading
-                </Link>
+                <>
+                  <Link
+                    className="button small"
+                    href={
+                      `/courses/${task.courseId}/read?task=` +
+                      encodeURIComponent(task.id)
+                    }
+                  >
+                    Open reading
+                  </Link>
+                  <button
+                    className="button small secondary"
+                    disabled={task.status === 'Completed'}
+                    onClick={() => onComplete(task)}
+                  >
+                    {task.status === 'Completed'
+                      ? 'Completed'
+                      : 'Mark done'}
+                  </button>
+                </>
               ) : task.kind === 'Review' && task.courseId !== 'demo' ? (
                 <Link
                   className="button small"
