@@ -20,6 +20,7 @@ import {
 } from './api'
 import type { PracticeSession } from './api'
 import PracticeStartModal from './PracticeStartModal'
+import StudyTimeLog from '../course/StudyTimeLog'
 
 import './practice.css'
 
@@ -30,7 +31,7 @@ export default function PracticeLivePage({
   courseId: string
   sessionId: string
 }) {
-  const { loadPlan } = useStudy()
+  const { loadPlan, plans } = useStudy()
   const [session, setSession] =
     useState<PracticeSession | null>(null)
   const [response, setResponse] = useState('')
@@ -43,7 +44,10 @@ export default function PracticeLivePage({
     let active = true
     getPractice(Number(courseId), Number(sessionId))
       .then((result) => {
-        if (active) setSession(result)
+        if (active) {
+          setSession(result)
+          if (result.status === 'finished') void loadPlan(Number(courseId))
+        }
       })
       .catch((reason) => {
         if (active) setError(messageOf(reason))
@@ -51,7 +55,7 @@ export default function PracticeLivePage({
     return () => {
       active = false
     }
-  }, [courseId, sessionId])
+  }, [courseId, sessionId, loadPlan])
 
   async function onSubmit(
     event: FormEvent<HTMLFormElement>,
@@ -111,6 +115,9 @@ export default function PracticeLivePage({
   )
 
   if (session.status === 'finished' && report) {
+    const practiceTask = plans[Number(courseId)]?.plan?.tasks.find(task =>
+      task.kind === 'Practice' && task.chapterId === String(session.chapter_id) && task.status === 'Completed',
+    )
     return (
       <div className="practice-session stack">
         <PageHeader
@@ -130,6 +137,7 @@ export default function PracticeLivePage({
               ? ` ${report.session_count} practice rounds.`
               : ''}
           </p>
+          {practiceTask && <StudyTimeLog key={practiceTask.id} courseId={Number(courseId)} task={practiceTask} />}
         </section>
 
         <section className="stack">

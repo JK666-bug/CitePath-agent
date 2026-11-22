@@ -40,6 +40,10 @@ import PaceLine, {
 } from '../../shared/components/PaceLine'
 
 import TaskDetails from './TaskDetails'
+import ScheduleReview from './ScheduleReview'
+import StudyTimeLog from './StudyTimeLog'
+import { getCourseWorkflow, hasUnappliedSettings, lastScheduledDate, scheduleReviewHref, studyDateKey } from './scheduleActions'
+import type { Workflow } from './scheduleActions'
 
 export default function CoursePlan({
   courseId,
@@ -63,6 +67,7 @@ export default function CoursePlan({
     useState('')
   const [practiceChapterId, setPracticeChapterId] =
     useState<number | null>(null)
+  const [workflow, setWorkflow] = useState<Workflow | null>(null)
   const isDemo = courseId === 'demo'
   const numericId = Number(courseId)
   const entry = plans[numericId]
@@ -72,6 +77,18 @@ export default function CoursePlan({
       void loadPlan(numericId)
     }
   }, [isDemo, loadPlan, numericId])
+
+  const currentPlan = entry?.plan
+  useEffect(() => {
+    if (isDemo || !currentPlan?.chapters.length) return
+    let active = true
+    void getCourseWorkflow(numericId).then(value => {
+      if (active) setWorkflow(value)
+    }).catch(() => {
+      if (active) setWorkflow(null)
+    })
+    return () => { active = false }
+  }, [isDemo, numericId, currentPlan])
 
   if (!isDemo && !entry?.loaded) {
     return (
@@ -113,6 +130,30 @@ export default function CoursePlan({
   }
 
   const totals = taskTotals(plan.tasks)
+  const today = studyDateKey()
+  let plannedFinish = ''
+  let overdue = 0
+  let unscheduled = 0
+  for (const task of plan.tasks) {
+    const date = lastScheduledDate(task)
+    if (date > plannedFinish) plannedFinish = date
+    if (task.status === 'Completed') continue
+    if (!date) unscheduled++
+    else if (date < today) overdue++
+  }
+
+  const hasScheduleSettings = Boolean(config.deadline && (
+    plan.schedule_run_id || config.scheduling_profile || plan.scheduling_profile
+  ))
+  const settingsHref = `/courses/${courseId}/info?edit=schedule`
+  const pendingSettings = hasUnappliedSettings(config, plan)
+  const remainingTasks = plan.tasks.filter(task => task.status !== 'Completed')
+  const calibratedKinds = (['Reading', 'Practice'] as const).filter(kind =>
+    workflow?.study_time_samples?.[kind] && remainingTasks.some(task => task.kind === kind),
+  )
+  const plannedMinutes = remainingTasks.reduce((total, task) =>
+    total + (task.schedule?.reduce((sum, slot) => sum + slot.minutes, 0) ?? task.estimated_minutes ?? 0), 0)
+  const difference = (workflow?.estimated_minutes ?? plannedMinutes) - plannedMinutes
 
   const selected =
     plan.tasks.find(
@@ -163,15 +204,7 @@ export default function CoursePlan({
             <div>
               <small>Planned finish</small>
               <strong>
-                {plan.tasks.length
-                  ? prettyDate(
-                      plan.tasks
-                        .map((task) => task.date)
-                        .filter(Boolean)
-                        .sort()
-                        .at(-1) || plan.start,
-                    )
-                  : 'Not scheduled'}
+                {plannedFinish ? prettyDate(plannedFinish) : 'Not scheduled'}
               </strong>
             </div>
           </div>
@@ -180,18 +213,47 @@ export default function CoursePlan({
         <section className="panel">
           <h2>Schedule outlook</h2>
 
-          {plan.start && plan.tasks.length ? (
+          {plannedFinish ? (
             <PaceLine plan={plan} config={config} />
           ) : (
-            <p className="muted">
-              Learning tasks are ready. Generate a daily plan to place them on the calendar.
-            </p>
+            <p className="muted">Learning tasks are ready to schedule.</p>
           )}
+
+          {!isDemo && totals.remaining > 0 && workflow && <div className="plan-remaining-time">
+            <p><strong>{workflow.estimated_minutes} min</strong> estimated for remaining tasks</p>
+            {calibratedKinds.length > 0 && <p className="muted small">
+              Based on {calibratedKinds.map(kind => `${workflow.study_time_samples?.[kind]} recent ${kind.toLowerCase()} records`).join(' and ')}.
+              {unscheduled === 0 && plannedMinutes > 0 && difference !== 0 &&
+                ` ${Math.abs(difference)} min ${difference > 0 ? 'more' : 'less'} than the current schedule.`}
+            </p>}
+          </div>}
         </section>
       </div>
 
-      {!isDemo && <p className="muted small">Manage materials and daily scheduling in <Link href={`/courses/${courseId}/info`}>Course info</Link>.</p>}
+      {!isDemo && totals.remaining > 0 && (
+        <section className="panel plan-schedule-attention" aria-label="Study schedule">
+          <div>
+            <strong>Study schedule</strong>
+            {(overdue > 0 || unscheduled > 0) && <p className="muted small">{[
+              overdue > 0 && `${overdue} overdue`,
+              unscheduled > 0 && `${unscheduled} not scheduled`,
+            ].filter(Boolean).join(' · ')}</p>}
+            {pendingSettings && <p className="muted small">Saved settings are waiting to be applied to the calendar.</p>}
+          </div>
+          {hasScheduleSettings ? (
+            <Link className="button small" href={scheduleReviewHref(courseId)}>
+              {plan.schedule_run_id ? 'Replan remaining tasks' : 'Review daily plan'}
+            </Link>
+          ) : (
+            <Link className="button small secondary" href={settingsHref}>Set up daily schedule</Link>
+          )}
+        </section>
+      )}
+      {!isDemo && <p className="muted small">Manage materials and study settings in <Link href={`/courses/${courseId}/info`}>Course info</Link>.</p>}
       {!isDemo && <PlanHistory courseId={numericId} version={plan.version} />}
+      {!isDemo && search.get('review') === 'schedule' && hasScheduleSettings && totals.remaining > 0 && (
+        <ScheduleReview courseId={numericId} onClose={() => navigate(`/courses/${courseId}/plan`, true)} />
+      )}
 
       <div className="plan-version">
         <p className="muted small">
@@ -311,6 +373,9 @@ export default function CoursePlan({
                           ) + 1}
                         </p>
                         {realPractice && <PracticeMastery progress={chapter.practice_progress} />}
+                        {!isDemo && task.status === 'Completed' && (
+                          <StudyTimeLog key={task.id} courseId={numericId} task={task} />
+                        )}
                       </div>
 
                       <div className={`plan-task-actions${realPractice ? ' plan-practice-actions' : ''}`}>

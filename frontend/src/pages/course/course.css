@@ -154,6 +154,49 @@
   font-size: 19px;
 }
 
+.plan-schedule-attention {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+}
+
+.plan-schedule-attention p {
+  margin: 5px 0 0;
+}
+
+.plan-remaining-time {
+  border-top: 1px solid var(--line);
+  margin-top: 14px;
+  padding-top: 10px;
+}
+
+.plan-remaining-time p {
+  margin: 0 0 4px;
+}
+
+.study-time-log {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin-top: 8px;
+}
+
+.study-time-log form,
+.study-time-log label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.study-time-log input {
+  width: 6rem;
+  padding: 6px 8px;
+}
+
 .plan-window {
   margin-top: 16px;
   text-align: left;
@@ -307,7 +350,8 @@
   font-size: 11px;
 }
 
-.plan-task.completed {
+.plan-task.completed > :not(.plan-task-body),
+.plan-task.completed .plan-task-body > :not(.study-time-log) {
   opacity: 0.48;
 }
 
@@ -320,9 +364,6 @@
 }
 
 .course-schedule-summary {
-  display: grid;
-  gap: 10px 18px;
-  grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
   margin: 8px 0 16px;
 }
 

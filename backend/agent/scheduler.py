@@ -3,6 +3,7 @@ import math
 import re
 from collections import defaultdict
 from datetime import date, datetime, timedelta
+from statistics import median
 from zoneinfo import ZoneInfo
 
 from agent.plan_state import normalize_task_status, normalize_task_type
@@ -141,25 +142,58 @@ def _review_minutes(chapter):
     return max(5, 4 * len(chapter.get("concepts") or []))
 
 
+def base_study_minutes(kind, chapter, page_text):
+    concepts = max(1, len(chapter.get("concepts") or []))
+    if kind == "Practice":
+        return max(10, 6 * concepts)
+    if kind == "Review":
+        return _review_minutes(chapter)
+    keys = {(int(s["document_id"]), int(s["page_number"])) for s in chapter.get("sources") or []}
+    words = sum(len(re.findall(r"[A-Za-z0-9]+|[\u3400-\u9fff]", page_text.get(key, ""))) for key in keys)
+    return max(5, math.ceil(words / 180) + 2 * concepts, len(keys))
+
+
+def study_pace(plan):
+    """Calibrate each task type from up to five recent completed tasks."""
+    pace = {}
+    for kind in ("Reading", "Practice"):
+        records = [task["study_time"] for task in plan["tasks"]
+                   if task["kind"] == kind and completed(task) and task.get("study_time")]
+        recent = sorted(records, key=lambda record: record["recorded_at"], reverse=True)[:5]
+        if len(recent) >= 3:
+            ratio = median(record["minutes"] / record["base_minutes"] for record in recent)
+            pace[kind] = {"factor": min(2, max(0.5, ratio)), "count": len(recent)}
+    return pace
+
+
 def estimate_times(plan, page_text, reports):
     estimates = {}
+    pace = study_pace(plan)
     chapters = {str(c["id"]): c for c in plan["chapters"]}
     for task in plan["tasks"]:
         if completed(task):
             continue
         chapter = chapters[str(task["chapterId"])]
-        keys = {(int(s["document_id"]), int(s["page_number"])) for s in chapter.get("sources") or []}
-        words = sum(len(re.findall(r"[A-Za-z0-9]+|[\u3400-\u9fff]", page_text.get(k, ""))) for k in keys)
         n = max(1, len(chapter.get("concepts") or []))
-        minutes = {"Reading": max(5, math.ceil(words / 180) + 2 * n, len(keys)),
-                   "Practice": max(10, 6 * n), "Review": _review_minutes(chapter)}[task["kind"]]
+        minutes = base_study_minutes(task["kind"], chapter, page_text)
+        basis = {
+            "Reading": "Estimated from page text, sources and chapter concepts.",
+            "Practice": "Estimated from the chapter's concept count.",
+            "Review": "Estimated from the chapter's concept count.",
+        }[task["kind"]]
         evidence = reports.get(str(chapter["id"]), {})
         practice = evidence.get("practice") or {}
-        if task["kind"] == "Practice" and task.get("status") == "In progress":
-            # A transparent conservative estimate; no inferred completion.
-            minutes = max(5, math.ceil(minutes * 0.75))
+        if task["kind"] == "Practice" and normalize_task_status(task.get("status")) == "in_progress":
+            mastered = (evidence.get("mastery") or {}).get("mastered", 0)
+            if mastered > 0:
+                remaining = max(0, n - mastered)
+                minutes = max(5, 6 * remaining)
+                basis = f"Estimated from {remaining} concepts still to master, with a 5-minute minimum."
+        if adjustment := pace.get(task["kind"]):
+            minutes = max(5, math.ceil(minutes * adjustment["factor"]))
+            basis += " Adjusted using your recent study time records."
         estimates[task["id"]] = {"minutes": minutes,
-            "basis": "Heuristic: text at 180 units/minute, concept overheads; active practice uses 75% of the initial estimate.",
+            "basis": basis,
             "has_learning_report": bool(practice or evidence.get("exam"))}
     return estimates
 

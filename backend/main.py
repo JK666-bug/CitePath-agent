@@ -65,6 +65,8 @@ class CourseSettingsBody(BaseModel):
     deadline: str = Field(default="", max_length=10)
     earlyDays: int = Field(default=0, ge=0, le=365)
     events: list[dict] = Field(default_factory=list, max_length=100)
+    scheduling_profile: dict | None = None
+    scheduling_mode: Literal["agent", "baseline"] | None = None
 
 
 class QuestionBody(BaseModel):
@@ -91,10 +93,16 @@ class ScheduleBody(BaseModel):
     request_id: str = Field(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
     profile: dict | None = None
     mode: Literal["agent", "baseline"] | None = None
+    preview: bool = False
 
 
 class SchedulingRequirementsBody(BaseModel):
     profile: dict
+    mode: Literal["agent", "baseline"] | None = None
+
+
+class StudyTimeBody(BaseModel):
+    minutes: int = Field(strict=True, ge=1, le=43200)
 
 
 class ExamAnswer(BaseModel):
@@ -227,7 +235,9 @@ def course_detail(course_id: int, user: dict = Depends(current_user)):
 @app.put("/api/courses/{course_id}/settings")
 def update_settings(course_id: int, body: CourseSettingsBody, user: dict = Depends(current_user)):
     try:
-        update_course_settings(user["id"], course_id, body.name, body.note, body.deadline, body.earlyDays, body.events, body.startDate)
+        update_course_settings(user["id"], course_id, body.name, body.note, body.deadline, body.earlyDays,
+                               body.events, body.startDate, scheduling_profile=body.scheduling_profile,
+                               scheduling_mode=body.scheduling_mode)
         return get_course(user["id"], course_id)
     except LookupError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
@@ -497,7 +507,7 @@ def repair_course_tasks(course_id: int, preview: bool = True, user: dict = Depen
 @app.put("/api/courses/{course_id}/schedule/requirements")
 def update_scheduling_requirements(course_id: int, body: SchedulingRequirementsBody, user: dict = Depends(current_user)):
     try:
-        return {"profile": scheduling.save_requirements(user["id"], course_id, body.profile)}
+        return {"profile": scheduling.save_requirements(user["id"], course_id, body.profile, body.mode)}
     except LookupError as error:
         raise HTTPException(404, str(error)) from error
     except ValueError as error:
@@ -531,6 +541,8 @@ def plan_version(course_id: int, version: int, user: dict = Depends(current_user
 @app.post("/api/courses/{course_id}/schedule")
 def schedule_course(course_id: int, body: ScheduleBody, user: dict = Depends(current_user)):
     try:
+        if body.preview:
+            return run_planner(user["id"], course_id, body.request_id, preview=True)
         profile, mode = body.profile, body.mode
         if profile is None:
             profile, saved_mode = scheduling.saved_schedule_preferences(user["id"], course_id)
@@ -540,6 +552,27 @@ def schedule_course(course_id: int, body: ScheduleBody, user: dict = Depends(cur
         raise HTTPException(400, str(error)) from error
     except LookupError as error:
         raise HTTPException(404, str(error)) from error
+
+
+@app.post("/api/courses/{course_id}/schedule/{run_id}/apply")
+def apply_course_schedule(course_id: int, run_id: str, user: dict = Depends(current_user)):
+    try:
+        return scheduling.publish_schedule(user["id"], course_id, run_id, apply=True)
+    except LookupError as error:
+        raise HTTPException(404, str(error)) from error
+    except (ValueError, ChapterizationConflict) as error:
+        raise HTTPException(409, str(error)) from error
+
+
+@app.put("/api/courses/{course_id}/tasks/{task_id}/study-time")
+def save_task_study_time(course_id: int, task_id: str, body: StudyTimeBody, user: dict = Depends(current_user)):
+    try:
+        return scheduling.record_study_time(user["id"], course_id, task_id, body.minutes)
+    except LookupError as error:
+        raise HTTPException(404, str(error)) from error
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
+
 
 @app.post("/api/courses/{course_id}/plan")
 def create_plan(

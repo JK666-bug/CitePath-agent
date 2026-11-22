@@ -7,7 +7,7 @@ from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from langchain_core.tools import tool
 
 from agent.llm import chat_model
-from agent.scheduler import estimate_times, propose_schedule, study_days, validate_schedule
+from agent.scheduler import estimate_times, propose_schedule, requirements, study_days, validate_schedule
 from db import scheduling as storage
 
 SYSTEM = """You are CitePath's daily learning planner.
@@ -30,7 +30,7 @@ never return internal chain-of-thought. You have at most 12 tool executions.
 """
 
 
-def run_planner(user_id, course_id, request_id, raw_profile, mode="agent", model=None):
+def run_planner(user_id, course_id, request_id, raw_profile=None, mode="agent", model=None, *, preview=False):
     run_id, previous = storage.claim_run(user_id, course_id, request_id)
     if previous:
         return previous
@@ -40,9 +40,15 @@ def run_planner(user_id, course_id, request_id, raw_profile, mode="agent", model
         "result": None, "check_availability": False,
     }
     try:
-        profile = storage.save_requirements(user_id, course_id, raw_profile)
+        if preview:
+            snapshot = storage.get_context(user_id, course_id, repair=False)
+            brief, plan = snapshot["brief"], snapshot["plan"]
+            profile = requirements(storage.replan_profile(brief, plan), brief)
+            mode = brief.get("scheduling_mode") or plan.get("schedule_mode") or mode
+        else:
+            profile = storage.save_requirements(user_id, course_id, raw_profile)
+            snapshot = storage.get_context(user_id, course_id)
         eligible_dates = study_days(profile)
-        snapshot = storage.get_context(user_id, course_id)
         preflight_estimates = estimate_times(snapshot["plan"], snapshot["page_text"], snapshot["reports"])
         required = sum(item["minutes"] for item in preflight_estimates.values())
         available = len(eligible_dates) * profile["daily_minutes"]
@@ -115,13 +121,14 @@ def run_planner(user_id, course_id, request_id, raw_profile, mode="agent", model
 
         @tool
         def save_schedule(candidate_id: str) -> dict:
-            """Publish a validated candidate, rechecking concurrent learning changes."""
+            """Record a validated candidate after checking for concurrent learning changes."""
             record = state["candidates"][candidate_id]
             if not record["validated"]:
                 raise ValueError("Validate this candidate successfully before saving")
             saved = storage.publish_schedule(user_id, course_id, run_id,
                         context()["token"], profile, record["candidate"], mode=mode,
-                        proposed_by=record["proposed_by"])
+                        proposed_by=record["proposed_by"], preview=preview)
+            state["draft"] = saved.pop("_draft", None)
             state["result"] = saved
             return saved
 
@@ -241,7 +248,8 @@ def run_planner(user_id, course_id, request_id, raw_profile, mode="agent", model
             bound = (model or chat_model()).bind_tools(all_tools)
             preflight_steps = len(trace)
             messages = [SystemMessage(content=SYSTEM), HumanMessage(content=json.dumps({
-                "goal": "Generate or update daily dates for existing tasks", "profile": profile,
+                "goal": "Prepare a validated schedule for the learner to review" if preview else "Generate or update daily dates for existing tasks",
+                "profile": profile,
             }, ensure_ascii=False))]
             for _ in range(12):
                 reply = bound.invoke(messages)
@@ -274,5 +282,6 @@ def run_planner(user_id, course_id, request_id, raw_profile, mode="agent", model
     if result["status"] == "saved":
         storage.store_trace(user_id, course_id, run_id, result)
     else:
-        storage.finish_run(user_id, course_id, run_id, result)
+        draft = state.get("draft") if result["status"] == "preview" else None
+        storage.finish_run(user_id, course_id, run_id, {**result, "_draft": draft} if draft else result)
     return result

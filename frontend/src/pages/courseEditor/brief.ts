@@ -38,6 +38,8 @@ export function decodeBrief(
           scheduling_profile: item.scheduling_profile && typeof item.scheduling_profile === 'object'
             ? item.scheduling_profile as CourseConfig['scheduling_profile']
             : undefined,
+          scheduling_mode: item.scheduling_mode === 'agent' || item.scheduling_mode === 'baseline'
+            ? item.scheduling_mode : undefined,
           events: Array.isArray(item.events) ? item.events.filter((x): x is { title: string; date: string } => Boolean(x && typeof x.title === 'string' && typeof x.date === 'string')) : [],
         }
       }

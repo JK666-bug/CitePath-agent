@@ -116,7 +116,8 @@ def save_course_note(user_id: int, course_id: int, note: str) -> str:
     return updated
 
 
-def update_course_settings(user_id: int, course_id: int, name: str, note: str, deadline: str, early_days: int, events: list, start_date: str = "") -> None:
+def update_course_settings(user_id: int, course_id: int, name: str, note: str, deadline: str, early_days: int,
+                           events: list, start_date: str = "", *, scheduling_profile=None, scheduling_mode=None) -> None:
     from datetime import date, timedelta
     name, note = name.strip(), note.strip()
     if not name or len(name) > 255 or len(note) > 9000:
@@ -155,6 +156,12 @@ def update_course_settings(user_id: int, course_id: int, name: str, note: str, d
             brief.update(schema="citepath-course-v1", note=note, deadline=deadline, earlyDays=early_days, events=cleaned)
             if start_date:
                 brief["startDate"] = start_date
+            if scheduling_profile is not None:
+                from db.scheduling import validate_course_requirements
+
+                brief["scheduling_profile"] = validate_course_requirements(cursor, course_id, scheduling_profile, brief)
+                if scheduling_mode is not None:
+                    brief["scheduling_mode"] = scheduling_mode
             payload = json.dumps(brief, ensure_ascii=False)
             if len(payload) > 10000:
                 raise ValueError("Course settings are too long")

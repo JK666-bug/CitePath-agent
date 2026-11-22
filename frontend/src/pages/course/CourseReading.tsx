@@ -16,6 +16,7 @@ import {
 } from '../../shared/components/UI'
 
 import { documentFileUrl } from './api'
+import StudyTimeLog from './StudyTimeLog'
 
 import './course.css'
 
@@ -150,6 +151,8 @@ export default function CourseReading({
           </>
         }
       />
+
+      {task.status === 'Completed' && <StudyTimeLog key={task.id} courseId={numericId} task={task} />}
 
       {!uniqueDocs.length ? (
         <Empty title="No PDF sources on this task">
