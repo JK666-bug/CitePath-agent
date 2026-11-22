@@ -1,4 +1,4 @@
-import { Modal } from '../../shared/components/UI'
+import { Modal, Notice } from '../../shared/components/UI'
 import { Link } from '../../shared/router'
 import { prettyDate } from '../../shared/format'
 
@@ -29,6 +29,7 @@ export type SavedSchedule = {
   start: string
   steps: ScheduleStep[]
   summary?: ScheduleSummary
+  unchanged?: boolean
 }
 
 const stepLabels: Record<string, string> = {
@@ -92,10 +93,13 @@ function firstStudyDate(proposal: Record<string, unknown> | undefined, start: st
   return earliest || start
 }
 
-export default function ScheduleSuccessDialog({ courseId, schedule, onClose }: {
+export default function ScheduleSuccessDialog({ courseId, schedule, onClose, onApply, applying = false, error }: {
   courseId: number
   schedule: SavedSchedule | null
   onClose: () => void
+  onApply?: () => void
+  applying?: boolean
+  error?: string
 }) {
   const steps = schedule?.steps.filter(step => Object.hasOwn(stepLabels, step.tool)) ?? []
   const proposal = getPublishedProposal(steps)
@@ -113,7 +117,12 @@ export default function ScheduleSuccessDialog({ courseId, schedule, onClose }: {
   if (date) calendarQuery.set('date', date)
 
   return (
-    <Modal open={Boolean(schedule)} title="Your daily plan is ready" onClose={onClose}>
+    <Modal
+      open={Boolean(schedule)}
+      title={schedule?.unchanged ? 'Your schedule is up to date' : onApply ? 'Review schedule changes' : 'Your daily plan is ready'}
+      onClose={onClose}
+      closeable={!applying}
+    >
       {schedule && (
         <div className="schedule-success">
           {summary ? <div className="schedule-decision">
@@ -122,21 +131,22 @@ export default function ScheduleSuccessDialog({ courseId, schedule, onClose }: {
             <p>{summary.reason}</p>
           </div> : <p>Your schedule is saved and available on the calendar.</p>}
 
-          {summary && (
+          {schedule.unchanged && <p className="muted small">Your current dates and study times still fit your settings.</p>}
+          {summary && !schedule.unchanged && (
             summary.changes.length ? (
-              <details className="schedule-success-steps">
+              <details className="schedule-success-steps" open={onApply ? true : undefined}>
                 <summary>Schedule changes · {changeLabel}</summary>
                 <ul className="schedule-change-list">
                   {summary.changes.map(change => (
                     <li key={change.task_id}>
                       <strong>{change.title}</strong>
                       {change.before.length > 0 && <span><b>Previously</b> {formatSlots(change.before)}</span>}
-                      <span><b>{change.before.length ? 'Now' : 'Scheduled'}</b> {formatSlots(change.after)}</span>
+                      <span><b>{onApply ? 'Proposed' : change.before.length ? 'Now' : 'Scheduled'}</b> {formatSlots(change.after)}</span>
                     </li>
                   ))}
                 </ul>
               </details>
-            ) : <p className="muted small">This plan uses the same dates and study times as before.</p>
+            ) : <p className="muted small">{onApply ? 'The settings will be updated. Task dates and study times stay the same.' : 'This plan uses the same dates and study times as before.'}</p>
           )}
           {Boolean(summary?.completed_preserved) && (
             <p className="muted small">{summary?.completed_preserved} completed {summary?.completed_preserved === 1 ? 'task kept' : 'tasks kept'}.</p>
@@ -153,8 +163,7 @@ export default function ScheduleSuccessDialog({ courseId, schedule, onClose }: {
                   const needsChange = step.tool === 'validate_daily_schedule' && asRecord(step.observation)?.valid === false
                   return (
                     <li key={step.step}>
-                      {stepLabels[step.tool]}
-                      {summary && step.source === 'system' && step.tool === 'save_schedule' && schedule.method === 'agent' && <span className="muted small"> · Saved after system validation</span>}
+                      {step.tool === 'save_schedule' ? 'Check the final candidate' : stepLabels[step.tool]}
                       {(!step.ok || needsChange) && <small>{step.ok ? 'Needed changes' : 'Could not complete'}</small>}
                     </li>
                   )
@@ -163,9 +172,17 @@ export default function ScheduleSuccessDialog({ courseId, schedule, onClose }: {
             )}
           </details>
 
+          {error && <Notice tone="error">{error}</Notice>}
           <div className="actions">
-            <Link className="button" href={`/calendar?${calendarQuery}`}>View calendar</Link>
-            <Link className="button secondary" href={`/courses/${courseId}/plan`}>View course plan</Link>
+            {onApply ? <>
+              <button className="button secondary" type="button" onClick={onClose} disabled={applying}>Cancel</button>
+              <button className="button" type="button" onClick={onApply} disabled={applying}>
+                {applying ? 'Applying…' : 'Apply schedule'}
+              </button>
+            </> : <>
+              <Link className="button" href={`/calendar?${calendarQuery}`}>View calendar</Link>
+              <button className="button secondary" type="button" onClick={onClose}>Back to Plan</button>
+            </>}
           </div>
         </div>
       )}

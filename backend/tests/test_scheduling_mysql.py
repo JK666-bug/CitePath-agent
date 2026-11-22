@@ -65,7 +65,7 @@ class SchedulingMySQLTest(LearningSyncMySQLTest):
                 body = "\n".join(line for line in body.splitlines() if not line.strip().startswith("CONSTRAINT ")).rstrip().rstrip(",")
                 cursor.execute(f"CREATE TEMPORARY TABLE `{name}` ({body}) ENGINE=InnoDB")
         cls.tables += extra
-        for module in (scheduling, chapterization):
+        for module in (scheduling, chapterization, courses):
             p = patch.object(module, "connect", return_value=SharedConnection(cls.connection))
             p.start(); cls.addClassCleanup(p.stop)
         for module, name in ((scheduling, "ensure_scheduling_storage"), (chapterization, "ensure_chapterization_storage")):
@@ -249,6 +249,152 @@ class SchedulingMySQLTest(LearningSyncMySQLTest):
         with self.connection.cursor() as cursor:
             cursor.execute("SELECT COUNT(*) AS n FROM plan_versions")
             self.assertGreaterEqual(cursor.fetchone()["n"], 2)
+
+    def test_same_schedule_reuses_version_even_for_old_plan_format(self):
+        first = planner.run_planner(10, 1, "first", self.profile, mode="baseline")
+        self.assertEqual(first["status"], "saved", first)
+        self.assertFalse(first["unchanged"])
+        old_plan = self.stored()
+        old_plan.pop("schedule_strategy")
+        with self.connection.cursor() as cursor:
+            cursor.execute("UPDATE study_plans SET plan_json=%s", (json.dumps(old_plan),))
+        self.connection.commit()
+        history = scheduling.plan_history(10, 1)
+
+        repeated = planner.run_planner(10, 1, "same-schedule", self.profile, mode="baseline")
+        self.assertEqual(repeated["status"], "saved", repeated)
+        self.assertTrue(repeated["unchanged"])
+        self.assertEqual(repeated["version"], first["version"])
+        self.assertEqual(self.stored(), old_plan)
+        self.assertEqual(scheduling.plan_history(10, 1), history)
+        self.assertEqual(planner.run_planner(10, 1, "same-schedule", self.profile, mode="baseline"), repeated)
+
+        changed = planner.run_planner(10, 1, "new-settings", {**self.profile, "daily_minutes": 90}, mode="baseline")
+        self.assertEqual(changed["status"], "saved", changed)
+        self.assertEqual(changed["summary"]["changes"], [])
+        self.assertFalse(changed["unchanged"])
+        self.assertEqual(changed["version"], first["version"] + 1)
+
+    def test_preview_only_publishes_after_confirmation_and_can_be_retried(self):
+        from fastapi import HTTPException
+        from main import CourseSettingsBody, ScheduleBody, apply_course_schedule, schedule_course, update_settings
+
+        user = {"id": 10}
+        scheduling.repair_tasks(10, 1)
+        settings = dict(startDate=self.profile["start"], name="Test", deadline=self.end,
+                        scheduling_profile=self.profile, scheduling_mode="baseline")
+        with patch("main.get_course", return_value={"id": 1}):
+            update_settings(1, CourseSettingsBody(**settings), user)
+        with self.assertRaises(HTTPException) as invalid:
+            update_settings(1, CourseSettingsBody(**{
+                **settings, "name": "Should roll back", "scheduling_mode": "agent",
+                "scheduling_profile": {**self.profile, "priority_chapter_ids": ["999"]},
+            }), user)
+        self.assertEqual(invalid.exception.status_code, 400)
+        with self.connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM courses WHERE id=1")
+            self.assertEqual(cursor.fetchone()["name"], "Test")
+        previous = self.stored()
+        history = scheduling.plan_history(10, 1)
+        request = ScheduleBody(request_id="review-schedule", preview=True)
+        preview = schedule_course(1, request, user)
+        self.assertEqual(preview["status"], "preview", preview)
+        self.assertEqual(preview["mode"], "baseline")
+        self.assertNotIn("_draft", preview)
+        self.assertNotIn("_draft", scheduling.recent_runs(10, 1)[0]["result"])
+        self.assertEqual(previous, self.stored())
+        self.assertEqual(history, scheduling.plan_history(10, 1))
+        self.assertEqual(schedule_course(1, request, user), preview)
+
+        applied = apply_course_schedule(1, preview["run_id"], user)
+        self.assertEqual(applied["status"], "saved")
+        self.assertEqual(applied["version"], previous["version"] + 1)
+        self.assertEqual(applied["summary"], preview["summary"])
+        self.assertEqual(applied, apply_course_schedule(1, preview["run_id"], user))
+        self.assertEqual(self.stored()["version"], applied["version"])
+        same = schedule_course(1, ScheduleBody(request_id="same-preview", preview=True), user)
+        self.assertTrue(same["unchanged"])
+        self.assertEqual(self.stored()["version"], applied["version"])
+
+    def test_logging_study_time_invalidates_preview_without_changing_plan_dates(self):
+        from db.plans import complete_read_task
+        from fastapi import HTTPException
+        from main import ScheduleBody, StudyTimeBody, apply_course_schedule, save_task_study_time, schedule_course
+
+        user = {"id": 10}
+        scheduling.repair_tasks(10, 1)
+        scheduling.save_requirements(10, 1, self.profile, mode="baseline")
+        complete_read_task(10, 1, "reading-4")
+        before = self.stored()
+        preview = schedule_course(1, ScheduleBody(request_id="before-log", preview=True), user)
+        self.assertEqual(preview["status"], "preview", preview)
+
+        with self.assertRaises(HTTPException) as incomplete:
+            save_task_study_time(1, "practice-4", StudyTimeBody(minutes=8), user)
+        self.assertEqual(incomplete.exception.status_code, 400)
+        saved = save_task_study_time(1, "reading-4", StudyTimeBody(minutes=14), user)
+        edited = save_task_study_time(1, "reading-4", StudyTimeBody(minutes=12), user)
+        self.assertEqual(edited, {**saved, "minutes": 12})
+        with self.assertRaises(HTTPException) as stale:
+            apply_course_schedule(1, preview["run_id"], user)
+        self.assertEqual(stale.exception.status_code, 409)
+        old_schedule = self.stored()
+        self.assertEqual(old_schedule["tasks"][0].pop("study_time"), edited)
+        self.assertEqual(old_schedule, before)
+
+    def test_logged_time_updates_forecast_before_it_updates_calendar(self):
+        from db.plans import complete_read_task
+
+        with self.connection.cursor() as cursor:
+            cursor.execute("UPDATE documents SET chapter_plan_status='unplanned' WHERE id=8")
+        self.connection.commit()
+        state = chapterization.prepare_chapterization(10, 1)
+        chapterization.save_document_chapters(10, 1, [8], False, state["token"], [
+            {"title": title, "concepts": ["One", "Two"], "sources": [{"document_id": 8, "page_number": 1}]}
+            for title in ("A", "B", "C")
+        ], "New material")
+        reading = [task["id"] for task in self.stored()["tasks"] if task["kind"] == "Reading"]
+        for task_id in reading[:3]:
+            complete_read_task(10, 1, task_id)
+        first = planner.run_planner(10, 1, "published-before-learning-time", self.profile, mode="baseline")
+        self.assertEqual(first["status"], "saved", first)
+        old = next(task for task in self.stored()["tasks"] if task["id"] == reading[3])
+        before = scheduling.workflow_status(10, 1)["estimated_minutes"]
+
+        for task_id in reading[:3]:
+            recorded = scheduling.record_study_time(10, 1, task_id, 1)
+            scheduling.record_study_time(10, 1, task_id, 2 * recorded["base_minutes"])
+        current = scheduling.workflow_status(10, 1)
+        self.assertEqual(current["study_time_samples"], {"Reading": 3})
+        self.assertEqual(current["estimated_minutes"], before + old["estimated_minutes"])
+        self.assertEqual(next(task for task in self.stored()["tasks"] if task["id"] == reading[3]), old)
+
+        preview = planner.run_planner(10, 1, "adjust-time", preview=True)
+        self.assertEqual(preview["status"], "preview", preview)
+        self.assertEqual(self.stored()["version"], first["version"])
+        scheduling.publish_schedule(10, 1, preview["run_id"], apply=True)
+        adjusted = next(task for task in self.stored()["tasks"] if task["id"] == reading[3])
+        self.assertEqual(adjusted["estimated_minutes"], 2 * old["estimated_minutes"])
+
+    def test_workflow_budget_and_published_plan_use_current_practice_mastery(self):
+        from db.practice import create_session
+
+        chapter_id = self.add_second_chapter()
+        create_session(10, 1, {"id": int(chapter_id), "title": "Second"})
+        before = scheduling.workflow_status(10, 1)["estimated_minutes"]
+        with self.connection.cursor() as cursor:
+            cursor.execute("SELECT id FROM plan_concepts WHERE chapter_id=%s ORDER BY id LIMIT 1", (chapter_id,))
+            concept_id = cursor.fetchone()["id"]
+            cursor.execute("INSERT INTO concept_progress (user_id,concept_id,level,streak) VALUES (10,%s,2,2)", (concept_id,))
+        self.connection.commit()
+        budget = scheduling.workflow_status(10, 1)["estimated_minutes"]
+        self.assertEqual(budget, before - 6)
+
+        result = planner.run_planner(10, 1, "practice-budget", self.profile, mode="baseline")
+        self.assertEqual(result["status"], "saved", result)
+        self.assertEqual(result["trace"][0]["observation"]["required_minutes"], budget)
+        practice = next(task for task in self.stored()["tasks"] if task["id"] == f"practice-{chapter_id}")
+        self.assertEqual(practice["estimated_minutes"], 6)
 
     def add_second_chapter(self):
         with self.connection.cursor() as cursor:

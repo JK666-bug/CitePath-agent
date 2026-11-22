@@ -2,11 +2,13 @@
 import copy
 import json
 import uuid
+from datetime import datetime, timezone
 
 from agent.learning_tasks import ensure_chapter_tasks
 from agent.plan_state import normalize_task_type
 from agent.scheduler import (
-    completed, estimate_times, last_scheduled_date, requirements, schedule_summary, today, validate_schedule,
+    base_study_minutes, completed, estimate_times, last_scheduled_date, requirements,
+    schedule_summary, study_pace, today, validate_schedule,
 )
 from db.chapterization import (
     ChapterizationConflict, _digest, _json_object, _read_state, _snapshot,
@@ -184,13 +186,8 @@ def _page_text(state):
             for page in state["pages"]}
 
 
-def _context(cursor, user_id, course_id):
-    state = _read_state(cursor, user_id, course_id)
-    plan = state["plan"]
-    if not plan or not plan.get("chapters"):
-        raise ValueError("Create chapters before planning daily tasks")
-    brief = _read_brief(state["brief"])
-    reports = {str(c["id"]): {} for c in plan["chapters"]}
+def _learning_evidence(cursor, user_id, course_id, chapters):
+    reports = {str(chapter["id"]): {} for chapter in chapters}
     for table, key in (("practice_sessions", "practice"), ("exams", "exam")):
         cursor.execute(
             f"SELECT chapter_id, report_json FROM {table} "
@@ -203,7 +200,6 @@ def _context(cursor, user_id, course_id):
                 bucket[key] = {field: report[field] for field in (
                     "score", "passed", "wrong_count", "correct_count", "question_count",
                     "concepts", "remaining_weak_concepts", "outcome") if field in report}
-    pending_materials = [d for d in state["documents"] if d["state"] == "unplanned"]
     cursor.execute("SELECT c.id,c.chapter_id,p.level,p.streak,p.updated_at FROM plan_concepts c "
                    "JOIN plan_chapters h ON h.id=c.chapter_id "
                    "LEFT JOIN concept_progress p ON p.concept_id=c.id AND p.user_id=%s "
@@ -218,6 +214,17 @@ def _context(cursor, user_id, course_id):
         if concept["level"] is not None:
             mastery["attempted"] += 1
             mastery["mastered"] += int(concept["level"] >= 2)
+    return reports, progress
+
+
+def _context(cursor, user_id, course_id):
+    state = _read_state(cursor, user_id, course_id)
+    plan = state["plan"]
+    if not plan or not plan.get("chapters"):
+        raise ValueError("Create chapters before planning daily tasks")
+    brief = _read_brief(state["brief"])
+    reports, progress = _learning_evidence(cursor, user_id, course_id, plan["chapters"])
+    pending_materials = [d for d in state["documents"] if d["state"] == "unplanned"]
     token = _digest({"course_state": state["token"], "reports": reports, "progress": progress})
     return {"course_id": course_id, "token": token, "plan": plan,
             "brief": brief, "profile": brief.get("scheduling_profile") or {},
@@ -225,8 +232,9 @@ def _context(cursor, user_id, course_id):
             "page_text": _page_text(state)}
 
 
-def get_context(user_id, course_id):
-    repair_tasks(user_id, course_id)
+def get_context(user_id, course_id, repair=True):
+    if repair:
+        repair_tasks(user_id, course_id)
     connection = connect()
     try:
         with connection.cursor() as cursor:
@@ -241,7 +249,17 @@ def get_context(user_id, course_id):
         connection.close()
 
 
-def save_requirements(user_id, course_id, raw):
+def validate_course_requirements(cursor, course_id, raw, brief):
+    from db.plans import load_active_chapter_ids
+
+    profile = requirements(raw, brief)
+    ids = {str(chapter_id) for chapter_id in load_active_chapter_ids(cursor, course_id)}
+    if not set(profile["priority_chapter_ids"]) <= ids:
+        raise ValueError("Select priority chapters from this course")
+    return profile
+
+
+def save_requirements(user_id, course_id, raw, mode=None):
     ensure_scheduling_storage()
     connection = connect()
     try:
@@ -249,13 +267,10 @@ def save_requirements(user_id, course_id, raw):
             lock_learning_course(cursor, user_id, course_id)
             cursor.execute("SELECT student_brief FROM courses WHERE id=%s", (course_id,))
             brief = _read_brief(cursor.fetchone()["student_brief"])
-            profile = requirements(raw, brief)
-            from db.plans import load_active_chapter_ids
-
-            ids = {str(id_) for id_ in load_active_chapter_ids(cursor, course_id)}
-            if not set(profile["priority_chapter_ids"]) <= ids:
-                raise ValueError("Select priority chapters from this course")
+            profile = validate_course_requirements(cursor, course_id, raw, brief)
             brief["scheduling_profile"] = profile
+            if mode is not None:
+                brief["scheduling_mode"] = mode
             payload = json.dumps(brief, ensure_ascii=False)
             cursor.execute("UPDATE courses SET student_brief=%s WHERE id=%s", (payload, course_id))
             cursor.execute("UPDATE study_plans SET student_brief=%s WHERE course_id=%s", (payload, course_id))
@@ -266,6 +281,16 @@ def save_requirements(user_id, course_id, raw):
         raise
     finally:
         connection.close()
+
+
+def replan_profile(brief, plan):
+    if not brief.get("deadline"):
+        raise ValueError("Set your study dates in Course settings before replanning.")
+    saved = brief.get("scheduling_profile") or plan.get("scheduling_profile") or {}
+    profile = {**saved, "daily_minutes": saved.get("daily_minutes", 60)}
+    profile["start"] = max(today(), brief.get("startDate") or saved.get("start") or today())
+    profile.pop("end", None)
+    return profile
 
 
 def saved_schedule_preferences(user_id, course_id):
@@ -283,20 +308,10 @@ def saved_schedule_preferences(user_id, course_id):
             row = cursor.fetchone()
             brief = _read_brief(row["student_brief"])
             plan = _json_object(row["plan_json"]) or {}
-            if not brief.get("deadline"):
-                raise ValueError("Set your study dates in Course settings before replanning.")
-            saved = brief.get("scheduling_profile") or plan.get("scheduling_profile") or {}
-            profile = {**saved, "daily_minutes": saved.get("daily_minutes", 60)}
-            profile["start"] = max(today(), brief.get("startDate") or saved.get("start") or today())
-            profile.pop("end", None)
-            mode = plan.get("schedule_mode")
+            profile = replan_profile(brief, plan)
+            mode = brief.get("scheduling_mode") or plan.get("schedule_mode")
             if mode not in ("agent", "baseline") and plan.get("schedule_run_id"):
-                cursor.execute(
-                    "SELECT result_json FROM planner_runs WHERE id=%s AND course_id=%s AND user_id=%s",
-                    (plan["schedule_run_id"], course_id, user_id),
-                )
-                run = cursor.fetchone()
-                mode = (_json_object(run["result_json"]) or {}).get("mode") if run else None
+                mode = _published_run_result(cursor, user_id, course_id, plan["schedule_run_id"]).get("mode")
         connection.commit()
         return profile, mode if mode in ("agent", "baseline") else "agent"
     except Exception:
@@ -313,29 +328,37 @@ def workflow_status(user_id, course_id):
         with connection.cursor() as cursor:
             lock_learning_course(cursor, user_id, course_id)
             state = _read_state(cursor, user_id, course_id)
+            plan = state["plan"] or {}
+            chapters = plan.get("chapters") or []
+            reports, _ = _learning_evidence(cursor, user_id, course_id, chapters) if chapters else ({}, [])
         connection.commit()
     except Exception:
         connection.rollback()
         raise
     finally:
         connection.close()
-    plan = state["plan"] or {}
     docs = state["documents"]
     tasks = plan.get("tasks") or []
     pending = [t for t in tasks if not completed(t)]
     scheduled_through = [last_scheduled_date(task) for task in pending]
     current_date = today()
-    return {"documents": docs, "chapters": len(plan.get("chapters") or []),
+    return {"documents": docs, "chapters": len(chapters),
             "tasks": len(tasks), "completed": len(tasks) - len(pending),
             "estimated_minutes": sum(
-                item["minutes"] for item in estimate_times(plan, _page_text(state), {}).values()
-            ) if plan.get("chapters") else 0,
+                item["minutes"] for item in estimate_times(plan, _page_text(state), reports).values()
+            ) if chapters else 0,
+            "study_time_samples": {kind: info["count"] for kind, info in study_pace({"tasks": tasks}).items()},
             "unscheduled": scheduled_through.count(""),
             "overdue": sum(bool(date) and date < current_date for date in scheduled_through),
             "new_documents": sum(d["state"] == "unplanned" and d["eligible"] for d in docs),
             "processing": sum(d["reason"] == "document_not_ready" for d in docs),
             "profile": (_read_brief(state["brief"])).get("scheduling_profile") or {},
             "version": int(plan.get("version") or 0)}
+
+
+def _public_result(value):
+    result = _json_object(value)
+    return {key: item for key, item in result.items() if key != "_draft"} if result else None
 
 
 def claim_run(user_id, course_id, request_id):
@@ -348,7 +371,7 @@ def claim_run(user_id, course_id, request_id):
                            (course_id, request_id))
             existing = cursor.fetchone()
             if existing:
-                return existing["id"], _json_object(existing["result_json"]) or {
+                return existing["id"], _public_result(existing["result_json"]) or {
                     "status": existing["status"], "run_id": existing["id"],
                     "message": "This request already exists. Use a new request to retry."}
             run_id = str(uuid.uuid4())
@@ -390,13 +413,68 @@ def recent_runs(user_id, course_id):
             rows = cursor.fetchall()
         connection.commit()
         return [{"id": r["id"], "status": r["status"], "created_at": str(r["created_at"]),
-                 "result": _json_object(r["result_json"])} for r in rows]
+                 "result": _public_result(r["result_json"])} for r in rows]
     finally:
         connection.close()
 
 
-def publish_schedule(user_id, course_id, run_id, token, profile, candidate, mode="agent", proposed_by="system"):
-    """Re-read all evidence under the course lock; stale proposals cannot publish."""
+def _published_run_result(cursor, user_id, course_id, run_id):
+    cursor.execute(
+        "SELECT result_json FROM planner_runs WHERE id=%s AND course_id=%s AND user_id=%s",
+        (run_id, course_id, user_id),
+    )
+    row = cursor.fetchone()
+    return (_json_object(row["result_json"]) or {}) if row else {}
+
+
+def _prepare_schedule(cursor, user_id, course_id, run_id, token, profile, candidate, mode, proposed_by):
+    context = _context(cursor, user_id, course_id)
+    if context["token"] != token:
+        raise ChapterizationConflict("Study settings, materials or progress changed. Create a new preview.")
+    normalized = requirements(profile, context["brief"])
+    old = context["plan"]
+    estimates = estimate_times(old, context["page_text"], context["reports"])
+    verdict = validate_schedule(old, normalized, estimates, candidate)
+    if not verdict["valid"]:
+        raise ValueError("; ".join(verdict["errors"]))
+
+    slots_by_task = {}
+    for slot in candidate["slots"]:
+        slots_by_task.setdefault(slot["task_id"], []).append({"date": slot["date"], "minutes": slot["minutes"]})
+    plan = copy.deepcopy(old)
+    for task in plan["tasks"]:
+        if completed(task):
+            continue
+        slots = sorted(slots_by_task[task["id"]], key=lambda slot: slot["date"])
+        task.update(schedule=slots, date=slots[0]["date"],
+                    estimated_minutes=estimates[task["id"]]["minutes"], estimate_basis=estimates[task["id"]]["basis"])
+
+    summary = schedule_summary(old, plan, normalized, candidate, proposed_by)
+    old_run_id = old.get("schedule_run_id")
+    strategy = candidate["strategy"]
+    unchanged = False
+    if old_run_id and not summary["changes"] and old.get("scheduling_profile") == normalized:
+        old_mode, old_strategy = old.get("schedule_mode"), old.get("schedule_strategy")
+        if not old_mode or not old_strategy:
+            previous = _published_run_result(cursor, user_id, course_id, old_run_id)
+            old_mode = old_mode or previous.get("mode")
+            old_strategy = old_strategy or (previous.get("summary") or {}).get("strategy")
+        unchanged = old_mode == mode and old_strategy == strategy
+    message = "Your current schedule is already up to date."
+    if not unchanged:
+        message = f"Scheduled unfinished tasks using {strategy}; completed work preserved."
+        plan.update(version=int(old.get("version") or 1) + 1, start=normalized["start"], end=normalized["end"],
+                    scheduling_profile=normalized, schedule_run_id=run_id, schedule_mode=mode,
+                    schedule_preferences=context["brief"].get("scheduling_profile") or normalized,
+                    schedule_strategy=strategy, reason=message)
+    result = {"status": "saved", "run_id": run_id, "version": plan["version"], "message": message,
+              "trace": [], "start": normalized["start"], "mode": mode, "summary": summary, "unchanged": unchanged}
+    return old, plan, result
+
+
+def publish_schedule(user_id, course_id, run_id, token=None, profile=None, candidate=None,
+                     mode="agent", proposed_by="system", *, preview=False, apply=False):
+    """Validate, and publish only for a confirmed preview or the immediate API."""
     connection = connect()
     try:
         with connection.cursor() as cursor:
@@ -404,44 +482,73 @@ def publish_schedule(user_id, course_id, run_id, token, profile, candidate, mode
             cursor.execute("SELECT status,result_json FROM planner_runs WHERE id=%s AND course_id=%s AND user_id=%s FOR UPDATE",
                            (run_id, course_id, user_id))
             run = cursor.fetchone()
-            if not run or run["status"] != "running":
+            if not run:
+                raise LookupError("Schedule preview not found")
+            data = _json_object(run["result_json"]) or {}
+            if apply:
+                if run["status"] == "saved" and data.get("confirmed"):
+                    return data
+                draft = data.get("_draft")
+                if run["status"] != "preview" or not draft:
+                    raise ChapterizationConflict("Create a new schedule preview before applying.")
+                token, profile, candidate = draft["token"], draft["profile"], draft["candidate"]
+                mode, proposed_by = data["mode"], draft["proposed_by"]
+            elif run["status"] != "running":
                 raise ChapterizationConflict("This planner run is no longer active")
-            context = _context(cursor, user_id, course_id)
-            if context["token"] != token:
-                raise ChapterizationConflict("Learning records or materials changed; reload and replan")
-            normalized = requirements(profile, context["brief"])
-            estimates = estimate_times(context["plan"], context["page_text"], context["reports"])
-            verdict = validate_schedule(context["plan"], normalized, estimates, candidate)
-            if not verdict["valid"]:
-                raise ValueError("; ".join(verdict["errors"]))
-            old = context["plan"]
-            plan = copy.deepcopy(old)
-            for task in plan["tasks"]:
-                if completed(task):
-                    continue
-                slots = [{"date": x["date"], "minutes": x["minutes"]}
-                         for x in candidate["slots"] if x["task_id"] == task["id"]]
-                task["schedule"] = slots
-                task["date"] = slots[0]["date"] if slots else ""
-                task["estimated_minutes"] = estimates[task["id"]]["minutes"]
-                task["estimate_basis"] = estimates[task["id"]]["basis"]
-            plan.update({"version": int(old.get("version") or 1) + 1,
-                         "start": normalized["start"], "end": normalized["end"],
-                         "scheduling_profile": normalized, "schedule_run_id": run_id, "schedule_mode": mode,
-                         "reason": f"Scheduled unfinished tasks using {candidate['strategy']}; completed work preserved."})
-            _snapshot(cursor, course_id, old, "before_schedule")
-            cursor.execute("UPDATE study_plans SET plan_json=%s,status='ready' WHERE course_id=%s",
-                           (json.dumps(plan, ensure_ascii=False), course_id))
-            _snapshot(cursor, course_id, plan, "scheduled")
-            # Publish marker in the SAME transaction prevents duplicate saves,
-            # even if the model or the HTTP worker fails after this commit.
-            saved = {"status": "saved", "run_id": run_id, "version": plan["version"],
-                     "message": plan["reason"], "trace": [], "start": normalized["start"], "mode": mode,
-                     "summary": schedule_summary(old, plan, normalized, candidate, proposed_by)}
+
+            old, plan, result = _prepare_schedule(
+                cursor, user_id, course_id, run_id, token, profile, candidate, mode, proposed_by,
+            )
+            if preview:
+                result.update(status="preview", version=old["version"])
+                if not result["unchanged"]:
+                    result["_draft"] = {"token": token, "profile": profile, "candidate": candidate, "proposed_by": proposed_by}
+                return result
+
+            if not result["unchanged"]:
+                _snapshot(cursor, course_id, old, "before_schedule")
+                cursor.execute("UPDATE study_plans SET plan_json=%s,status='ready' WHERE course_id=%s",
+                               (json.dumps(plan, ensure_ascii=False), course_id))
+                _snapshot(cursor, course_id, plan, "scheduled")
+            if apply:
+                result.update(confirmed=True, trace=data.get("trace") or [], duration_ms=data.get("duration_ms"))
             cursor.execute("UPDATE planner_runs SET status='saved',result_json=%s WHERE id=%s",
-                           (json.dumps(saved), run_id))
+                           (json.dumps(result, ensure_ascii=False), run_id))
         connection.commit()
-        return saved
+        return result
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
+def record_study_time(user_id, course_id, task_id, minutes):
+    connection = connect()
+    try:
+        with connection.cursor() as cursor:
+            lock_learning_course(cursor, user_id, course_id)
+            state = _read_state(cursor, user_id, course_id)
+            plan = state["plan"] or {}
+            task = next((task for task in plan.get("tasks", []) if task["id"] == task_id), None)
+            if task is None:
+                raise LookupError("Task not found")
+            if task["kind"] not in ("Reading", "Practice") or not completed(task):
+                raise ValueError("Record study time for a completed reading or practice task.")
+            record = task.get("study_time")
+            if record and record["minutes"] == minutes:
+                return record
+            chapter = next(chapter for chapter in plan["chapters"] if str(chapter["id"]) == str(task["chapterId"]))
+            record = {
+                "minutes": minutes,
+                "base_minutes": record["base_minutes"] if record else base_study_minutes(task["kind"], chapter, _page_text(state)),
+                "recorded_at": record["recorded_at"] if record else datetime.now(timezone.utc).isoformat(),
+            }
+            task["study_time"] = record
+            cursor.execute("UPDATE study_plans SET plan_json=%s WHERE course_id=%s",
+                           (json.dumps(plan, ensure_ascii=False), course_id))
+        connection.commit()
+        return record
     except Exception:
         connection.rollback()
         raise

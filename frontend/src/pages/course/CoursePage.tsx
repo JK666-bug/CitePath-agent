@@ -145,6 +145,7 @@ export default function CoursePage({
 
       {tab === 'plan' ? (
         <CoursePlan
+          key={courseId}
           courseId={courseId}
           course={course}
         />

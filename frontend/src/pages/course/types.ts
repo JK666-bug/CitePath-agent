@@ -6,6 +6,7 @@ export type CourseConfig = {
   note: string
   events?: { title: string; date: string }[]
   scheduling_profile?: Partial<NonNullable<StudyPlan['scheduling_profile']>>
+  scheduling_mode?: StudyPlan['schedule_mode']
 }
 
 export type Material = {
@@ -42,6 +43,7 @@ export type Task = {
   schedule?: { date: string; minutes: number }[]
   estimated_minutes?: number
   estimate_basis?: string
+  study_time?: { minutes: number }
   status:
     | 'Not started'
     | 'In progress'
@@ -90,6 +92,7 @@ export type StudyPlan = {
   reason: string
   schedule_run_id?: string
   schedule_mode?: 'agent' | 'baseline'
+  schedule_preferences?: StudyPlan['scheduling_profile']
   scheduling_profile?: {
     start: string; end: string; daily_minutes: number; weekdays: number[]
     off_dates: string[]; priority_chapter_ids: string[]; strategy: string; note: string

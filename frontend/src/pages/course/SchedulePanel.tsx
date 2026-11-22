@@ -7,23 +7,17 @@ import { decodeBrief } from '../courseEditor/brief'
 import { useStudy } from '../../shared/StudyProvider'
 import StudyDates from '../courseEditor/StudyDates'
 import { Notice } from '../../shared/components/UI'
-import ScheduleSuccessDialog from './ScheduleSuccessDialog'
+import { Link } from '../../shared/router'
+import { request } from '../../shared/request'
 import type { SavedSchedule } from './ScheduleSuccessDialog'
-import { getCourseWorkflow, requestSchedule, scheduleStrategies, studyWeekdays } from './scheduleActions'
+import { getCourseWorkflow, lastScheduledDate, scheduleReviewHref, scheduleStrategies, studyDateKey, studyWeekdays } from './scheduleActions'
 import type { Workflow } from './scheduleActions'
 import './schedulePanel.css'
 
 type Profile = NonNullable<StudyPlan['scheduling_profile']>
 
-async function call<T>(url: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(url, { ...init, credentials: 'include' })
-  const value = await response.json()
-  if (!response.ok) throw new Error(value.detail || 'Could not update the schedule')
-  return value as T
-}
-
-export default function SchedulePanel({ course, plan, courseSettings, inline = false, hideStudyDates = false, courseWorkflow }: { course: CourseDetail; plan: StudyPlan; courseSettings?: { name: string; note: string; events: { title: string; date: string }[] }; inline?: boolean; hideStudyDates?: boolean; courseWorkflow?: Workflow | null }) {
-  const { loadPlan, loadCourse, refreshCourses } = useStudy()
+export default function SchedulePanel({ course, plan, courseSettings, inline = false, hideStudyDates = false, courseWorkflow, onSaved }: { course: CourseDetail; plan: StudyPlan; courseSettings?: { name: string; note: string; events: { title: string; date: string }[] }; inline?: boolean; hideStudyDates?: boolean; courseWorkflow?: Workflow | null; onSaved?: () => void }) {
+  const { loadCourse, refreshCourses } = useStudy()
   const config = decodeBrief(course.student_brief)
   const initial = config.scheduling_profile ?? plan.scheduling_profile
   const [profile, setProfile] = useState<Profile>(() => ({
@@ -38,11 +32,10 @@ export default function SchedulePanel({ course, plan, courseSettings, inline = f
   const [dateToSkip, setDateToSkip] = useState('')
   const [localWorkflow, setWorkflow] = useState<Workflow | null>(null)
   const workflow = courseWorkflow === undefined ? localWorkflow : courseWorkflow
-  const [savedSchedule, setSavedSchedule] = useState<SavedSchedule | null>(null)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
-  const [mode, setMode] = useState<SavedSchedule['method']>(plan.schedule_mode ?? 'agent')
+  const [mode, setMode] = useState<SavedSchedule['method']>(config.scheduling_mode ?? plan.schedule_mode ?? 'agent')
 
   useEffect(() => {
     if (courseWorkflow !== undefined) return
@@ -60,11 +53,9 @@ export default function SchedulePanel({ course, plan, courseSettings, inline = f
     : ''
   const priorities = profile.priority_chapter_ids.filter(id => plan.chapters.some(chapter => chapter.id === id))
   const pendingTasks = plan.tasks.filter(task => task.status !== 'Completed')
-  const lastStudyDates = pendingTasks.map(task =>
-    task.schedule?.reduce((latest, slot) => slot.date > latest ? slot.date : latest, '') || task.date,
-  )
+  const lastStudyDates = pendingTasks.map(lastScheduledDate)
   const unscheduled = workflow?.unscheduled ?? lastStudyDates.filter(date => !date).length
-  const overdue = workflow?.overdue ?? lastStudyDates.filter(date => date && date < dateKey()).length
+  const overdue = workflow?.overdue ?? lastStudyDates.filter(date => date && date < studyDateKey()).length
   const canAddSkipDate = dateToSkip && !profile.off_dates.includes(dateToSkip)
   const offDates = canAddSkipDate ? [...profile.off_dates, dateToSkip].sort() : profile.off_dates
   const span = profile.start && end ? daysBetween(profile.start, end) : NaN
@@ -85,10 +76,6 @@ export default function SchedulePanel({ course, plan, courseSettings, inline = f
   const strategyHelp = mode === 'baseline' && strategy.value === 'auto'
     ? 'Fixed rules use reading, practice, then review.'
     : strategy.help
-  const action = allCompleted && courseSettings ? 'Save settings' : plan.schedule_run_id
-    ? courseSettings ? 'Save and replan' : 'Replan schedule'
-    : courseSettings ? 'Save and replan' : 'Generate daily plan'
-
   function addSkipDate() {
     if (!canAddSkipDate) return
     setProfile(current => ({ ...current, off_dates: [...current.off_dates, dateToSkip].sort() }))
@@ -108,9 +95,6 @@ export default function SchedulePanel({ course, plan, courseSettings, inline = f
     setBusy(true)
     setError('')
     setMessage('')
-    setSavedSchedule(null)
-    let settingsSaved = false
-    let preferencesSaved = false
     try {
       if (courseSettings && (!courseSettings.name.trim() || courseSettings.events.some(item => !item.title.trim() || !item.date))) throw new Error('Enter a course name and a title and full date for every event.')
       if (!profile.start || !end || end < profile.start) {
@@ -124,30 +108,27 @@ export default function SchedulePanel({ course, plan, courseSettings, inline = f
         off_dates: offDates,
         priority_chapter_ids: priorities,
       }
-      await call(`/api/courses/${course.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: courseSettings?.name ?? course.name, note: courseSettings?.note ?? config.note, events: courseSettings?.events ?? config.events ?? [], startDate: profile.start, deadline, earlyDays }) })
-      settingsSaved = true
-      await call(`/api/courses/${course.id}/schedule/requirements`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profile: schedule }) })
-      preferencesSaved = true
+      await request(`/api/courses/${course.id}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: courseSettings?.name ?? course.name,
+          note: courseSettings?.note ?? config.note,
+          events: courseSettings?.events ?? config.events ?? [],
+          startDate: profile.start,
+          deadline,
+          earlyDays,
+          scheduling_profile: schedule,
+          scheduling_mode: mode,
+        }),
+      })
+      await Promise.allSettled([loadCourse(course.id), refreshCourses()])
       setProfile(schedule)
       setDateToSkip('')
-      if (allCompleted) {
-        await Promise.allSettled([loadCourse(course.id), refreshCourses()])
-        setMessage('Settings saved. All learning tasks are complete.')
-        return
-      }
-      const response = await requestSchedule(course.id, { profile: schedule, mode })
-      await Promise.allSettled([loadPlan(course.id), loadCourse(course.id), refreshCourses()])
-      if (response.status === 'saved') {
-        setSavedSchedule({ method: response.mode ?? mode, start: schedule.start, steps: response.trace ?? [], summary: response.summary })
-      } else {
-        setError(`Settings were saved. No new schedule was published. ${response.message}`)
-      }
+      setMessage(allCompleted ? 'Settings saved. All learning tasks are complete.' : 'Study settings saved.')
+      onSaved?.()
     } catch (reason) {
-      if (settingsSaved) await Promise.allSettled([loadCourse(course.id), loadPlan(course.id), refreshCourses()])
-      const prefix = preferencesSaved
-        ? 'Settings were saved. No new schedule was published. '
-        : settingsSaved ? 'Course information was saved. Scheduling preferences could not be saved. ' : ''
-      setError(`${prefix}${reason instanceof Error ? reason.message : 'Planner request failed'}`)
+      setError(reason instanceof Error ? reason.message : 'Could not save study settings')
     } finally { setBusy(false) }
   }
 
@@ -205,7 +186,11 @@ export default function SchedulePanel({ course, plan, courseSettings, inline = f
               <select value={profile.strategy} onChange={event => setProfile({ ...profile, strategy: event.target.value })}>
                 {scheduleStrategies.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}
               </select>
-              <small className="muted">{strategyHelp}</small>
+              <small className="muted">
+                {strategy.value === 'weak_first' && priorities.length > 0
+                  ? 'Your selected priority chapters come first, followed by weak chapters from the rest.'
+                  : strategyHelp}
+              </small>
             </label>
           </div>
 
@@ -342,26 +327,26 @@ export default function SchedulePanel({ course, plan, courseSettings, inline = f
           <div className="schedule-budget" aria-live="polite">
             <strong>Study time budget</strong>
             {allCompleted ? <span>All tasks completed.</span> : <>
-              {budget !== null && <span>{studyDays} {studyDays === 1 ? 'study day' : 'study days'} × {profile.daily_minutes} min = {budget} min available</span>}
+              {budget !== null && <span>{budget} min available</span>}
               {estimate !== undefined && estimate > 0 && <span>{estimate} min estimated for remaining tasks</span>}
               {shortfall > 0 && <span className="schedule-overdue">Short by {shortfall} min. Add study days or increase daily study time.</span>}
             </>}
           </div>
           <div className="schedule-footer">
             <p className="muted small">Longer tasks can span several days.</p>
-            <button className="button" type="submit" disabled={!plan.chapters.length || (allCompleted && !courseSettings)}>
-              {busy ? 'Planning…' : action}
+            <button className="button" type="submit" disabled={busy || !plan.chapters.length || (allCompleted && !courseSettings)}>
+              {busy ? 'Saving…' : 'Save settings'}
             </button>
           </div>
         </fieldset>
       </form>
-      {message && <Notice>{message}</Notice>}
+      {message && (
+        <Notice tone="success">
+          {message}{' '}
+          {!allCompleted && <Link href={scheduleReviewHref(course.id)}>Review schedule</Link>}
+        </Notice>
+      )}
       {error && <Notice tone="error">{error}</Notice>}
-      <ScheduleSuccessDialog
-        courseId={course.id}
-        schedule={savedSchedule}
-        onClose={() => setSavedSchedule(null)}
-      />
     </section>
   )
 }

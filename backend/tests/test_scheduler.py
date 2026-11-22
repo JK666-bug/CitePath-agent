@@ -3,7 +3,7 @@ import unittest
 from datetime import date, timedelta
 
 from agent.learning_tasks import chapter_task, ensure_chapter_tasks
-from agent.scheduler import estimate_times, propose_schedule, requirements, today, validate_schedule
+from agent.scheduler import estimate_times, propose_schedule, requirements, study_pace, today, validate_schedule
 
 
 def fixture():
@@ -52,6 +52,41 @@ class SchedulingTest(unittest.TestCase):
         candidate = propose_schedule(plan, profile, estimates, {})
         self.assertNotIn(plan["tasks"][0]["id"], {s["task_id"] for s in candidate["slots"]})
         self.assertEqual(plan["tasks"][0]["date"], "2026-01-01")
+
+    def test_practice_time_uses_current_mastery_for_active_tasks(self):
+        plan, _ = fixture()
+        plan["chapters"][0]["concepts"] = [str(number) for number in range(10)]
+        practice = next(task for task in plan["tasks"] if task["id"] == "practice-4")
+        evidence = {"4": {"mastery": {"mastered": 8}}}
+
+        self.assertEqual(estimate_times(plan, {}, evidence)[practice["id"]]["minutes"], 60)
+        practice["status"] = "In progress"
+        self.assertEqual(estimate_times(plan, {}, {})[practice["id"]]["minutes"], 60)
+        estimate = estimate_times(plan, {}, evidence)[practice["id"]]
+        self.assertEqual(estimate["minutes"], 12)
+        self.assertIn("2 concepts", estimate["basis"])
+
+        evidence["4"]["mastery"]["mastered"] = 10
+        self.assertEqual(estimate_times(plan, {}, evidence)[practice["id"]]["minutes"], 5)
+        practice["status"] = "Completed"
+        self.assertNotIn(practice["id"], estimate_times(plan, {}, evidence))
+
+    def test_study_time_calibrates_only_the_matching_kind_with_enough_records(self):
+        plan, profile = fixture()
+        times = [13, 15, 16]
+        samples = [{"kind": "Reading", "status": "Completed", "study_time": {
+            "base_minutes": 10, "minutes": minutes, "recorded_at": f"2026-11-{day:02d}",
+        }} for day, minutes in enumerate(times, 1)]
+        plan["tasks"].extend(samples[:2])
+        initial = estimate_times(plan, {}, {})
+        self.assertEqual(study_pace(plan), {})
+        plan["tasks"].append(samples[-1])
+        adjusted = estimate_times(plan, {}, {})
+        self.assertEqual(study_pace(plan), {"Reading": {"factor": 1.5, "count": 3}})
+        self.assertEqual(adjusted["reading-4"]["minutes"], 8)
+        self.assertEqual(adjusted["practice-4"], initial["practice-4"])
+        candidate = propose_schedule(plan, profile, adjusted, {})
+        self.assertTrue(validate_schedule(plan, profile, adjusted, candidate)["valid"])
 
     def test_infeasible_schedule_is_not_valid(self):
         plan, profile = fixture()

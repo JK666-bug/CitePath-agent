@@ -3,9 +3,8 @@ import type { FormEvent } from 'react'
 import { FileText } from 'lucide-react'
 import ChapterRebuild from './ChapterRebuild'
 import SchedulePanel from './SchedulePanel'
-import ScheduleSuccessDialog from './ScheduleSuccessDialog'
-import type { SavedSchedule } from './ScheduleSuccessDialog'
-import { getCourseWorkflow, requestSchedule, scheduleStrategies, studyWeekdays } from './scheduleActions'
+import { Link, useLocation } from '../../shared/router'
+import { getCourseWorkflow, hasUnappliedSettings, scheduleReviewHref, scheduleStrategies, studyWeekdays } from './scheduleActions'
 import type { Workflow } from './scheduleActions'
 import { analyzeNewDocuments } from './chapterActions'
 import ImportantDates from '../courseEditor/ImportantDates'
@@ -84,7 +83,8 @@ export default function CourseInfo({
   const config =
     decodeBrief(course.student_brief)
 
-  const [editing, setEditing] = useState(false)
+  const { search } = useLocation()
+  const [editing, setEditing] = useState(search.get('edit') === 'schedule')
   const [name, setName] = useState(course.name)
   const [note, setNote] = useState(config.note)
   const [events, setEvents] = useState(config.events || [])
@@ -96,11 +96,9 @@ export default function CourseInfo({
   const publishedProfile = plan?.schedule_run_id ? plan.scheduling_profile : undefined
   const savedProfile = config.scheduling_profile
   const savedPreferences = scheduleSummary(savedProfile)
-  const publishedSchedule = scheduleSummary(publishedProfile)
-  const preferencesChanged = publishedProfile && savedProfile &&
-    (Object.keys(publishedProfile) as (keyof ScheduleProfile)[]).some(
-      key => String(publishedProfile[key] ?? '') !== String(savedProfile[key] ?? ''),
-    )
+  const preferencesChanged = hasUnappliedSettings(config, plan)
+  const canReview = Boolean(config.deadline && (publishedProfile || savedProfile))
+  const reviewHref = scheduleReviewHref(course.id)
   const courseNameInput = useRef<HTMLInputElement>(null)
   useEffect(() => { if (courseId !== 'demo') void loadPlan(course.id) }, [course.id, courseId, loadPlan])
   useEffect(() => {
@@ -148,8 +146,6 @@ export default function CourseInfo({
     useState<Material | null>(null)
 
   const [replanPrompt, setReplanPrompt] = useState<'upload' | 'rebuild' | null>(null)
-  const [savedSchedule, setSavedSchedule] = useState<SavedSchedule | null>(null)
-  const [replanError, setReplanError] = useState('')
 
   function editSettings() {
     if (!editing) {
@@ -160,7 +156,6 @@ export default function CourseInfo({
       setEditing(true)
     }
     setReplanPrompt(null)
-    setReplanError('')
     requestAnimationFrame(() => courseNameInput.current?.focus())
   }
 
@@ -172,34 +167,6 @@ export default function CourseInfo({
     const [, result] = await Promise.all([reload(), loadPlan(course.id)])
     if (!result) throw new Error('Could not refresh the chapter list. Reload the page to see your saved changes.')
     return result.plan
-  }
-
-  async function replanNow() {
-    if (busy || demo || !hasRemainingTasks) return
-    setReplanPrompt(null)
-    setReplanError('')
-    setSavedSchedule(null)
-    setBusy(true)
-    setMessage('Rescheduling unfinished tasks…')
-    try {
-      const result = await requestSchedule(course.id)
-      await Promise.allSettled([loadPlan(course.id), reload()])
-      if (result.status === 'saved') {
-        setSavedSchedule({
-          method: result.mode ?? plan?.schedule_mode ?? 'agent',
-          start: result.start ?? dateKey(),
-          steps: result.trace ?? [],
-          summary: result.summary,
-        })
-      } else {
-        setReplanError(result.message)
-      }
-    } catch (reason) {
-      setReplanError(messageOf(reason))
-    } finally {
-      setMessage('')
-      setBusy(false)
-    }
   }
 
   async function upload(
@@ -229,7 +196,6 @@ export default function CourseInfo({
     }
 
     setBusy(true)
-    setReplanError('')
     const messages: string[] = []
     let changesSaved = false
 
@@ -266,7 +232,6 @@ export default function CourseInfo({
 
     setBusy(true)
     setError('')
-    setReplanError('')
     setMessage('')
     let deleted = false
 
@@ -315,7 +280,10 @@ export default function CourseInfo({
               : undefined}
           />
           {!hasChapters && <><StudyDates value={dates} onChange={next => setDates({ ...next, startDate: next.startDate || '' })} /><button className="button secondary" disabled={busy} onClick={() => void saveInfo()}>Save course information</button><p className="muted small">Analyze a PDF to enable daily scheduling.</p></>}
-          {hasChapters && plan && <SchedulePanel course={course} plan={plan} courseSettings={{ name, note, events }} courseWorkflow={workflow} inline />}
+          {hasChapters && plan && <SchedulePanel course={course} plan={plan} courseSettings={{ name, note, events }} courseWorkflow={workflow} inline onSaved={() => {
+            setEditing(false)
+            setMessage('Study settings saved.')
+          }} />}
         </div> : <>
           <dl className="course-facts"><div><dt>Course name</dt><dd>{course.name}</dd></div><div><dt>Start learning on</dt><dd>{config.startDate ? prettyDate(config.startDate, true) : plan?.scheduling_profile?.start ? prettyDate(plan.scheduling_profile.start, true) : 'Not set'}</dd></div><div><dt>Learning deadline</dt><dd>{config.deadline ? prettyDate(config.deadline, true) : 'Not set'}</dd></div><div><dt>Finish early by</dt><dd>{config.earlyDays} days</dd></div><div><dt>Materials</dt><dd>{course.documents.length} PDFs</dd></div></dl>
           <h3>Course note and calendar dates</h3><p className="course-note">{config.note || 'No additional note.'}</p>
@@ -325,18 +293,13 @@ export default function CourseInfo({
             <div>
               <dt>Saved preferences</dt>
               <dd>{savedPreferences || 'No scheduling preferences saved yet.'}</dd>
-              {preferencesChanged && <dd>These changes will apply when you replan.</dd>}
-            </div>
-            <div>
-              <dt>Published to calendar</dt>
-              <dd>{publishedSchedule || 'No daily schedule has been published.'}</dd>
+              {preferencesChanged && <dd>Your calendar still uses the previous settings. Review the schedule to apply these changes.</dd>}
             </div>
           </dl>
           {hasChapters && !hasRemainingTasks && <p className="muted small">All tasks completed.</p>}
-          {!demo && hasRemainingTasks && (
-            <button type="button" className="button small secondary" disabled={busy} onClick={() => void replanNow()}>
-              {plan?.schedule_run_id ? 'Replan schedule' : 'Generate daily plan'}
-            </button>
+          {!demo && hasRemainingTasks && (canReview
+            ? <Link className="button small secondary" href={reviewHref}>Review schedule</Link>
+            : <button type="button" className="button small secondary" disabled={busy} onClick={editSettings}>Set up daily schedule</button>
           )}
         </>}
       </section>
@@ -344,13 +307,6 @@ export default function CourseInfo({
       {error && (
         <Notice tone="error">
           {error}
-        </Notice>
-      )}
-
-      {replanError && (
-        <Notice tone="error">
-          {replanError}{' '}
-          <button type="button" className="text-button" onClick={editSettings}>Edit course settings</button>
         </Notice>
       )}
 
@@ -457,19 +413,16 @@ export default function CourseInfo({
             {replanPrompt === 'upload'
               ? 'Your new chapters are available in Plan. '
               : 'Your updated chapters are available in Plan. '}
-            Replan all unfinished tasks with your saved settings, or edit them first.
+            Review a new schedule to place unfinished tasks on your calendar.
           </p>
           <div className="actions">
-            <button type="button" className="button" disabled={busy || !hasRemainingTasks} onClick={() => void replanNow()}>
-              Replan now
-            </button>
+            {canReview && hasRemainingTasks && <Link className="button" href={reviewHref}>Review schedule</Link>}
             <button type="button" className="button secondary" disabled={busy} onClick={editSettings}>
-              Edit settings and replan
+              Edit study settings
             </button>
           </div>
         </div>
       </Modal>
-      <ScheduleSuccessDialog courseId={course.id} schedule={savedSchedule} onClose={() => setSavedSchedule(null)} />
       <Modal
         open={Boolean(remove)}
         title="Delete course material?"
