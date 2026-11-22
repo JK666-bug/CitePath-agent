@@ -34,10 +34,12 @@ export function StudyScheduleAttention({
   courseId,
   course,
   plan,
+  onEditSettings,
 }: {
   courseId: string
   course: CourseDetail
   plan: StudyPlan
+  onEditSettings: () => void
 }) {
   const { search } = useLocation()
   const config = decodeBrief(course.student_brief)
@@ -72,7 +74,11 @@ export function StudyScheduleAttention({
       </section>
 
       {search.get('review') === 'schedule' && hasScheduleSettings && (
-        <ScheduleReview courseId={numericId} onClose={() => navigate(`/courses/${courseId}/info`, true)} />
+        <ScheduleReview
+          courseId={numericId}
+          onClose={() => navigate(`/courses/${courseId}/info`, true)}
+          onEditSettings={onEditSettings}
+        />
       )}
     </>
   )

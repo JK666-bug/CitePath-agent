@@ -411,7 +411,12 @@ export default function CourseInfo({
       </section>
 
       {!demo && plan ? (
-        <StudyScheduleAttention courseId={courseId} course={course} plan={plan} />
+        <StudyScheduleAttention
+          courseId={courseId}
+          course={course}
+          plan={plan}
+          onEditSettings={editSettings}
+        />
       ) : null}
       {!demo && plan ? <PlanHistory courseId={course.id} version={plan.version} /> : null}
 

@@ -1,19 +1,25 @@
 import { useEffect, useRef, useState } from 'react'
 import { ApiError, messageOf } from '../../shared/request'
-import { Link } from '../../shared/router'
 import { Loading, Modal, Notice } from '../../shared/components/UI'
 import { useStudy } from '../../shared/StudyProvider'
 import ScheduleSuccessDialog from './ScheduleSuccessDialog'
 import { applySchedule, previewSchedule, scheduleForDialog } from './scheduleActions'
 
-export default function ScheduleReview({ courseId, onClose }: { courseId: number; onClose: () => void }) {
+export default function ScheduleReview({
+  courseId,
+  onClose,
+  onEditSettings,
+}: {
+  courseId: number
+  onClose: () => void
+  onEditSettings: () => void
+}) {
   const { loadPlan, refreshCourses } = useStudy()
   const [result, setResult] = useState<Awaited<ReturnType<typeof previewSchedule>> | null>(null)
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
   const [applying, setApplying] = useState(false)
   const request = useRef<ReturnType<typeof previewSchedule> | null>(null)
-  const settings = `/courses/${courseId}/info?edit=schedule`
 
   useEffect(() => {
     let active = true
@@ -65,7 +71,12 @@ export default function ScheduleReview({ courseId, onClose }: { courseId: number
       {error ? <div className="stack">
         <Notice tone="error">{error}</Notice>
         <div className="actions">
-          <Link className="button secondary" href={settings}>Edit study settings</Link>
+          <button className="button secondary" type="button" onClick={() => {
+            onClose()
+            onEditSettings()
+          }}>
+            Edit study settings
+          </button>
           <button className="button secondary" type="button" onClick={() => {
             request.current = null
             setError('')
