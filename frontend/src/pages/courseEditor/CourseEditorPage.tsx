@@ -258,7 +258,7 @@ function Editor({
 
         setStatus('Analyzing new materials into chapters…')
         const analyzed = await analyzeNewDocuments(id)
-        if (newUploads && !analyzed) throw new Error('PDFs were saved but are not ready for chapter analysis. Check Course info and retry Rebuild chapters.')
+        if (newUploads && !analyzed) throw new Error('PDFs were saved but are not ready for chapter analysis. Check Course info and try again.')
         await Promise.all([loadCourse(id), loadPlan(id), refreshCourses()])
         setCreationComplete(true)
 

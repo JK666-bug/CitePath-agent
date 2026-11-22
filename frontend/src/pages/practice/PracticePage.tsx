@@ -150,7 +150,7 @@ export default function PracticePage() {
                         }
                       >
                         {!session
-                          ? 'Start practice'
+                          ? 'Practice'
                           : session.status ===
                               'Answering'
                             ? 'Continue practice'

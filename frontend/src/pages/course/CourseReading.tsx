@@ -16,9 +16,21 @@ import {
 } from '../../shared/components/UI'
 
 import { documentFileUrl } from './api'
-import StudyTimeLog from './StudyTimeLog'
+import ReadingTutor from './ReadingTutor'
+import { sourcePageLabel } from './SourceSummary'
 
 import './course.css'
+
+function pageSpan(sources: { document_id: number; page_number: number }[], documentId: number) {
+  const pages = sources
+    .filter(source => source.document_id === documentId)
+    .map(source => source.page_number)
+    .sort((a, b) => a - b)
+  if (!pages.length) return 'Pages not set'
+  const start = pages[0]
+  const end = pages[pages.length - 1]
+  return start === end ? `Page ${start}` : `Pages ${start}–${end}`
+}
 
 export default function CourseReading({
   courseId,
@@ -36,7 +48,6 @@ export default function CourseReading({
   const {
     plans,
     loadPlan,
-    finishPlanTask,
   } = useStudy()
   const numericId = Number(courseId)
   const plan = isDemo ? null : plans[numericId]?.plan
@@ -123,93 +134,58 @@ export default function CourseReading({
     )
   }
 
+  const title = task.title.replace(/^Read:\s*/i, '') || task.title
+  const pagesLabel = sourcePageLabel(task.sources)
+
   return (
-    <div className="course-reading stack">
-      <PageHeader
-        eyebrow="Chapter reading"
-        title={task.title.replace(/^Read:\s*/i, '') || task.title}
-        subtitle="Open the original lecture PDF for this reading step."
-        actions={
-          <>
-            <button
-              className="button"
-              disabled={task?.status === 'Completed'}
-              onClick={() => {
-                if (task) {
-                  void finishPlanTask(numericId, task.id)
-                }
-              }}
-            >
-              {task?.status === 'Completed' ? 'Completed' : 'Mark done'}
-            </button>
-            <Link
-              className="button secondary"
-              href={`/courses/${courseId}/plan`}
-            >
-              Back to plan
-            </Link>
-          </>
-        }
-      />
-
-      {task.status === 'Completed' && <StudyTimeLog key={task.id} courseId={numericId} task={task} />}
-
-      {!uniqueDocs.length ? (
-        <Empty title="No PDF sources on this task">
-          <Link href={`/courses/${courseId}/plan`}>Back to plan</Link>
-        </Empty>
-      ) : (
-        <div className="reading-layout">
-          <aside className="panel reading-files">
-            <h2>Materials</h2>
-            <ul className="reading-file-list">
+    <div className="reading-stage">
+      <section className="reading-stage-pdf" aria-label="Lecture PDF">
+        <header className="reading-stage-bar">
+          <Link className="button small secondary" href={`/courses/${courseId}/plan`}>
+            Back
+          </Link>
+          <div className="reading-stage-title">
+            <strong>{title}</strong>
+            {pagesLabel && <span className="muted small">{pagesLabel}</span>}
+          </div>
+          {uniqueDocs.length > 1 && (
+            <div className="reading-doc-switch" aria-label="Reading PDFs">
               {uniqueDocs.map((item) => (
-                <li key={item.document_id}>
-                  <button
-                    type="button"
-                    className={
-                      item.document_id === activeId
-                        ? 'reading-file is-selected'
-                        : 'reading-file'
-                    }
-                    onClick={() => setSelectedId(item.document_id)}
-                  >
-                    <strong title={item.filename}>{item.filename}</strong>
-                    <span className="muted small">
-                      Starts at page {item.page_number}
-                      {!item.has_file ? ' · File missing' : ''}
-                    </span>
-                  </button>
-                </li>
+                <button
+                  key={item.document_id}
+                  type="button"
+                  className={item.document_id === activeId ? 'is-selected' : ''}
+                  onClick={() => setSelectedId(item.document_id)}
+                >
+                  {pageSpan(sources, item.document_id)}
+                </button>
               ))}
-            </ul>
-          </aside>
-
-          <section className="panel reading-viewer">
-            {!active ? (
-              <p className="muted">Select a PDF.</p>
-            ) : !active.has_file ? (
-              <Notice>
-                Original PDF is not stored for {active.filename}. Re-upload
-                it on{' '}
-                <Link href={`/courses/${courseId}/info`}>
-                  Course information
-                </Link>{' '}
-                to enable reading.
-              </Notice>
-            ) : (
-              <iframe
-                title={active.filename}
-                className="reading-frame"
-                src={
-                  documentFileUrl(numericId, active.document_id) +
-                  `#page=${active.page_number}`
-                }
-              />
-            )}
-          </section>
-        </div>
-      )}
+            </div>
+          )}
+        </header>
+        {!active ? (
+          <Empty title="No PDF sources on this task">
+            <Link href={`/courses/${courseId}/plan`}>Back to plan</Link>
+          </Empty>
+        ) : !active.has_file ? (
+          <Notice>
+            Original PDF is not stored for {active.filename}. Re-upload it on{' '}
+            <Link href={`/courses/${courseId}/info`}>Course information</Link>{' '}
+            to enable reading.
+          </Notice>
+        ) : (
+          <iframe
+            title={active.filename}
+            className="reading-frame"
+            src={`${documentFileUrl(numericId, active.document_id)}#page=${active.page_number}`}
+          />
+        )}
+      </section>
+      <ReadingTutor
+        courseId={numericId}
+        taskId={task.id}
+        sources={sources}
+      />
     </div>
   )
 }

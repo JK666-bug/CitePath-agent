@@ -7,10 +7,9 @@ import { decodeBrief } from '../courseEditor/brief'
 import { useStudy } from '../../shared/StudyProvider'
 import StudyDates from '../courseEditor/StudyDates'
 import { Notice } from '../../shared/components/UI'
-import { Link } from '../../shared/router'
 import { request } from '../../shared/request'
 import type { SavedSchedule } from './ScheduleSuccessDialog'
-import { getCourseWorkflow, lastScheduledDate, scheduleReviewHref, scheduleStrategies, studyDateKey, studyWeekdays } from './scheduleActions'
+import { getCourseWorkflow, lastScheduledDate, scheduleStrategies, studyDateKey, studyWeekdays } from './scheduleActions'
 import type { Workflow } from './scheduleActions'
 import './schedulePanel.css'
 
@@ -342,8 +341,8 @@ export default function SchedulePanel({ course, plan, courseSettings, inline = f
       </form>
       {message && (
         <Notice tone="success">
-          {message}{' '}
-          {!allCompleted && <Link href={scheduleReviewHref(course.id)}>Review schedule</Link>}
+          {message}
+          {!allCompleted && ' Use Replan remaining tasks below to preview the schedule.'}
         </Notice>
       )}
       {error && <Notice tone="error">{error}</Notice>}

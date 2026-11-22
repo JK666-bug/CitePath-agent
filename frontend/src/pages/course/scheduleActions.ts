@@ -63,7 +63,7 @@ export function scheduleForDialog(
 }
 
 export function scheduleReviewHref(courseId: number | string) {
-  return `/courses/${courseId}/plan?review=schedule`
+  return `/courses/${courseId}/info?review=schedule`
 }
 
 export function previewSchedule(courseId: number, requestId: string) {

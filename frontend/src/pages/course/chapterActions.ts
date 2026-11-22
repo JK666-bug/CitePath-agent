@@ -4,7 +4,7 @@ type Options = { token: string; new_documents: { id: number }[]; blocked_documen
 export async function analyzeNewDocuments(courseId: number) {
   const options = await request<Options>(`/api/courses/${courseId}/chapters/options`)
   if (!options.new_documents.length) {
-    if (options.blocked_documents?.some(item => item.state === 'unplanned')) throw new Error('New PDFs are not ready for chapter analysis. Check the material list and retry Rebuild chapters.')
+    if (options.blocked_documents?.some(item => item.state === 'unplanned')) throw new Error('New PDFs are not ready for chapter analysis. Check the material list and upload again.')
     return 0
   }
   await request(`/api/courses/${courseId}/chapters/rebuild`, {

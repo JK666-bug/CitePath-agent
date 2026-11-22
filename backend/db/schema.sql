@@ -194,6 +194,7 @@ CREATE TABLE IF NOT EXISTS practice_questions (
   answer TEXT NOT NULL,
   rubric_json JSON NULL,
   sources_json JSON NOT NULL,
+  decision_json JSON NULL,
   UNIQUE KEY uq_practice_question_pos (session_id, position),
   CONSTRAINT fk_practice_questions_session FOREIGN KEY (session_id) REFERENCES practice_sessions (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

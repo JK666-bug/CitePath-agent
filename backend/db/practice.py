@@ -63,6 +63,7 @@ def ensure_practice_storage() -> None:
                   answer TEXT NOT NULL,
                   rubric_json JSON NULL,
                   sources_json JSON NOT NULL,
+                  decision_json JSON NULL,
                   UNIQUE KEY uq_practice_question_pos (session_id, position),
                   CONSTRAINT fk_practice_questions_session FOREIGN KEY (session_id) REFERENCES practice_sessions (id) ON DELETE CASCADE
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
@@ -105,6 +106,17 @@ def ensure_practice_storage() -> None:
             )
             if int(cursor.fetchone()["column_count"]) == 0:
                 cursor.execute("ALTER TABLE practice_sessions ADD COLUMN prefs_json JSON NULL")
+            cursor.execute(
+                """
+                SELECT COUNT(*) AS column_count
+                FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = 'practice_questions'
+                  AND COLUMN_NAME = 'decision_json'
+                """
+            )
+            if int(cursor.fetchone()["column_count"]) == 0:
+                cursor.execute("ALTER TABLE practice_questions ADD COLUMN decision_json JSON NULL")
         connection.commit()
     except Exception:
         connection.rollback()
@@ -401,9 +413,9 @@ def insert_question(session_id: int, phase: str, review_round: int, question: di
                 """
                 INSERT INTO practice_questions (
                   session_id, position, concept_id, concept_name, phase, review_round, kind,
-                  prompt, options_json, answer, rubric_json, sources_json
+                  prompt, options_json, answer, rubric_json, sources_json, decision_json
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     session_id,
@@ -418,6 +430,7 @@ def insert_question(session_id: int, phase: str, review_round: int, question: di
                     question["answer"],
                     json.dumps(question["rubric"], ensure_ascii=False),
                     json.dumps(question["sources"], ensure_ascii=False),
+                    json.dumps(question.get("decision"), ensure_ascii=False) if question.get("decision") else None,
                 ),
             )
         connection.commit()
@@ -808,7 +821,7 @@ def present_session(user_id: int, course_id: int, session_id: int, concepts: lis
         with connection.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT q.id, q.concept_name, q.kind, q.prompt, q.options_json, q.sources_json
+                SELECT q.id, q.concept_name, q.kind, q.prompt, q.options_json, q.sources_json, q.decision_json
                 FROM practice_questions q
                 LEFT JOIN practice_answers a ON a.question_id = q.id
                 WHERE q.session_id = %s AND a.id IS NULL
@@ -841,6 +854,7 @@ def present_session(user_id: int, course_id: int, session_id: int, concepts: lis
             "prompt": current["prompt"],
             "options": _json_list(_json_value(current["options_json"])),
             "sources": _json_list(_json_value(current["sources_json"])),
+            "decision": _json_object(_json_value(current["decision_json"])),
         }
     last = None
     if feedback is not None:

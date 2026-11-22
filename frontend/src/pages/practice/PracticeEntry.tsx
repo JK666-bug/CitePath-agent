@@ -8,23 +8,25 @@ export function PracticeEntry({
   progress,
   onStart,
   className = 'button small',
+  compact = false,
 }: {
   courseId: string | number
   progress?: ChapterPracticeProgress
   onStart: () => void
   className?: string
+  compact?: boolean
 }) {
   if (progress?.open_session_id != null) {
     return (
       <Link className={className} href={`/practice/${courseId}/sessions/${progress.open_session_id}`}>
-        Continue practice
+        {compact ? 'Continue' : 'Continue practice'}
       </Link>
     )
   }
 
   return (
     <button type="button" className={className} onClick={onStart}>
-      {progress?.has_finished ? 'Practice again' : 'Start practice'}
+      {progress?.has_finished ? 'Practice again' : 'Practice'}
     </button>
   )
 }

@@ -249,7 +249,7 @@ export default function PracticeLivePage({
         subtitle={
           session.status === 'finished'
             ? 'Every concept in this chapter is mastered.'
-            : 'Two correct answers in a row move this concept on. Each question is labeled with its concept.'
+            : 'Two correct answers for a concept mark it mastered. Each question is labeled with its concept.'
         }
       />
 
@@ -294,6 +294,10 @@ export default function PracticeLivePage({
                 : 'Short answer'}
             </span>
           </div>
+
+          {question.decision?.reason && (
+            <p className="muted small">Why this question: {question.decision.reason}</p>
+          )}
 
           <h2>{question.prompt}</h2>
 

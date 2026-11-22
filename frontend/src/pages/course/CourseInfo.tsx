@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { FileText } from 'lucide-react'
-import ChapterRebuild from './ChapterRebuild'
+import PlanHistory from './PlanHistory'
+import PlanOverview, { StudyScheduleAttention } from './PlanOverview'
 import SchedulePanel from './SchedulePanel'
 import { Link, useLocation } from '../../shared/router'
 import { getCourseWorkflow, hasUnappliedSettings, scheduleReviewHref, scheduleStrategies, studyWeekdays } from './scheduleActions'
@@ -145,7 +146,7 @@ export default function CourseInfo({
   const [remove, setRemove] =
     useState<Material | null>(null)
 
-  const [replanPrompt, setReplanPrompt] = useState<'upload' | 'rebuild' | null>(null)
+  const [replanPrompt, setReplanPrompt] = useState(false)
 
   function editSettings() {
     if (!editing) {
@@ -155,7 +156,7 @@ export default function CourseInfo({
       setDates({ startDate: config.startDate || dateKey(), deadline: config.deadline, earlyDays: config.earlyDays })
       setEditing(true)
     }
-    setReplanPrompt(null)
+    setReplanPrompt(false)
     requestAnimationFrame(() => courseNameInput.current?.focus())
   }
 
@@ -215,11 +216,11 @@ export default function CourseInfo({
       const analyzed = await analyzeNewDocuments(course.id)
       const updatedPlan = await refreshChapters()
       setMessage(messages.join(' ') || (analyzed ? '' : 'These materials are already up to date.'))
-      if (analyzed && updatedPlan?.chapters.length) setReplanPrompt('upload')
+      if (analyzed && updatedPlan?.chapters.length) setReplanPrompt(true)
     } catch (reason) {
       setMessage('')
       setError(changesSaved
-        ? `${messageOf(reason)} Saved PDFs remain in this course. Check Course materials or use Rebuild chapters to finish analysis.`
+        ? `${messageOf(reason)} Saved PDFs remain in this course. Check Course materials and upload again to finish analysis.`
         : messageOf(reason))
       await Promise.allSettled([reload(), loadPlan(course.id)])
     } finally {
@@ -255,6 +256,24 @@ export default function CourseInfo({
 
   return (
     <div className="stack">
+      {!demo && plan?.chapters.length ? (
+        <PlanOverview
+          course={course}
+          plan={plan}
+          workflow={workflow}
+        />
+      ) : null}
+
+      {error && (
+        <Notice tone="error">
+          {error}
+        </Notice>
+      )}
+
+      {message && (
+        <Notice>{message}</Notice>
+      )}
+
       <section className="panel">
         <div className="actions">
           <h2>Course settings</h2>
@@ -293,26 +312,15 @@ export default function CourseInfo({
             <div>
               <dt>Saved preferences</dt>
               <dd>{savedPreferences || 'No scheduling preferences saved yet.'}</dd>
-              {preferencesChanged && <dd>Your calendar still uses the previous settings. Review the schedule to apply these changes.</dd>}
+              {preferencesChanged && <dd>Your calendar still uses the previous settings. Use Replan remaining tasks to preview and apply them.</dd>}
             </div>
           </dl>
           {hasChapters && !hasRemainingTasks && <p className="muted small">All tasks completed.</p>}
-          {!demo && hasRemainingTasks && (canReview
-            ? <Link className="button small secondary" href={reviewHref}>Review schedule</Link>
-            : <button type="button" className="button small secondary" disabled={busy} onClick={editSettings}>Set up daily schedule</button>
+          {!demo && hasRemainingTasks && !canReview && (
+            <button type="button" className="button small secondary" disabled={busy} onClick={editSettings}>Set up daily schedule</button>
           )}
         </>}
       </section>
-
-      {error && (
-        <Notice tone="error">
-          {error}
-        </Notice>
-      )}
-
-      {message && (
-        <Notice>{message}</Notice>
-      )}
 
       <section className="panel">
         <h2>Course materials</h2>
@@ -402,21 +410,26 @@ export default function CourseInfo({
         )}
       </section>
 
-      {!demo && <ChapterRebuild courseId={course.id} disabled={busy} onRebuilt={() => setReplanPrompt('rebuild')} />}
+      {!demo && plan ? (
+        <StudyScheduleAttention courseId={courseId} course={course} plan={plan} />
+      ) : null}
+      {!demo && plan ? <PlanHistory courseId={course.id} version={plan.version} /> : null}
+
       <Modal
-        open={replanPrompt !== null}
+        open={replanPrompt}
         title="Chapters are ready"
-        onClose={() => setReplanPrompt(null)}
+        onClose={() => setReplanPrompt(false)}
       >
         <div className="stack">
           <p>
-            {replanPrompt === 'upload'
-              ? 'Your new chapters are available in Plan. '
-              : 'Your updated chapters are available in Plan. '}
-            Review a new schedule to place unfinished tasks on your calendar.
+            Your new chapters are available in Plan. Review a new schedule to place unfinished tasks on your calendar.
           </p>
           <div className="actions">
-            {canReview && hasRemainingTasks && <Link className="button" href={reviewHref}>Review schedule</Link>}
+            {canReview && hasRemainingTasks && (
+              <Link className="button" href={reviewHref}>
+                {plan?.schedule_run_id ? 'Replan remaining tasks' : 'Review daily plan'}
+              </Link>
+            )}
             <button type="button" className="button secondary" disabled={busy} onClick={editSettings}>
               Edit study settings
             </button>

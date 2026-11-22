@@ -29,6 +29,33 @@ def load_page_bodies(pairs: list[tuple[int, int]]) -> dict[tuple[int, int], dict
     return {(int(row["document_id"]), int(row["page_number"])): row for row in rows}
 
 
+def load_document_pages(document_ids: list[int]) -> list[dict]:
+    """Usable page text for the attached lecture PDFs, in reading order."""
+    ids = [int(item) for item in document_ids if int(item) > 0]
+    if not ids:
+        return []
+    marks = ", ".join(["%s"] * len(ids))
+    connection = connect()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"""
+                SELECT p.document_id, p.page_number, p.body, d.filename
+                FROM pages p
+                JOIN documents d ON d.id = p.document_id
+                WHERE p.usable = 1
+                  AND p.document_id IN ({marks})
+                  AND p.body IS NOT NULL
+                  AND TRIM(p.body) <> ''
+                ORDER BY d.position, p.document_id, p.page_number
+                """,
+                ids,
+            )
+            return list(cursor.fetchall())
+    finally:
+        connection.close()
+
+
 def load_leading_pages(document_ids: list[int], limit: int = 4) -> list[dict]:
     """First usable pages from selected lecture PDFs."""
     ids = [int(item) for item in document_ids if int(item) > 0]

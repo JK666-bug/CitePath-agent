@@ -147,7 +147,6 @@ export default function CoursePage({
         <CoursePlan
           key={courseId}
           courseId={courseId}
-          course={course}
         />
       ) : tab === 'info' ? (
         <CourseInfo

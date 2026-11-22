@@ -2,7 +2,6 @@ import {
   useEffect,
   useState,
 } from 'react'
-import PlanHistory from './PlanHistory'
 import SourceSummary from './SourceSummary'
 import {
   BookOpen,
@@ -10,8 +9,7 @@ import {
   RotateCcw,
 } from 'lucide-react'
 
-import type { Chapter, CourseDetail, Task } from './types'
-import { decodeBrief } from '../courseEditor/brief'
+import type { Chapter, Task } from './types'
 
 import { createExam } from '../exam/api'
 import { PracticeEntry, PracticeMastery } from '../practice/PracticeEntry'
@@ -34,23 +32,13 @@ import {
   Notice,
 } from '../../shared/components/UI'
 
-import PaceLine, {
-  ProgressTrack,
-  taskTotals,
-} from '../../shared/components/PaceLine'
-
 import TaskDetails from './TaskDetails'
-import ScheduleReview from './ScheduleReview'
 import StudyTimeLog from './StudyTimeLog'
-import { getCourseWorkflow, hasUnappliedSettings, lastScheduledDate, scheduleReviewHref, studyDateKey } from './scheduleActions'
-import type { Workflow } from './scheduleActions'
 
 export default function CoursePlan({
   courseId,
-  course,
 }: {
   courseId: string
-  course: CourseDetail
 }) {
   const {
     demo,
@@ -67,7 +55,6 @@ export default function CoursePlan({
     useState('')
   const [practiceChapterId, setPracticeChapterId] =
     useState<number | null>(null)
-  const [workflow, setWorkflow] = useState<Workflow | null>(null)
   const isDemo = courseId === 'demo'
   const numericId = Number(courseId)
   const entry = plans[numericId]
@@ -78,18 +65,6 @@ export default function CoursePlan({
     }
   }, [isDemo, loadPlan, numericId])
 
-  const currentPlan = entry?.plan
-  useEffect(() => {
-    if (isDemo || !currentPlan?.chapters.length) return
-    let active = true
-    void getCourseWorkflow(numericId).then(value => {
-      if (active) setWorkflow(value)
-    }).catch(() => {
-      if (active) setWorkflow(null)
-    })
-    return () => { active = false }
-  }, [isDemo, numericId, currentPlan])
-
   if (!isDemo && !entry?.loaded) {
     return (
       <Loading text="Loading your study plan…" />
@@ -99,9 +74,6 @@ export default function CoursePlan({
   const plan = isDemo
     ? demo.plan
     : entry?.plan
-
-  const config =
-    decodeBrief(course.student_brief)
 
   function markComplete(task: Task) {
     if (isDemo) {
@@ -124,36 +96,9 @@ export default function CoursePlan({
         )}
 
         <Notice>No chapters yet. Upload materials and analyze them in <Link href={`/courses/${courseId}/info`}>Course info</Link>.</Notice>
-        {plan && !isDemo && <PlanHistory courseId={numericId} version={plan.version} />}
       </div>
     )
   }
-
-  const totals = taskTotals(plan.tasks)
-  const today = studyDateKey()
-  let plannedFinish = ''
-  let overdue = 0
-  let unscheduled = 0
-  for (const task of plan.tasks) {
-    const date = lastScheduledDate(task)
-    if (date > plannedFinish) plannedFinish = date
-    if (task.status === 'Completed') continue
-    if (!date) unscheduled++
-    else if (date < today) overdue++
-  }
-
-  const hasScheduleSettings = Boolean(config.deadline && (
-    plan.schedule_run_id || config.scheduling_profile || plan.scheduling_profile
-  ))
-  const settingsHref = `/courses/${courseId}/info?edit=schedule`
-  const pendingSettings = hasUnappliedSettings(config, plan)
-  const remainingTasks = plan.tasks.filter(task => task.status !== 'Completed')
-  const calibratedKinds = (['Reading', 'Practice'] as const).filter(kind =>
-    workflow?.study_time_samples?.[kind] && remainingTasks.some(task => task.kind === kind),
-  )
-  const plannedMinutes = remainingTasks.reduce((total, task) =>
-    total + (task.schedule?.reduce((sum, slot) => sum + slot.minutes, 0) ?? task.estimated_minutes ?? 0), 0)
-  const difference = (workflow?.estimated_minutes ?? plannedMinutes) - plannedMinutes
 
   const selected =
     plan.tasks.find(
@@ -174,85 +119,6 @@ export default function CoursePlan({
           Creating a new plan from your note
           and lecture pages…
         </Notice>
-      )}
-
-      <div className="course-plan-overview">
-        <section className="panel">
-          <h2>Your course progress</h2>
-
-          <ProgressTrack
-            label="Planned tasks completed"
-            done={totals.done}
-            total={totals.total}
-          />
-
-          <div className="plan-stats">
-            <div>
-              <small>Tasks</small>
-              <strong>
-                {totals.done}/{totals.total}
-              </strong>
-            </div>
-
-            <div>
-              <small>Remaining</small>
-              <strong>
-                {totals.remaining}
-              </strong>
-            </div>
-
-            <div>
-              <small>Planned finish</small>
-              <strong>
-                {plannedFinish ? prettyDate(plannedFinish) : 'Not scheduled'}
-              </strong>
-            </div>
-          </div>
-        </section>
-
-        <section className="panel">
-          <h2>Schedule outlook</h2>
-
-          {plannedFinish ? (
-            <PaceLine plan={plan} config={config} />
-          ) : (
-            <p className="muted">Learning tasks are ready to schedule.</p>
-          )}
-
-          {!isDemo && totals.remaining > 0 && workflow && <div className="plan-remaining-time">
-            <p><strong>{workflow.estimated_minutes} min</strong> estimated for remaining tasks</p>
-            {calibratedKinds.length > 0 && <p className="muted small">
-              Based on {calibratedKinds.map(kind => `${workflow.study_time_samples?.[kind]} recent ${kind.toLowerCase()} records`).join(' and ')}.
-              {unscheduled === 0 && plannedMinutes > 0 && difference !== 0 &&
-                ` ${Math.abs(difference)} min ${difference > 0 ? 'more' : 'less'} than the current schedule.`}
-            </p>}
-          </div>}
-        </section>
-      </div>
-
-      {!isDemo && totals.remaining > 0 && (
-        <section className="panel plan-schedule-attention" aria-label="Study schedule">
-          <div>
-            <strong>Study schedule</strong>
-            {(overdue > 0 || unscheduled > 0) && <p className="muted small">{[
-              overdue > 0 && `${overdue} overdue`,
-              unscheduled > 0 && `${unscheduled} not scheduled`,
-            ].filter(Boolean).join(' · ')}</p>}
-            {pendingSettings && <p className="muted small">Saved settings are waiting to be applied to the calendar.</p>}
-          </div>
-          {hasScheduleSettings ? (
-            <Link className="button small" href={scheduleReviewHref(courseId)}>
-              {plan.schedule_run_id ? 'Replan remaining tasks' : 'Review daily plan'}
-            </Link>
-          ) : (
-            <Link className="button small secondary" href={settingsHref}>Set up daily schedule</Link>
-          )}
-        </section>
-      )}
-      {!isDemo && <p className="muted small">Manage materials and study settings in <Link href={`/courses/${courseId}/info`}>Course info</Link>.</p>}
-      {!isDemo && <PlanHistory courseId={numericId} version={plan.version} />}
-      {!isDemo && search.get('review') === 'schedule' && hasScheduleSettings && totals.remaining > 0 && (
-        <ScheduleReview courseId={numericId} onClose={() => navigate(`/courses/${courseId}/plan`, true)} />
       )}
 
       <div className="plan-version">
@@ -360,6 +226,7 @@ export default function CoursePlan({
                           {task.title}
                         </button>
 
+                        {task.kind === 'Reading' && <SourceSummary sources={task.sources} />}
                         <p className="muted small">
                           {task.date ? prettyDate(task.date) : 'Not scheduled'}
                           {Boolean(task.schedule?.length) && ` · ${task.estimated_minutes} min across ${task.schedule?.length} day(s)`}
@@ -378,7 +245,7 @@ export default function CoursePlan({
                         )}
                       </div>
 
-                      <div className={`plan-task-actions${realPractice ? ' plan-practice-actions' : ''}`}>
+                      <div className="plan-task-actions">
                         {task.kind === 'Practice' ? (
                           isDemo ? (
                             <>
@@ -405,6 +272,7 @@ export default function CoursePlan({
                             <>
                               <PracticeEntry
                                 courseId={courseId}
+                                compact
                                 progress={chapter.practice_progress}
                                 onStart={() => {
                                   setExamError('')

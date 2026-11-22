@@ -12,8 +12,16 @@ from agent.llm import chat_model
 from agent.skills import load_skill
 from agent.web import search_pages
 from db.auth import username_of
-from db.courses import get_course
-from db.qa import insert_record, load_leading_pages, load_overview_pages, load_page_bodies, recent_turns
+from db.courses import get_course, list_courses
+from db.plans import get_plan
+from db.qa import (
+    insert_record,
+    load_document_pages,
+    load_leading_pages,
+    load_overview_pages,
+    load_page_bodies,
+    recent_turns,
+)
 from db.study_status import chapter_report, concept_report, course_study, review_report, wrong_report
 from vector.rerank import rerank
 from vector.segments import search, select_page_keys
@@ -75,8 +83,10 @@ def answer_question(
     # web for this turn — no need to flip the Web chip manually.
     web_topic = _web_followup_topic(user_id, course_id, text, tab_id)
     include_web = bool(include_web) or bool(web_topic)
-    # Pure greetings / thanks: never search notes or ask about the web.
-    if _is_greeting(text) and not include_web:
+    own_courses = _asks_about_courses(text)
+    own_study = _asks_about_study(text)
+    # Acknowledgements need no search, unless they explicitly accept a valid web offer.
+    if _is_greeting(text) and not web_topic:
         return _store(
             course,
             user_id,
@@ -89,7 +99,7 @@ def answer_question(
             tab_id,
         )
     # No PDFs selected -> casual chat; Web chip / yes-follow-up still allowed.
-    if document_ids is not None and len(document_ids) == 0:
+    if document_ids is not None and len(document_ids) == 0 and not (own_courses or own_study):
         if include_web:
             return _chat_with_web(
                 course, user_id, course_id, text, tab_id, web_topic=web_topic
@@ -105,8 +115,8 @@ def answer_question(
             "chat",
             tab_id,
         )
-    document_ids = _selected_document_ids(course, document_ids)
-    pages, parsed, study, web_pages, account = _choose_and_answer(
+    document_ids = [] if own_courses or own_study else _selected_document_ids(course, document_ids)
+    pages, parsed, study, web_pages, account, course_data = _choose_and_answer(
         document_ids,
         user_id,
         course_id,
@@ -116,6 +126,24 @@ def answer_question(
         web_topic=web_topic,
     )
     answer = str(parsed.get("answer") or "").strip()
+    if own_courses:
+        return _store(
+            course,
+            user_id,
+            text,
+            (answer if course_data and answer else "I could not read your course information. Please try again.")[:MAX_ANSWER],
+            [],
+            not course_data,
+            [],
+            "course" if course_data else "",
+            tab_id,
+        )
+    if own_study:
+        return _store(
+            course, user_id, text,
+            (answer if study and answer else "I could not read your learning progress. Please try again.")[:MAX_ANSWER],
+            [], not study, [], "study" if study else "", tab_id,
+        )
     # Only treat as account Q&A when the student actually asked about their identity.
     # Spurious account_info calls must not hide lecture evidence (e.g. a course code).
     if account and _asks_about_self(text):
@@ -280,7 +308,7 @@ def _choose_and_answer(
     tab_id: str | None = None,
     include_web: bool = False,
     web_topic: str | None = None,
-) -> tuple[list[dict], dict, bool, list[dict], bool]:
+) -> tuple[list[dict], dict, bool, list[dict], bool, bool]:
     state = {
         "pages": [],
         "study": False,
@@ -289,6 +317,7 @@ def _choose_and_answer(
         "web": [],
         "web_done": False,
         "account": False,
+        "course": False,
         "nudged": False,
         "nudged_web": False,
     }
@@ -297,6 +326,12 @@ def _choose_and_answer(
     @tool
     def search_notes(query: str) -> str:
         """Load lecture PDF pages. For course/PPT overview questions, samples pages across the deck for a summary; otherwise searches by meaning."""
+        if _asks_about_courses(topic):
+            return "The student's course list and progress come from my_courses. Call my_courses instead."
+        if _asks_about_study(topic):
+            return "The student's learning progress comes from review_status, concept_mastery, and chapter_mastery. Use those tools instead."
+        if not document_ids:
+            return "No lecture PDFs are selected. Do not use lecture pages for this answer."
         if web_topic:
             return (
                 "This turn is a web follow-up. Do not search lecture notes. "
@@ -348,6 +383,67 @@ def _choose_and_answer(
         return json.dumps({"username": username_of(user_id)}, ensure_ascii=False)
 
     @tool
+    def my_courses() -> str:
+        """Read this student's own course list and current progress. Use for questions about how many courses they have, course names, deadlines, materials, plans, chapters, or task completion."""
+        state["course"] = True
+        state["study"] = True
+        rows = list_courses(user_id)
+        summaries = []
+        for row in rows:
+            course_id = int(row["id"])
+            detail = get_course(user_id, course_id)
+            if detail is None:
+                continue
+            try:
+                brief = json.loads(detail.get("student_brief") or "{}")
+            except (TypeError, ValueError):
+                brief = {}
+            if not isinstance(brief, dict):
+                brief = {}
+            documents = detail.get("documents") or []
+            ready_documents = [
+                item for item in documents
+                if str(item.get("ingest_status") or "").lower() == "complete"
+            ]
+            plan_result = get_plan(user_id, course_id)
+            plan = plan_result.get("plan") or {}
+            chapters = plan.get("chapters") or []
+            tasks = plan.get("tasks") or []
+            completed_tasks = sum(
+                1 for task in tasks
+                if str(task.get("status") or "").casefold() == "completed"
+            )
+            completed_chapters = sum(
+                1 for chapter in chapters
+                if str(chapter.get("chapter_status") or "").casefold()
+                in {"completed", "learned", "passed"}
+            )
+            summaries.append({
+                "course_id": course_id,
+                "name": detail.get("name") or row.get("name") or "",
+                "deadline": brief.get("deadline") or None,
+                "materials": {
+                    "total": len(documents),
+                    "ready": len(ready_documents),
+                    "readable_pages": sum(
+                        int(item.get("usable_page_count") or 0)
+                        for item in ready_documents
+                    ),
+                },
+                "plan_status": plan_result.get("status") or "draft",
+                "chapters": {
+                    "total": len(chapters),
+                    "completed": completed_chapters,
+                },
+                "tasks": {
+                    "total": len(tasks),
+                    "completed": completed_tasks,
+                    "remaining": max(0, len(tasks) - completed_tasks),
+                },
+            })
+        return json.dumps({"course_count": len(summaries), "courses": summaries}, ensure_ascii=False)
+
+    @tool
     def review_status(chapter: str) -> str:
         """Read finished practice rounds, whether practice is still open, and exam results."""
         state["study"] = True
@@ -375,6 +471,7 @@ def _choose_and_answer(
         search_notes,
         search_web,
         account_info,
+        my_courses,
         review_status,
         concept_mastery,
         chapter_mastery,
@@ -394,6 +491,30 @@ def _choose_and_answer(
         raw = message_text(last).strip()
         parsed = parse_json_object(raw) or {}
         answer_text = str(parsed.get("answer") or raw)
+        if _asks_about_courses(topic) and not state["course"]:
+            return Command(
+                goto="model",
+                update={
+                    "messages": [
+                        HumanMessage(
+                            content=(
+                                "This is a question about the student's own courses. "
+                                "Call my_courses first and answer only from its returned data. "
+                                "Do not search lecture notes for course-list or progress facts."
+                            )
+                        )
+                    ]
+                },
+            )
+        if _asks_about_study(topic) and not state["study"]:
+            return Command(
+                goto="model",
+                update={"messages": [HumanMessage(content=(
+                    "This asks about the student's own learning progress. "
+                    "Call review_status, concept_mastery, or chapter_mastery for this course, "
+                    "then answer only from the returned study records."
+                ))]},
+            )
         if include_web and not state["web_done"] and not state["nudged_web"]:
             state["nudged_web"] = True
             return Command(
@@ -425,9 +546,9 @@ def _choose_and_answer(
         # If PDFs are selected and notes were never searched, force one search
         # even when the model asks for clarification instead of answering.
         # Skip greetings / account-name small talk.
-        if state["nudged"] or state["searched"] or state["study"] or state["account"]:
+        if state["nudged"] or state["searched"] or state["study"] or state["account"] or state["course"]:
             return None
-        if _is_greeting(topic) or _asks_about_self(topic):
+        if _is_greeting(topic) or _asks_about_self(topic) or _asks_about_courses(topic) or _asks_about_study(topic):
             return None
         state["nudged"] = True
         return Command(
@@ -452,6 +573,8 @@ def _choose_and_answer(
         )
 
     system_prompt = load_skill("qa") + (
+        ("\n\n" + load_skill("course") if _asks_about_courses(question) else "")
+    ) + (
         WEB_FOLLOWUP_NOTE if web_topic else (WEB_ENABLED_NOTE if include_web else "")
     )
     agent = create_agent(
@@ -504,7 +627,7 @@ def _choose_and_answer(
                 "cited_pages": [],
                 "web_sources": [],
             }
-    return state["pages"], parsed, state["study"], state["web"], state["account"]
+    return state["pages"], parsed, state["study"], state["web"], state["account"], state["course"]
 
 
 def _final_parsed(messages: list, state: dict) -> dict:
@@ -529,7 +652,7 @@ def _final_parsed(messages: list, state: dict) -> dict:
     if raw:
         retry = parse_json_object(
             invoke_text(
-                load_skill("qa"),
+                load_skill("qa") + ("\n\n" + load_skill("course") if state["course"] else ""),
                 "Return one JSON object only, written for the student.\n\n"
                 f"Draft answer to rewrite as JSON:\n{raw}",
             )
@@ -695,6 +818,10 @@ def _web_followup_topic(
     if not _offers_web(str(last.get("answer") or "")):
         return None
     prior = str(last.get("question") or "").strip()
+    # Old replies may have offered a public search for private course facts.
+    # A short acknowledgement must not send those facts to a web search.
+    if _asks_about_courses(prior) or _asks_about_study(prior) or _asks_about_self(prior):
+        return None
     return prior or None
 
 
@@ -814,6 +941,12 @@ def _is_greeting(text: str) -> bool:
         "多谢",
         "感谢",
         "好的谢谢",
+        "好",
+        "好的",
+        "明白了",
+        "收到",
+        "ok",
+        "okay",
         "拜拜",
         "再见",
         "bye",
@@ -842,6 +975,30 @@ def _asks_about_self(question: str) -> bool:
         "who am i",
         "my username",
         "my account",
+    )
+    return any(marker in text for marker in markers)
+
+
+def _asks_about_courses(question: str) -> bool:
+    text = str(question or "").casefold()
+    markers = (
+        "my course", "my courses", "how many courses", "what courses do i have",
+        "list my courses", "each course", "all courses", "course status",
+        "course progress", "courses progress", "my classes", "how are my courses",
+        "我的课程", "我的课", "我有几门课", "我有几门课程", "几门课", "几门课程",
+        "每门课", "每一门课", "所有课程", "课程列表", "课程情况", "课程进度",
+        "各门课程", "各门课", "当前课程进度", "这门课进度", "这门课程进度",
+    )
+    return any(marker in text for marker in markers)
+
+
+def _asks_about_study(question: str) -> bool:
+    text = str(question or "").casefold()
+    markers = (
+        "我的学习情况", "我的学习进度", "我学得怎么样", "我的掌握情况",
+        "我的复习情况", "我哪些概念没掌握", "我的错题", "我的考试情况",
+        "my learning progress", "my study progress", "my mastery",
+        "how am i doing", "my wrong answers", "my practice results",
     )
     return any(marker in text for marker in markers)
 
@@ -1076,6 +1233,73 @@ def _citation_key(item, allowed: set[tuple[int, int]]) -> tuple[int, int] | None
     if len(matches) == 1:
         return matches[0]
     return None
+
+
+ATTACHED_CHARS = 28000
+
+
+def answer_attached_chat(
+    user_id: int,
+    course_id: int,
+    question: str,
+    document_ids: list[int] | None,
+    tab_id: str | None = None,
+    include_web: bool = False,
+) -> dict:
+    """Ordinary chat with one lecture PDF already attached. No citations."""
+    text = question.strip()
+    if not text:
+        raise ValueError("Write a question")
+    if len(text) > 2000:
+        raise ValueError("Question is too long")
+    course = get_course(user_id, course_id)
+    if course is None:
+        raise LookupError("Course not found")
+    selected = _selected_document_ids(course, document_ids or [])
+    attachment = _attachment_text(load_document_pages(selected))
+    web = search_pages(text) if include_web else []
+    web_text = _format_web(web) if web else ""
+    reply = invoke_messages(
+        [
+            SystemMessage(
+                content=(
+                    "You are chatting with a student. A lecture PDF is already attached. "
+                    "Use the conversation and that PDF. When web pages are included, you may use them as well. "
+                    "Reply in the student's language, in plain sentences. "
+                    "Do not list sources, citations, filenames, or page numbers unless the student asks where something is. "
+                    "Do not output JSON."
+                )
+            ),
+            *memory_messages(recent_turns(user_id, course_id, MEMORY_TURNS, tab_id)),
+            HumanMessage(
+                content=(
+                    f"Attached PDF:\n{attachment or 'No readable text was extracted from the PDF.'}\n\n"
+                    + (f"Web pages:\n{web_text}\n\n" if include_web else "")
+                    + f"Student: {text}"
+                )
+            ),
+        ]
+    )
+    answer = (message_text(reply).strip() or "好的。")[:MAX_ANSWER]
+    return _store(course, user_id, text, answer, [], False, [], "chat", tab_id)
+
+
+def _attachment_text(rows: list[dict]) -> str:
+    parts: list[str] = []
+    used = 0
+    for row in rows:
+        body = str(row.get("body") or "").strip()
+        if not body:
+            continue
+        piece = (
+            f"--- {row.get('filename') or 'PDF'} page {int(row.get('page_number') or 0)} ---\n"
+            f"{body[:PAGE_CHARS]}"
+        )
+        if used and used + len(piece) > ATTACHED_CHARS:
+            break
+        parts.append(piece)
+        used += len(piece)
+    return "\n\n".join(parts)
 
 
 def _store(

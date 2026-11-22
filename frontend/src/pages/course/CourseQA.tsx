@@ -65,6 +65,7 @@ function groupTabs(rows: QAResponse[]): Tab[] {
 
 function answerBadge(response: QAResponse) {
   if (response.refused) return 'Insufficient evidence'
+  if (response.origin === 'course') return 'Answer from your courses'
   if (response.origin === 'account') return 'Answer from your account'
   if (response.origin === 'chat') return 'Noted'
   if (response.web_sources?.length) return 'Supplemented from the web'
@@ -425,8 +426,8 @@ export default function CourseQA({
 
           {!usable && (
             <Notice>
-              No lecture PDFs are ready yet, so replies stay casual chat. You can
-              still turn on Web search. Upload materials on{' '}
+              No lecture PDFs are ready yet. You can still ask about your courses
+              and learning progress, or use casual chat and Web search. Upload materials on{' '}
               <Link href={`/courses/${courseId}/info`}>
                 Course information
               </Link>{' '}
@@ -468,7 +469,7 @@ export default function CourseQA({
                 </button>
                 {!documentIds.length && !includeWeb && (
                   <span className="muted small">
-                    No PDF selected — casual chat. Turn on Web to search online.
+                    No PDF selected — ask about your courses or progress, or chat. Turn on Web to search online.
                   </span>
                 )}
                 {includeWeb && (
@@ -491,22 +492,22 @@ export default function CourseQA({
                     setError('')
                   }}
                   onKeyDown={(event) => {
-                    if (event.key !== 'Enter' || event.shiftKey) return
-                    if (event.nativeEvent.isComposing) return
+                    if (event.key !== 'Enter') return
+                    if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return
+                    if (event.shiftKey) return
                     event.preventDefault()
                     event.currentTarget.form?.requestSubmit()
                   }}
                   placeholder={
                     !documentIds.length
                       ? includeWeb
-                        ? 'Ask anything… (casual chat + web search)'
-                        : 'Say something… (no PDF — casual chat, or turn on Web)'
+                        ? 'Ask about your courses, progress, or anything online…'
+                        : 'Ask about your courses or learning progress…'
                       : activeTab?.messages.length
                         ? 'Ask a follow-up…'
                         : 'Ask anything about your course materials…'
                   }
                 />
-
                 <div className="qa-composer-actions">
                   {activeTab?.messages.length ? (
                     <button
@@ -518,14 +519,15 @@ export default function CourseQA({
                       New chat
                     </button>
                   ) : null}
-                  <button
-                    className="button small"
-                    disabled={busy}
-                  >
-                    {busy ? '…' : 'Send'}
-                  </button>
+                    <button
+                      className="button"
+                      disabled={busy}
+                    >
+                      {busy ? '…' : 'Send'}
+                    </button>
                 </div>
               </div>
+              <p className="muted small qa-composer-hint">Press Enter to send; Shift+Enter adds a new line.</p>
             </form>
           )}
         </section>

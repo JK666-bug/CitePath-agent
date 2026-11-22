@@ -8,6 +8,7 @@ export type PracticeQuestion = {
   prompt: string
   options: string[]
   sources: Source[]
+  decision?: { mode: 'agent' | 'fallback'; reason: string; trace: { tool: string; arguments?: Record<string, unknown> }[] } | null
 }
 
 export type PracticeFeedback = {

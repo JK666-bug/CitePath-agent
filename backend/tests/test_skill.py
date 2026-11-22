@@ -1,9 +1,12 @@
 import unittest
+from unittest.mock import patch
 
 from agent.web import _focus, _public_http, _result_url
 
 from agent.qa import (
+    answer_question,
     _accepts_web,
+    _web_followup_topic,
     _asks_about_self,
     _is_greeting,
     _lecture_supported,
@@ -68,6 +71,7 @@ class SkillLoadTest(unittest.TestCase):
         self.assertTrue(_is_greeting("你好"))
         self.assertTrue(_is_greeting("hello"))
         self.assertTrue(_is_greeting("谢谢"))
+        self.assertTrue(_is_greeting("好的"))
         self.assertFalse(_is_greeting("When is recovery funding released?"))
         self.assertFalse(_is_greeting("你好，珊瑚白化是什么"))
 
@@ -112,6 +116,49 @@ class SkillLoadTest(unittest.TestCase):
 
         self.assertIn("没有返回可用", EMPTY_WEB)
         self.assertIn("Do not call search_notes", WEB_FOLLOWUP_NOTE)
+
+
+class CourseRoutingTest(unittest.TestCase):
+    def test_acknowledgement_does_not_web_search_private_course_question(self):
+        previous = [{"question": "我的学习情况", "answer": "需要我帮你联网查一下吗？"}]
+        with patch("agent.qa.recent_turns", return_value=previous):
+            self.assertIsNone(_web_followup_topic(3, 7, "好的", "tab-1"))
+
+    def test_course_count_uses_agent_without_selected_pdfs(self):
+        with (
+            patch("agent.qa.get_course", return_value={"id": 7, "name": "Test", "documents": []}),
+            patch("agent.qa._web_followup_topic", return_value=None),
+            patch("agent.qa._choose_and_answer", return_value=([], {"answer": "You have 2 courses."}, True, [], False, True)) as agent,
+            patch("agent.qa._store", return_value={"ok": True}) as store,
+        ):
+            self.assertEqual(answer_question(3, 7, "我有几门课", []), {"ok": True})
+        self.assertEqual(agent.call_args.args[0], [])
+        self.assertEqual(store.call_args.args[4], [])
+        self.assertEqual(store.call_args.args[7], "course")
+
+    def test_course_answer_does_not_cite_selected_lecture(self):
+        page = {"document_id": 11, "page_number": 1, "filename": "lecture.pdf"}
+        with (
+            patch("agent.qa.get_course", return_value={"id": 7, "name": "Test", "documents": []}),
+            patch("agent.qa._web_followup_topic", return_value=None),
+            patch("agent.qa._choose_and_answer", return_value=([page], {"answer": "You have 2 courses.", "cited_pages": [page]}, True, [], False, True)),
+            patch("agent.qa._store", return_value={"ok": True}) as store,
+        ):
+            answer_question(3, 7, "我有几门课", [11])
+        self.assertEqual(store.call_args.args[4], [])
+        self.assertEqual(store.call_args.args[7], "course")
+
+    def test_learning_progress_uses_study_tools_without_selected_pdfs(self):
+        with (
+            patch("agent.qa.get_course", return_value={"id": 7, "name": "Test", "documents": []}),
+            patch("agent.qa._web_followup_topic", return_value=None),
+            patch("agent.qa._choose_and_answer", return_value=([], {"answer": "Two concepts mastered."}, True, [], False, False)) as agent,
+            patch("agent.qa._store", return_value={"ok": True}) as store,
+        ):
+            answer_question(3, 7, "我的学习情况", [])
+        self.assertEqual(agent.call_args.args[0], [])
+        self.assertEqual(store.call_args.args[4], [])
+        self.assertEqual(store.call_args.args[7], "study")
 
 
 class StudyReportTest(unittest.TestCase):

@@ -1,0 +1,23 @@
+%%{init: {"flowchart": {"htmlLabels": true, "curve": "basis", "padding": 18, "nodeSpacing": 28, "rankSpacing": 40}}}%%
+flowchart TB
+  M["收到问题"] --> G{"寒暄 / 闲聊?"}
+  G -->|是| CHAT["自然语言回复<br/>不搜讲义"]
+  G -->|否| PDF{"是否选中 PDF?"}
+  PDF -->|否| WEB1{"Web 开启?"}
+  WEB1 -->|是| SW1["search_web"]
+  WEB1 -->|否| CHAT
+  PDF -->|是| SN["search_notes<br/>混合检索"]
+  SN --> OK{"讲义是否足够?"}
+  OK -->|是| ANS["基于讲义作答<br/>带页码引用"]
+  OK -->|否| ASK["说明缺口<br/>询问是否联网"]
+  ASK --> YES{"用户回复 好的/可以?"}
+  YES -->|是| SW2["仅 search_web<br/>不再复述讲义"]
+  YES -->|否| STOP["停止 / 等待"]
+  SW2 --> HIT{"有网页结果?"}
+  HIT -->|是| WANS["基于网页作答"]
+  HIT -->|否| MISS["简短说明未找到"]
+
+  classDef step fill:#FFF8EF,stroke:#C89D7C,stroke-width:1.5px,color:#41352E
+  classDef store fill:#F5ECE0,stroke:#A46945,stroke-width:1.5px,color:#41352E
+  class M,CHAT,SN,ANS,ASK,SW1,SW2,WANS,MISS,STOP step
+  class G,PDF,WEB1,OK,YES,HIT store

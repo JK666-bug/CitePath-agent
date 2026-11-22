@@ -3,10 +3,9 @@ import json
 from agent.exam import _ask, _explain, _grade_shorts, _option_text, _real_option
 from agent.practice_select import (
     all_mastered,
-    learn_kind,
-    next_unmastered,
     record_learn,
 )
+from agent.practice_decision import decide_next_question
 from db.exam_cases import list_exam_cases, load_case_pages
 from db.exams import load_chapter
 from db.practice import (
@@ -216,21 +215,24 @@ def _ensure_question(user_id: int, course_id: int, session_id: int, chapter: dic
         _store_report(user_id, session_id, chapter, closing=True)
         return
     progress = progress_map(user_id, [int(item["id"]) for item in chapter["concepts"]])
-    concept = next_unmastered(chapter["concepts"], progress)
-    if concept is None:
+    if all_mastered(chapter["concepts"], progress):
         _store_report(user_id, session_id, chapter, closing=True)
         return
-    state = progress.get(concept["id"], {})
-    streak = int(state.get("streak") or 0)
-    miss = latest_miss(user_id, concept["id"]) if streak < 1 else None
+    decision = decide_next_question(
+        user_id, chapter["concepts"], progress,
+        load_session_attempts(session_id), session.get("prefs") or {},
+    )
+    concept = next(item for item in chapter["concepts"] if int(item["id"]) == decision["concept_id"])
+    miss = latest_miss(user_id, concept["id"])
     question = _write_question(
         concept,
         chapter["pages"],
-        learn_kind(streak),
+        decision["kind"],
         miss,
         session.get("prefs") or {},
         int(session["course_id"]),
     )
+    question["decision"] = decision
     insert_question(session_id, "learn", int(session["review_round"]), question)
 
 

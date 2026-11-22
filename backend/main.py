@@ -10,7 +10,7 @@ from typing import Literal
 from agent.exam import open_exam, save_exam_drafts, start_exam, submit_exam
 from agent.practice import answer_practice, open_practice, start_practice
 from agent.llm import ping
-from agent.qa import answer_question, delete_question_tab, list_questions
+from agent.qa import answer_attached_chat, answer_question, delete_question_tab, list_questions
 from db.auth import authenticate, close_session, open_session, register_user, user_from_token
 from db.courses import (
     create_course,
@@ -74,6 +74,7 @@ class QuestionBody(BaseModel):
     document_ids: list[int] = Field(default_factory=list, max_length=40)
     tab_id: str | None = Field(default=None, max_length=64)
     include_web: bool = False
+    chat: bool = False
 
 
 class PlanWindow(BaseModel):
@@ -589,7 +590,7 @@ def create_plan(
     raise HTTPException(
         status_code=409,
         detail=(
-            "Use Rebuild chapters to manage chapters. "
+            "Chapter updates happen when materials are uploaded. "
             "Daily scheduling is a separate operation."
         ),
     )
@@ -798,6 +799,15 @@ def create_question(
     user: dict = Depends(current_user),
 ):
     try:
+        if body.chat:
+            return answer_attached_chat(
+                user["id"],
+                course_id,
+                body.question,
+                body.document_ids,
+                body.tab_id,
+                body.include_web,
+            )
         return answer_question(
             user["id"],
             course_id,
