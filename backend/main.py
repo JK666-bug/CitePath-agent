@@ -5,15 +5,16 @@ from pathlib import Path
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+from typing import Literal
 
 from agent.exam import open_exam, save_exam_drafts, start_exam, submit_exam
 from agent.practice import answer_practice, open_practice, start_practice
 from agent.llm import ping
-from agent.plan import generate_plan
 from agent.qa import answer_question, delete_question_tab, list_questions
 from db.auth import authenticate, close_session, open_session, register_user, user_from_token
 from db.courses import (
     create_course,
+    update_course_settings,
     delete_course,
     delete_document_rows,
     get_course,
@@ -26,6 +27,13 @@ from db.practice import list_chapter_reports
 from db.uploads import existing_upload, save_document
 from ingest.pdf_reader import read_pdf
 from vector.segments import delete_segments
+from agent.chapterization import rebuild_chapters
+from db.chapterization import (
+    ChapterizationConflict,
+    chapterization_options,
+)
+from db import scheduling
+from agent.planner import run_planner
 
 app = FastAPI(title="CitePath")
 app.add_middleware(
@@ -50,6 +58,15 @@ class CourseBody(BaseModel):
     student_brief: str = Field(max_length=MAX_BRIEF_LENGTH)
 
 
+class CourseSettingsBody(BaseModel):
+    startDate: str = Field(default="", max_length=10)
+    name: str = Field(max_length=255)
+    note: str = Field(default="", max_length=9000)
+    deadline: str = Field(default="", max_length=10)
+    earlyDays: int = Field(default=0, ge=0, le=365)
+    events: list[dict] = Field(default_factory=list, max_length=100)
+
+
 class QuestionBody(BaseModel):
     question: str = Field(max_length=2000)
     document_ids: list[int] = Field(default_factory=list, max_length=40)
@@ -62,6 +79,22 @@ class PlanWindow(BaseModel):
     end: str = Field(max_length=10)
     note: str = Field(default="", max_length=9000)
     document_ids: list[int] = Field(default_factory=list, max_length=40)
+
+
+class ChapterRebuildBody(BaseModel):
+    token: str = Field(min_length=64, max_length=64)
+    document_ids: list[int] = Field(default_factory=list, max_length=40)
+    confirmed: bool = False
+
+
+class ScheduleBody(BaseModel):
+    request_id: str = Field(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
+    profile: dict | None = None
+    mode: Literal["agent", "baseline"] | None = None
+
+
+class SchedulingRequirementsBody(BaseModel):
+    profile: dict
 
 
 class ExamAnswer(BaseModel):
@@ -191,6 +224,17 @@ def course_detail(course_id: int, user: dict = Depends(current_user)):
     return course
 
 
+@app.put("/api/courses/{course_id}/settings")
+def update_settings(course_id: int, body: CourseSettingsBody, user: dict = Depends(current_user)):
+    try:
+        update_course_settings(user["id"], course_id, body.name, body.note, body.deadline, body.earlyDays, body.events, body.startDate)
+        return get_course(user["id"], course_id)
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
 @app.post("/api/courses/{course_id}/documents")
 async def add_document(
     course_id: int,
@@ -300,9 +344,10 @@ def remove_document(
     document_id: int,
     user: dict = Depends(current_user),
 ):
-    if not owns_document(user["id"], course_id, document_id):
-        raise HTTPException(status_code=404, detail="Material not found")
-    delete_document_rows(document_id)
+    try:
+        delete_document_rows(user["id"], course_id, document_id)
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
     try:
         delete_segments(document_id)
     except Exception:
@@ -425,30 +470,138 @@ def remove_exam_case(
 @app.get("/api/courses/{course_id}/plan")
 def course_plan(course_id: int, user: dict = Depends(current_user)):
     try:
+        scheduling.repair_tasks(user["id"], course_id)
         return get_plan(user["id"], course_id)
     except LookupError as error:
         raise HTTPException(status_code=404, detail="Course not found") from error
 
 
-@app.post("/api/courses/{course_id}/plan")
-def create_plan(course_id: int, body: PlanWindow, user: dict = Depends(current_user)):
+@app.get("/api/courses/{course_id}/workflow")
+def course_workflow(course_id: int, user: dict = Depends(current_user)):
     try:
-        return generate_plan(
-            user["id"],
-            course_id,
-            body.start,
-            body.end,
-            body.note,
-            body.document_ids,
+        return scheduling.workflow_status(user["id"], course_id)
+    except LookupError as error:
+        raise HTTPException(404, str(error)) from error
+    except (ValueError, ChapterizationConflict) as error:
+        raise HTTPException(409, str(error)) from error
+
+
+@app.post("/api/courses/{course_id}/tasks/repair")
+def repair_course_tasks(course_id: int, preview: bool = True, user: dict = Depends(current_user)):
+    try:
+        return scheduling.repair_tasks(user["id"], course_id, preview=preview)
+    except LookupError as error:
+        raise HTTPException(404, str(error)) from error
+
+
+@app.put("/api/courses/{course_id}/schedule/requirements")
+def update_scheduling_requirements(course_id: int, body: SchedulingRequirementsBody, user: dict = Depends(current_user)):
+    try:
+        return {"profile": scheduling.save_requirements(user["id"], course_id, body.profile)}
+    except LookupError as error:
+        raise HTTPException(404, str(error)) from error
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
+
+
+@app.get("/api/courses/{course_id}/schedule/runs")
+def scheduling_runs(course_id: int, user: dict = Depends(current_user)):
+    try:
+        return {"runs": scheduling.recent_runs(user["id"], course_id)}
+    except LookupError as error:
+        raise HTTPException(404, str(error)) from error
+
+
+@app.get("/api/courses/{course_id}/plan/versions")
+def plan_versions(course_id: int, user: dict = Depends(current_user)):
+    try:
+        return {"versions": scheduling.plan_history(user["id"], course_id)}
+    except LookupError as error:
+        raise HTTPException(404, str(error)) from error
+
+
+@app.get("/api/courses/{course_id}/plan/versions/{version}")
+def plan_version(course_id: int, version: int, user: dict = Depends(current_user)):
+    try:
+        return scheduling.historical_plan(user["id"], course_id, version)
+    except LookupError as error:
+        raise HTTPException(404, str(error)) from error
+
+
+@app.post("/api/courses/{course_id}/schedule")
+def schedule_course(course_id: int, body: ScheduleBody, user: dict = Depends(current_user)):
+    try:
+        profile, mode = body.profile, body.mode
+        if profile is None:
+            profile, saved_mode = scheduling.saved_schedule_preferences(user["id"], course_id)
+            mode = mode or saved_mode
+        return run_planner(user["id"], course_id, body.request_id, profile, mode or "agent")
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
+    except LookupError as error:
+        raise HTTPException(404, str(error)) from error
+
+@app.post("/api/courses/{course_id}/plan")
+def create_plan(
+    course_id: int,
+    body: PlanWindow,
+    user: dict = Depends(current_user),
+):
+    if get_course(user["id"], course_id) is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Course not found",
+        )
+
+    raise HTTPException(
+        status_code=409,
+        detail=(
+            "Use Rebuild chapters to manage chapters. "
+            "Daily scheduling is a separate operation."
+        ),
+    )
+
+@app.get("/api/courses/{course_id}/chapters/options")
+def get_chapterization_options(
+    course_id: int,
+    user: dict = Depends(current_user),
+):
+    try:
+        return chapterization_options(user["id"], course_id)
+    except LookupError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except ChapterizationConflict as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+
+
+@app.post("/api/courses/{course_id}/chapters/rebuild")
+def rebuild_course_chapters(
+    course_id: int,
+    body: ChapterRebuildBody,
+    user: dict = Depends(current_user),
+):
+    try:
+        return rebuild_chapters(
+            user_id=user["id"],
+            course_id=course_id,
+            token=body.token,
+            document_ids=body.document_ids,
+            confirmed=body.confirmed,
         )
     except LookupError as error:
-        raise HTTPException(status_code=404, detail="Course not found") from error
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except ChapterizationConflict as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
-    except RuntimeError as error:
-        raise HTTPException(status_code=500, detail=str(error)) from error
     except Exception as error:
-        raise HTTPException(status_code=502, detail="Could not create a study plan") from error
+        raise HTTPException(
+            status_code=502,
+            detail=(
+                "Could not rebuild chapters. "
+                "The existing chapters were preserved."
+            ),
+        ) from error
 
 
 @app.post("/api/courses/{course_id}/plan/tasks/{task_id}/complete")

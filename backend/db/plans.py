@@ -121,10 +121,13 @@ def load_usable_pages(
 
 
 def get_plan(user_id: int, course_id: int) -> dict:
+    from db.practice import chapter_practice_progress, ensure_practice_storage
+
     course = get_course(user_id, course_id)
     if course is None:
         raise LookupError("Course not found")
     ensure_plan_storage()
+    ensure_practice_storage()
     connection = connect()
     try:
         with connection.cursor() as cursor:
@@ -138,13 +141,35 @@ def get_plan(user_id: int, course_id: int) -> dict:
             )
             row = cursor.fetchone()
             chapters = _load_chapters(cursor, course_id)
+            practice_progress = chapter_practice_progress(cursor, user_id, course_id) if chapters else {}
     finally:
         connection.close()
-    plan = _plan_or_none(None if row is None else row["plan_json"])
-    if plan is not None and chapters:
+    plan = _plan_or_none(
+        None if row is None else row["plan_json"]
+    )
+
+    if plan is not None:
+        states = plan.get("chapter_states") or {}
+
+        for chapter in chapters:
+            state = states.get(
+                str(chapter["id"])
+            ) or {}
+
+            chapter["chapter_status"] = str(
+                state.get("chapter_status") or "planned"
+            )
+            chapter["review_status"] = str(
+                state.get("review_status") or "not_assessed"
+            )
+            if chapter["id"] in practice_progress:
+                chapter["practice_progress"] = practice_progress[chapter["id"]]
+
         plan["chapters"] = chapters
+
     if plan is not None:
         _stamp_document_numbers(plan, course_id)
+
     status = "ready" if plan else "draft"
     return {"status": status, "plan": plan}
 
@@ -217,23 +242,63 @@ def save_plan(course_id: int, plan: dict) -> None:
         connection.close()
 
 
-def complete_task(user_id: int, course_id: int, task_id: str) -> dict:
-    current = get_plan(user_id, course_id)
-    plan = current["plan"]
-    if not plan:
-        raise LookupError("Task not found")
-    found = False
-    for task in plan["tasks"]:
-        if task.get("id") != task_id:
-            continue
-        found = True
-        task["status"] = "Completed"
-        break
-    if not found:
-        raise LookupError("Task not found")
-    save_plan(course_id, plan)
-    return {"status": "ready", "plan": plan}
+def complete_read_task(
+    user_id: int,
+    course_id: int,
+    task_id: str,
+) -> dict:
+    from db.plan_sync import (
+        ensure_learning_sync_storage,
+        lock_learning_course,
+        sync_learning_state,
+    )
 
+    ensure_learning_sync_storage()
+    connection = connect()
+
+    try:
+        with connection.cursor() as cursor:
+            lock_learning_course(
+                cursor,
+                user_id,
+                course_id,
+            )
+
+            sync_learning_state(
+                cursor,
+                user_id,
+                course_id,
+                read_task_id=task_id,
+            )
+
+        connection.commit()
+
+    except Exception:
+        connection.rollback()
+        raise
+
+    finally:
+        connection.close()
+
+    return get_plan(user_id, course_id)
+
+
+def complete_task(
+    user_id: int,
+    course_id: int,
+    task_id: str,
+) -> dict:
+    """
+    Keep the existing API import compatible.
+
+    Practice and Review are completed by learning evidence,
+    not by this manual endpoint.
+    """
+    return complete_read_task(
+        user_id,
+        course_id,
+        task_id,
+    )
 
 def _delete_chapters(cursor, course_id: int) -> None:
     cursor.execute("SELECT id FROM plan_chapters WHERE course_id = %s", (course_id,))
@@ -248,6 +313,23 @@ def _delete_chapters(cursor, course_id: int) -> None:
     cursor.execute(f"DELETE FROM plan_chapter_pages WHERE chapter_id IN ({marks})", ids)
     cursor.execute(f"DELETE FROM plan_concepts WHERE chapter_id IN ({marks})", ids)
     cursor.execute("DELETE FROM plan_chapters WHERE course_id = %s", (course_id,))
+
+
+def load_active_chapter_ids(cursor, course_id: int) -> list[int]:
+    """Exclude chapters whose source PDFs have all been removed."""
+    cursor.execute(
+        """
+        SELECT c.id FROM plan_chapters c
+        WHERE c.course_id = %s AND EXISTS (
+            SELECT 1 FROM plan_chapter_pages p
+            JOIN documents d ON d.id = p.document_id AND d.course_id = c.course_id
+            WHERE p.chapter_id = c.id
+        )
+        ORDER BY c.position, c.id
+        """,
+        (course_id,),
+    )
+    return [int(row["id"]) for row in cursor.fetchall()]
 
 
 def _load_chapters(cursor, course_id: int) -> list[dict]:
@@ -305,6 +387,7 @@ def _load_chapters(cursor, course_id: int) -> list[dict]:
             "sources": sources.get(int(row["id"]), []),
         }
         for row in rows
+        if int(row["id"]) in sources
     ]
 
 

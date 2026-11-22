@@ -1,8 +1,11 @@
 //集中定义课程、任务和练习的数据格式。
 export type CourseConfig = {
+  startDate?: string
   deadline: string
   earlyDays: number
   note: string
+  events?: { title: string; date: string }[]
+  scheduling_profile?: Partial<NonNullable<StudyPlan['scheduling_profile']>>
 }
 
 export type Material = {
@@ -36,12 +39,27 @@ export type Task = {
   title: string
   kind: 'Reading' | 'Practice' | 'Review'
   date: string
+  schedule?: { date: string; minutes: number }[]
+  estimated_minutes?: number
+  estimate_basis?: string
   status:
     | 'Not started'
     | 'In progress'
     | 'Completed'
+  completion_source?:
+    | 'student'
+    | 'practice_submit'
+    | 'exam_pass'
+    | ''
   sources: Source[]
   concepts: string[]
+}
+
+export type ChapterPracticeProgress = {
+  open_session_id: number | null
+  has_finished: boolean
+  mastered: number
+  total: number
 }
 
 export type Chapter = {
@@ -49,6 +67,18 @@ export type Chapter = {
   title: string
   concepts: string[]
   sources: Source[]
+  practice_progress?: ChapterPracticeProgress
+  chapter_status?:
+    | 'planned'
+    | 'learning'
+    | 'learned'
+    | 'practice_in_progress'
+    | 'exam_pending'
+    | 'completed'
+  review_status?:
+    | 'not_assessed'
+    | 'required'
+    | 'passed'
 }
 
 export type StudyPlan = {
@@ -58,11 +88,19 @@ export type StudyPlan = {
   tasks: Task[]
   chapters: Chapter[]
   reason: string
+  schedule_run_id?: string
+  schedule_mode?: 'agent' | 'baseline'
+  scheduling_profile?: {
+    start: string; end: string; daily_minutes: number; weekdays: number[]
+    off_dates: string[]; priority_chapter_ids: string[]; strategy: string; note: string
+  }
 }
 
 export type CalendarTask = Task & {
   courseId: string
   courseName: string
+  minutes?: number
+  practice_progress?: ChapterPracticeProgress
 }
 
 export type Question = {

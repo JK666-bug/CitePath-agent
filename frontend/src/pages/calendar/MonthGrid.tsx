@@ -6,11 +6,13 @@ export default function MonthGrid({
   selected,
   tasks,
   onSelect,
+  events,
 }: {
   month: Date
   selected: string
   tasks: CalendarTask[]
   onSelect: (date: string) => void
+  events: { date: string; title: string; courseName: string }[]
 }) {
   const first = new Date(
     month.getFullYear(),
@@ -175,6 +177,7 @@ export default function MonthGrid({
                         </span>
 
                         <span className="calendar-cell-tasks">
+                          {events.filter(event => event.date === key).map((event, i) => <span className="calendar-course calendar-event" key={`event-${i}`}>{event.courseName} · {event.title}</span>)}
                           {courses.map((course) => (
                             <span
                               className={

@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import type { Task } from './types'
+import type { ChapterPracticeProgress, Task } from './types'
 
 import { prettyDate } from '../../shared/format'
+import { PracticeEntry, PracticeMastery } from '../practice/PracticeEntry'
 import PracticeStartModal from '../practice/PracticeStartModal'
 
 import {
@@ -15,11 +16,13 @@ import {
 
 export default function TaskDetails({
   task,
+  practiceProgress,
   courseId,
   onClose,
   onComplete,
 }: {
   task: Task | null
+  practiceProgress?: ChapterPracticeProgress
   courseId: string
   onClose: () => void
   onComplete: (task: Task) => void
@@ -43,10 +46,16 @@ export default function TaskDetails({
             <h3>{task.title}</h3>
 
             <p className="muted">
-              {prettyDate(task.date, true)}
+              {task.date ? prettyDate(task.date, true) : 'Not scheduled'}
               {' · '}
               {task.status}
             </p>
+
+            {task.kind === 'Practice' && courseId !== 'demo' && <PracticeMastery progress={practiceProgress} />}
+
+            {Boolean(task.schedule?.length) && <ul>
+              {task.schedule?.map((slot) => <li key={slot.date}>{prettyDate(slot.date)} · {slot.minutes} min</li>)}
+            </ul>}
 
             <div>
               <strong>Concepts</strong>
@@ -78,23 +87,32 @@ export default function TaskDetails({
                     Open chapter practice
                   </Link>
                 ) : (
-                  <button
+                  <PracticeEntry
                     className="button"
-                    onClick={() => setPracticeOpen(true)}
-                  >
-                    Start practice
-                  </button>
+                    courseId={courseId}
+                    progress={practiceProgress}
+                    onStart={() => setPracticeOpen(true)}
+                  />
                 )
               ) : task.kind === 'Reading' && courseId !== 'demo' ? (
-                <Link
-                  className="button"
-                  href={
-                    `/courses/${courseId}/read?task=` +
-                    encodeURIComponent(task.id)
-                  }
-                >
-                  Open reading
-                </Link>
+                <>
+                  <Link
+                    className="button"
+                    href={
+                      `/courses/${courseId}/read?task=` +
+                      encodeURIComponent(task.id)
+                    }
+                  >
+                    Open reading
+                  </Link>
+                  <button
+                    className="button secondary"
+                    disabled={task.status === 'Completed'}
+                    onClick={() => onComplete(task)}
+                  >
+                    {task.status === 'Completed' ? 'Completed' : 'Done'}
+                  </button>
+                </>
               ) : task.kind === 'Review' && courseId !== 'demo' ? (
                 <Link
                   className="button"

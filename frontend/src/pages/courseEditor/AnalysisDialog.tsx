@@ -15,6 +15,7 @@ export default function AnalysisDialog({
   demo,
   courseId,
   onClose,
+  onSchedule,
 }: {
   open: boolean
   busy: boolean
@@ -23,6 +24,7 @@ export default function AnalysisDialog({
   demo: boolean
   courseId: string
   onClose: () => void
+  onSchedule?: () => void
 }) {
   const title = busy
     ? 'Preparing your course'
@@ -31,6 +33,8 @@ export default function AnalysisDialog({
       : demo
         ? 'Sample schedule updated'
         : 'Course saved'
+
+  const canSetSchedule = !busy && !error && !demo && Boolean(onSchedule)
 
   return (
     <Modal
@@ -51,22 +55,23 @@ export default function AnalysisDialog({
           {status}
         </p>
 
-        {error ? (
+        {error && (
           <Notice tone="error">
             {error}
           </Notice>
-        ) : (
-          !busy && (
-            <Notice>
-              {demo
-                ? 'The sample schedule was recalculated locally. Completed tasks were preserved. No AI analysis was performed.'
-                : 'Your course is saved. Automatic study-time estimation and plan generation require the planning service, which is not connected yet.'}
-            </Notice>
-          )
         )}
 
         {!busy && (
           <div className="actions">
+            {canSetSchedule && (
+              <button
+                type="button"
+                className="button"
+                onClick={onSchedule}
+              >
+                Set daily schedule
+              </button>
+            )}
             {demo ? (
               <Link
                 className="button"
@@ -77,25 +82,23 @@ export default function AnalysisDialog({
             ) : (
               courseId && (
                 <Link
-                  className="button"
-                  href={
-                    `/courses/${courseId}/info`
-                  }
+                  className={canSetSchedule ? 'button secondary' : 'button'}
+                  href={`/courses/${courseId}/plan`}
                 >
-                  View saved course
+                  View chapters
                 </Link>
               )
             )}
 
-            <button
-              type="button"
-              className="button secondary"
-              onClick={onClose}
-            >
-              {error
-                ? 'Back to form'
-                : 'Close'}
-            </button>
+            {!canSetSchedule && (
+              <button
+                type="button"
+                className="button secondary"
+                onClick={onClose}
+              >
+                {error ? 'Back to form' : 'Close'}
+              </button>
+            )}
           </div>
         )}
       </div>

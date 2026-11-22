@@ -165,7 +165,7 @@ export default function CourseCard({
             {plan
               ? prettyDate(
                   plan.tasks
-                    .map((task) => task.date)
+                    .flatMap((task) => task.schedule?.length ? task.schedule.map((slot) => slot.date) : task.date ? [task.date] : [])
                     .sort()
                     .at(-1) || '',
                 )
@@ -223,7 +223,7 @@ export default function CourseCard({
               next.map((task) => (
                 <div key={task.id}>
                   <small>
-                    {prettyDate(task.date)}
+                    {task.date ? prettyDate(task.date) : 'Not scheduled'}
                   </small>
                   <span>{task.title}</span>
                 </div>

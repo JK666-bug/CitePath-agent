@@ -2,17 +2,19 @@ import {
   useEffect,
   useState,
 } from 'react'
-
+import PlanHistory from './PlanHistory'
+import SourceSummary from './SourceSummary'
 import {
   BookOpen,
   PencilLine,
   RotateCcw,
 } from 'lucide-react'
 
-import type { CourseDetail, Task } from './types'
+import type { Chapter, CourseDetail, Task } from './types'
 import { decodeBrief } from '../courseEditor/brief'
 
 import { createExam } from '../exam/api'
+import { PracticeEntry, PracticeMastery } from '../practice/PracticeEntry'
 import PracticeStartModal from '../practice/PracticeStartModal'
 import { messageOf } from '../../shared/request'
 import { useStudy } from '../../shared/StudyProvider'
@@ -24,16 +26,12 @@ import {
 } from '../../shared/router'
 
 import {
-  addDays,
-  dateKey,
   prettyDate,
 } from '../../shared/format'
 
 import {
-  Empty,
   Loading,
   Notice,
-  Sources,
 } from '../../shared/components/UI'
 
 import PaceLine, {
@@ -41,9 +39,6 @@ import PaceLine, {
   taskTotals,
 } from '../../shared/components/PaceLine'
 
-import DocumentPicker, {
-  usableMaterials,
-} from './DocumentPicker'
 import TaskDetails from './TaskDetails'
 
 export default function CoursePlan({
@@ -58,7 +53,6 @@ export default function CoursePlan({
     completeTask,
     plans,
     loadPlan,
-    generateCoursePlan,
     finishPlanTask,
   } = useStudy()
 
@@ -92,29 +86,18 @@ export default function CoursePlan({
   const config =
     decodeBrief(course.student_brief)
 
-  const windowStart =
-    plan?.start || dateKey()
-
-  const windowEnd = suggestedEnd(
-    config.deadline,
-    config.earlyDays,
-    windowStart,
-    plan?.end,
-  )
-
-  const materials = usableMaterials(course.documents)
-  const ready = materials.length > 0
-
   function markComplete(task: Task) {
     if (isDemo) {
       completeTask(task.id)
       return
     }
 
-    void finishPlanTask(numericId, task.id)
+    if (task.kind === 'Reading') {
+      void finishPlanTask(numericId, task.id)
+    }
   }
 
-  if (!plan) {
+  if (!plan?.chapters.length) {
     return (
       <div className="stack">
         {entry?.error && (
@@ -123,45 +106,8 @@ export default function CoursePlan({
           </Notice>
         )}
 
-        <Empty title="Generate a study plan">
-          <p>
-            Choose the PDFs this plan should
-            use, then set the first and last
-            study day. You can generate another
-            plan later from different PDFs in
-            this course.
-          </p>
-
-          {!ready && (
-            <p>
-              Upload a readable PDF on the
-              Course information tab first.
-            </p>
-          )}
-
-          <PlanDates
-            key={`${windowStart}:${windowEnd}:${config.note}:${materials.map((item) => item.id).join(',')}`}
-            initialStart={windowStart}
-            initialEnd={windowEnd}
-            initialNote={config.note}
-            documents={course.documents}
-            busy={!ready || Boolean(entry?.generating)}
-            label={
-              entry?.generating
-                ? 'Creating your plan…'
-                : 'Generate plan'
-            }
-            onGenerate={(start, end, note, documentIds) =>
-              void generateCoursePlan(
-                numericId,
-                start,
-                end,
-                note,
-                documentIds,
-              )
-            }
-          />
-        </Empty>
+        <Notice>No chapters yet. Upload materials and analyze them in <Link href={`/courses/${courseId}/info`}>Course info</Link>.</Notice>
+        {plan && !isDemo && <PlanHistory courseId={numericId} version={plan.version} />}
       </div>
     )
   }
@@ -217,12 +163,15 @@ export default function CoursePlan({
             <div>
               <small>Planned finish</small>
               <strong>
-                {prettyDate(
-                  plan.tasks
-                    .map((task) => task.date)
-                    .sort()
-                    .at(-1) || plan.start,
-                )}
+                {plan.tasks.length
+                  ? prettyDate(
+                      plan.tasks
+                        .map((task) => task.date)
+                        .filter(Boolean)
+                        .sort()
+                        .at(-1) || plan.start,
+                    )
+                  : 'Not scheduled'}
               </strong>
             </div>
           </div>
@@ -231,54 +180,18 @@ export default function CoursePlan({
         <section className="panel">
           <h2>Schedule outlook</h2>
 
-          <PaceLine
-            plan={plan}
-            config={config}
-          />
+          {plan.start && plan.tasks.length ? (
+            <PaceLine plan={plan} config={config} />
+          ) : (
+            <p className="muted">
+              Learning tasks are ready. Generate a daily plan to place them on the calendar.
+            </p>
+          )}
         </section>
       </div>
 
-      {!isDemo && (
-        <section className="panel">
-          <h2>Plan dates</h2>
-
-          <p className="muted small">
-            Choose which PDFs to include.
-            Regenerating replaces this plan, so
-            you can switch to another set of
-            PDFs in the same course.
-          </p>
-
-          <PlanDates
-            key={`${plan.version}:${windowStart}:${windowEnd}:${config.note}:${materials.map((item) => item.id).join(',')}`}
-            initialStart={windowStart}
-            initialEnd={windowEnd}
-            initialNote={config.note}
-            documents={course.documents}
-            busy={Boolean(entry?.generating)}
-            label={
-              entry?.generating
-                ? 'Creating your plan…'
-                : 'Regenerate plan'
-            }
-            onGenerate={(start, end, note, documentIds) => {
-              if (
-                window.confirm(
-                  'Save this study brief and generate a new plan? Completed tasks in this plan will be reset.',
-                )
-              ) {
-                void generateCoursePlan(
-                  numericId,
-                  start,
-                  end,
-                  note,
-                  documentIds,
-                )
-              }
-            }}
-          />
-        </section>
-      )}
+      {!isDemo && <p className="muted small">Manage materials and daily scheduling in <Link href={`/courses/${courseId}/info`}>Course info</Link>.</p>}
+      {!isDemo && <PlanHistory courseId={numericId} version={plan.version} />}
 
       <div className="plan-version">
         <p className="muted small">
@@ -300,8 +213,11 @@ export default function CoursePlan({
         </div>
       </div>
 
-      {plan.chapters.map(
-        (chapter, chapterIndex) => (
+      {plan.chapters.map((chapter, chapterIndex) => {
+        const chapterTasks = plan.tasks.filter(task => task.chapterId === chapter.id)
+        const review = chapterTasks.find(task => task.kind === 'Review')
+
+        return (
           <section
             className="panel chapter-section"
             key={chapter.id}
@@ -314,37 +230,41 @@ export default function CoursePlan({
 
                 <h2>{chapter.title}</h2>
 
+                <div className="chapter-statuses">
+                  <span className="badge">{chapterStatusLabel(chapter.chapter_status)}</span>
+                  {!isDemo && (
+                    <span
+                      className={`badge ${chapter.review_status === 'required' ? 'warning' : ''}`}
+                      title={!chapter.review_status || chapter.review_status === 'not_assessed' ? 'A review task is added if you do not pass the exam.' : undefined}
+                    >
+                      {reviewStatusLabel(chapter.review_status)}
+                    </span>
+                  )}
+                </div>
+
                 <p className="muted small">
                   {chapter.concepts.join(' · ')}
                 </p>
               </div>
 
-              <Sources
-                sources={chapter.sources}
-              />
+              <div className="chapter-card-source">
+                <SourceSummary sources={chapter.sources} />
+              </div>
             </header>
 
             <div className="plan-task-list">
-              {plan.tasks
-                .filter(
-                  (task) =>
-                    task.chapterId ===
-                    chapter.id,
-                )
+              {chapterTasks
+                .filter(task => task.kind !== 'Review')
                 .map((task) => {
-                  const Icon =
-                    task.kind === 'Reading'
-                      ? BookOpen
-                      : task.kind === 'Practice'
-                        ? PencilLine
-                        : RotateCcw
+                  const Icon = task.kind === 'Reading' ? BookOpen : PencilLine
+                  const realPractice = task.kind === 'Practice' && !isDemo
+                  const canContinue = realPractice && chapter.practice_progress?.open_session_id != null
 
                   return (
                     <article
                       className={
                         `plan-task ${
-                          task.status ===
-                          'Completed'
+                          task.status === 'Completed' && !canContinue
                             ? 'completed'
                             : ''
                         }`
@@ -379,7 +299,10 @@ export default function CoursePlan({
                         </button>
 
                         <p className="muted small">
-                          {prettyDate(task.date)}
+                          {task.date ? prettyDate(task.date) : 'Not scheduled'}
+                          {Boolean(task.schedule?.length) && ` · ${task.estimated_minutes} min across ${task.schedule?.length} day(s)`}
+                          {' · '}
+                          {canContinue ? 'Practice in progress' : taskStatusLabel(task)}
                           {' · '}
                           Step{' '}
                           {plan.tasks.findIndex(
@@ -387,9 +310,10 @@ export default function CoursePlan({
                               item.id === task.id,
                           ) + 1}
                         </p>
+                        {realPractice && <PracticeMastery progress={chapter.practice_progress} />}
                       </div>
 
-                      <div className="plan-task-actions">
+                      <div className={`plan-task-actions${realPractice ? ' plan-practice-actions' : ''}`}>
                         {task.kind === 'Practice' ? (
                           isDemo ? (
                             <>
@@ -414,17 +338,14 @@ export default function CoursePlan({
                             </>
                           ) : (
                             <>
-                              <button
-                                className="button small"
-                                onClick={() => {
+                              <PracticeEntry
+                                courseId={courseId}
+                                progress={chapter.practice_progress}
+                                onStart={() => {
                                   setExamError('')
-                                  setPracticeChapterId(
-                                    Number(task.chapterId),
-                                  )
+                                  setPracticeChapterId(Number(task.chapterId))
                                 }}
-                              >
-                                Practice
-                              </button>
+                              />
                               <button
                                 className="button small secondary"
                                 disabled={
@@ -440,11 +361,12 @@ export default function CoursePlan({
                                     numericId,
                                     Number(task.chapterId),
                                   )
-                                    .then((created) =>
+                                    .then(async (created) => {
+                                      await loadPlan(numericId)
                                       navigate(
                                         `/exams/${courseId}/${created.id}`,
-                                      ),
-                                    )
+                                      )
+                                    })
                                     .catch((reason) => {
                                       setExamError(
                                         messageOf(reason),
@@ -460,32 +382,7 @@ export default function CoursePlan({
                               </button>
                             </>
                           )
-                        ) : task.kind === 'Review' ? (
-                          <>
-                            {isDemo ? (
-                              <span className="plan-task-action-slot" />
-                            ) : (
-                              <Link
-                                className="button small"
-                                href={
-                                  `/courses/${courseId}/chapters/${task.chapterId}/reports`
-                                }
-                              >
-                                Reports
-                              </Link>
-                            )}
-                            <button
-                              className="button small secondary"
-                              disabled={
-                                task.status === 'Completed' ||
-                                entry?.generating
-                              }
-                              onClick={() => markComplete(task)}
-                            >
-                              Done
-                            </button>
-                          </>
-                        ) : task.kind === 'Reading' && !isDemo ? (
+                        ) : !isDemo ? (
                           <>
                             <Link
                               className="button small"
@@ -529,13 +426,15 @@ export default function CoursePlan({
                     </article>
                   )
                 })}
+              <ChapterReview chapter={chapter} task={review} courseId={courseId} />
             </div>
           </section>
-        ),
-      )}
+        )
+      })}
 
       <TaskDetails
         task={selected}
+        practiceProgress={plan.chapters.find(chapter => chapter.id === selected?.chapterId)?.practice_progress}
         courseId={courseId}
         onClose={() =>
           navigate(`/courses/${courseId}/plan`)
@@ -555,161 +454,87 @@ export default function CoursePlan({
   )
 }
 
-function suggestedEnd(
-  deadline: string,
-  earlyDays: number,
-  start: string,
-  saved?: string,
-) {
-  if (
-    saved &&
-    /^\d{4}-\d{2}-\d{2}$/.test(saved) &&
-    saved >= start
-  ) {
-    return saved
-  }
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(deadline)) {
-    const early = addDays(deadline, -earlyDays)
-    return early >= start ? early : deadline
-  }
-
-  return addDays(start, 14)
-}
-
-function PlanDates({
-  initialStart,
-  initialEnd,
-  initialNote,
-  documents,
-  busy,
-  label,
-  onGenerate,
+function ChapterReview({
+  chapter,
+  task,
+  courseId,
 }: {
-  initialStart: string
-  initialEnd: string
-  initialNote: string
-  documents: CourseDetail['documents']
-  busy: boolean
-  label: string
-  onGenerate: (
-    start: string,
-    end: string,
-    note: string,
-    documentIds: number[],
-  ) => void
+  chapter: Chapter
+  task?: Task
+  courseId: string
 }) {
-  const ready = usableMaterials(documents)
-  const [startDate, setStartDate] =
-    useState(initialStart)
-  const [endDate, setEndDate] =
-    useState(initialEnd)
-  const [note, setNote] = useState(initialNote)
-  const [documentIds, setDocumentIds] = useState(
-    () => ready.map((document) => document.id),
-  )
-  const [error, setError] = useState('')
-  const invalid =
-    !/^\d{4}-\d{2}-\d{2}$/.test(startDate) ||
-    !/^\d{4}-\d{2}-\d{2}$/.test(endDate) ||
-    endDate < startDate
+  const isDemo = courseId === 'demo'
+  const timing = task?.date ? prettyDate(task.date) : 'Replan to schedule this review'
 
   return (
-    <div className="plan-window">
-      <div className="field full">
-        <span>PDFs for this plan</span>
-        <DocumentPicker
-          documents={documents}
-          selectedIds={documentIds}
-          disabled={busy}
-          onChange={(ids) => {
-            setDocumentIds(ids)
-            setError('')
-          }}
-        />
+    <article className="plan-task">
+      <span className="task-symbol review" aria-hidden="true">
+        <RotateCcw size={17} strokeWidth={1.5} />
+      </span>
+      <div className="plan-task-body">
+        {task ? (
+          <Link
+            className="task-title"
+            href={`/courses/${courseId}/plan?task=${encodeURIComponent(task.id)}`}
+          >
+            {task.title}
+          </Link>
+        ) : (
+          <span className="task-title">Review: {chapter.title}</span>
+        )}
+        {task && (task.date || (!isDemo && task.status !== 'Completed')) && (
+          <p className="muted small">
+            {timing}
+            {!!task.schedule?.length && ` · ${task.estimated_minutes} min across ${task.schedule.length} day(s)`}
+          </p>
+        )}
       </div>
-
-      <div className="form-grid">
-        <label className="field">
-          <span>Start date</span>
-
-          <input
-            type="date"
-            value={startDate}
-            disabled={busy}
-            aria-invalid={Boolean(error)}
-            onChange={(event) => {
-              setStartDate(event.target.value)
-              setError('')
-            }}
-          />
-        </label>
-
-        <label className="field">
-          <span>End date</span>
-
-          <input
-            type="date"
-            value={endDate}
-            disabled={busy}
-            aria-invalid={Boolean(error)}
-            onChange={(event) => {
-              setEndDate(event.target.value)
-              setError('')
-            }}
-          />
-        </label>
-
-        <label className="field full">
-          <span>Study brief</span>
-
-          <textarea
-            rows={4}
-            maxLength={9000}
-            value={note}
-            disabled={busy}
-            onChange={(event) =>
-              setNote(event.target.value)
-            }
-            placeholder="Goals, background, and what you want this plan to emphasize."
-          />
-        </label>
-      </div>
-
-      {error && (
-        <p className="field-error" role="alert">
-          {error}
-        </p>
+      {!isDemo && (
+        <div className="plan-task-actions plan-review-actions">
+          <Link className="button small secondary" href={`/courses/${courseId}/chapters/${chapter.id}/reports`}>
+            Reports
+          </Link>
+        </div>
       )}
-
-      <div className="actions">
-        <button
-          className="button"
-          disabled={busy}
-          onClick={() => {
-            if (!documentIds.length) {
-              setError('Select at least one PDF.')
-              return
-            }
-            if (invalid) {
-              setError(
-                'Choose a start date and an end date on or after it.',
-              )
-              return
-            }
-
-            onGenerate(
-              startDate,
-              endDate,
-              note,
-              documentIds,
-            )
-          }}
-        >
-          {label}
-        </button>
-      </div>
-    </div>
+    </article>
   )
 }
 
+function taskStatusLabel(task: Task) {
+  if (task.status === 'Completed') {
+    if (task.completion_source === 'exam_pass') {
+      return 'Completed by exam'
+    }
+    if (task.completion_source === 'practice_submit') {
+      return 'Completed by practice'
+    }
+    return 'Completed'
+  }
+
+  return task.status === 'In progress'
+    ? 'In progress'
+    : 'Not started'
+}
+
+function chapterStatusLabel(status?: string) {
+  const labels: Record<string, string> = {
+    planned: 'Planned',
+    learning: 'Learning',
+    learned: 'Learned',
+    practice_in_progress: 'Practice in progress',
+    exam_pending: 'Awaiting exam',
+    completed: 'Chapter completed',
+  }
+
+  return labels[status || 'planned'] || 'Planned'
+}
+
+function reviewStatusLabel(status?: string) {
+  const labels: Record<string, string> = {
+    not_assessed: 'Review after exam',
+    required: 'Review required',
+    passed: 'Exam passed',
+  }
+
+  return labels[status || 'not_assessed'] || 'Review after exam'
+}

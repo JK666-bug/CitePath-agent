@@ -1,3 +1,4 @@
+import StudyDates from './StudyDates'
 import type { CourseConfig } from '../course/types'
 
 export type CourseFormValue =
@@ -33,7 +34,7 @@ export default function CourseForm({
   return (
     <div className="form-grid">
       <label className="field full">
-        <span>Course name</span>
+        <span>Course name *</span>
 
         <input
           id="course-name"
@@ -60,81 +61,10 @@ export default function CourseForm({
         {error('name')}
       </label>
 
-      <label className="field">
-        <span>Learning deadline</span>
-
-        <input
-          id="course-deadline"
-          type="date"
-          value={value.deadline}
-          disabled={disabled}
-          aria-invalid={
-            Boolean(errors.deadline)
-          }
-          aria-describedby={
-            errors.deadline
-              ? 'course-deadline-error'
-              : undefined
-          }
-          onChange={(event) =>
-            onChange({
-              ...value,
-              deadline:
-                event.target.value,
-            })
-          }
-        />
-
-        {error('deadline')}
-      </label>
-
-      <label className="field">
-        <span>
-          Finish early by (days)
-        </span>
-
-        <input
-          id="course-earlyDays"
-          type="number"
-          min="0"
-          step="1"
-          value={value.earlyDays}
-          disabled={disabled}
-          aria-invalid={
-            Boolean(errors.earlyDays)
-          }
-          aria-describedby={
-            errors.earlyDays
-              ? 'course-earlyDays-error'
-              : undefined
-          }
-          onChange={(event) =>
-            onChange({
-              ...value,
-              earlyDays: Number(
-                event.target.value,
-              ),
-            })
-          }
-        />
-
-        {error('earlyDays')}
-      </label>
-
-      <div className="editor-help">
-        <strong>
-          Leave room for review.
-        </strong>
-
-        <p>
-          Your deadline and how many days
-          you finish early shape the schedule.
-        </p>
-      </div>
-
+      <div className="full"><StudyDates value={value} onChange={(next) => onChange({ ...value, ...next })} errors={errors} disabled={disabled} /></div>
       <label className="field full">
         <span>
-          Goals, background, and important dates
+          Course note and calendar dates
         </span>
 
         <textarea
@@ -149,15 +79,10 @@ export default function CourseForm({
               note: event.target.value,
             })
           }
-          placeholder="Tell us about your goal, current knowledge, exam date, and assignment deadlines."
+          placeholder="Optional note, e.g. Final exam on Dec 11 or 12月11日期末考试."
         />
 
         {error('note')}
-
-        <small className="muted">
-          Your original note is preserved with
-          the course settings.
-        </small>
       </label>
     </div>
   )

@@ -6,6 +6,7 @@ import {
   navigate,
 } from '../../shared/router'
 import { messageOf } from '../../shared/request'
+import { useStudy } from '../../shared/StudyProvider'
 import {
   Empty,
   Loading,
@@ -30,6 +31,7 @@ export default function ExamPage({
   courseId: string
   examId: string
 }) {
+  const { loadPlan } = useStudy()
   const [exam, setExam] =
     useState<ExamRecord | null>(null)
   const [answers, setAnswers] = useState<
@@ -113,6 +115,7 @@ export default function ExamPage({
           response: answers[question.id] || '',
         })),
       )
+      await loadPlan(Number(courseId))
       navigate(`/exams/${courseId}/${exam.id}/report`)
     } catch (reason) {
       setError(messageOf(reason))

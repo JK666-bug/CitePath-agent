@@ -121,12 +121,23 @@ export default function CalendarPage() {
         return []
       }
 
-      return plan.tasks.map((task) => ({
-        ...task,
-        courseId: String(course.id),
-        courseName: course.name,
-      }))
+      const chapterPractice = new Map(plan.chapters.map(chapter => [chapter.id, chapter.practice_progress]))
+      return plan.tasks.flatMap((task) => {
+        const slots = task.schedule?.length
+          ? task.schedule
+          : task.date ? [{ date: task.date, minutes: task.estimated_minutes }] : []
+        return slots.map((slot) => ({
+          ...task, date: slot.date, minutes: slot.minutes,
+          courseId: String(course.id), courseName: course.name,
+          practice_progress: task.kind === 'Practice' ? chapterPractice.get(task.chapterId) : undefined,
+        }))
+      })
     })
+
+  const events = demoMode ? [] : courses.flatMap((course) => {
+    if (filter !== 'all' && String(course.id) !== filter) return []
+    return (decodeBrief(course.student_brief).events || []).map(event => ({ ...event, courseName: course.name }))
+  })
 
   const tasks = demoMode
     ? demoTasks
@@ -188,7 +199,7 @@ export default function CalendarPage() {
       {demoMode ? (
         <DemoNotice />
       ) : (
-        !tasks.length && (
+        !tasks.length && !events.length && (
           <Notice>
             Generate a study plan from a course
             to see it here.{' '}
@@ -360,6 +371,7 @@ export default function CalendarPage() {
             month={month}
             selected={selected}
             tasks={tasks}
+            events={events}
             onSelect={(date) => {
               setMonth(parseDate(date))
 
@@ -376,6 +388,7 @@ export default function CalendarPage() {
         {selected && (
           <DayOverview
             date={selected}
+            events={events.filter(event => event.date === selected)}
             tasks={tasks.filter(
               (task) =>
                 task.date === selected,

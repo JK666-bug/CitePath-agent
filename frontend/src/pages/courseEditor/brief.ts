@@ -25,15 +25,20 @@ export function decodeBrief(
 
       if (
         typeof item.deadline === 'string' &&
-        /^\d{4}-\d{2}-\d{2}$/.test(item.deadline) &&
+        (item.deadline === '' || /^\d{4}-\d{2}-\d{2}$/.test(item.deadline)) &&
         typeof item.earlyDays === 'number' &&
         item.earlyDays >= 0 &&
         typeof item.note === 'string'
       ) {
         return {
+          startDate: typeof item.startDate === 'string' ? item.startDate : '',
           deadline: item.deadline,
           earlyDays: item.earlyDays,
           note: item.note,
+          scheduling_profile: item.scheduling_profile && typeof item.scheduling_profile === 'object'
+            ? item.scheduling_profile as CourseConfig['scheduling_profile']
+            : undefined,
+          events: Array.isArray(item.events) ? item.events.filter((x): x is { title: string; date: string } => Boolean(x && typeof x.title === 'string' && typeof x.date === 'string')) : [],
         }
       }
     }

@@ -212,7 +212,6 @@ def schedule_tasks(
         for kind, label in (
             ("Reading", "Read"),
             ("Practice", "Practice"),
-            ("Review", "Review"),
         ):
             tasks.append(
                 {

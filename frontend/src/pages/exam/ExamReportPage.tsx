@@ -4,7 +4,9 @@ import {
   Link,
   navigate,
 } from '../../shared/router'
+import { prettyDate } from '../../shared/format'
 import { messageOf } from '../../shared/request'
+import { useStudy } from '../../shared/StudyProvider'
 import {
   Empty,
   Loading,
@@ -25,6 +27,7 @@ export default function ExamReportPage({
   courseId: string
   examId: string
 }) {
+  const { loadPlan, plans } = useStudy()
   const [exam, setExam] =
     useState<ExamRecord | null>(null)
   const [error, setError] = useState('')
@@ -44,6 +47,10 @@ export default function ExamReportPage({
       active = false
     }
   }, [courseId, examId])
+
+  useEffect(() => {
+    void loadPlan(Number(courseId))
+  }, [courseId, loadPlan])
 
   if (error && !exam) {
     return (
@@ -71,6 +78,9 @@ export default function ExamReportPage({
   }
 
   const report = exam.report
+  const review = plans[Number(courseId)]?.plan?.tasks.find(
+    task => task.kind === 'Review' && task.chapterId === String(exam.chapter_id) && task.status !== 'Completed',
+  )
   const examQuestions = exam.questions.filter((item) => item.correct !== undefined)
   const shown = examQuestions.filter((item) => !wrongOnly || !item.correct)
 
@@ -102,6 +112,17 @@ export default function ExamReportPage({
           </span>
         </p>
       </section>
+
+      {!report.passed && review && (
+        <Notice>
+          {review.date ? `Review added to your calendar starting ${prettyDate(review.date, true)}.`
+            : 'Review added to your tasks. Replan or add study time to schedule it.'}
+          {' '}
+          <Link href={review.date ? `/calendar?course=${courseId}&date=${review.date}` : `/courses/${courseId}/info`}>
+            {review.date ? 'View calendar' : 'Course settings'}
+          </Link>
+        </Notice>
+      )}
 
       <section className="stack">
         <div className="actions spread">
@@ -167,9 +188,10 @@ export default function ExamReportPage({
             setBusy(true)
             setError('')
             void createExam(Number(courseId), exam.chapter_id)
-              .then((created) =>
-                navigate(`/exams/${courseId}/${created.id}`),
-              )
+              .then(async (created) => {
+                await loadPlan(Number(courseId))
+                navigate(`/exams/${courseId}/${created.id}`)
+              })
               .catch((reason) => {
                 setError(messageOf(reason))
                 setBusy(false)

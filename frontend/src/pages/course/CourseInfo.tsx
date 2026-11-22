@@ -1,10 +1,23 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { FileText } from 'lucide-react'
+import ChapterRebuild from './ChapterRebuild'
+import SchedulePanel from './SchedulePanel'
+import ScheduleSuccessDialog from './ScheduleSuccessDialog'
+import type { SavedSchedule } from './ScheduleSuccessDialog'
+import { getCourseWorkflow, requestSchedule, scheduleStrategies, studyWeekdays } from './scheduleActions'
+import type { Workflow } from './scheduleActions'
+import { analyzeNewDocuments } from './chapterActions'
+import ImportantDates from '../courseEditor/ImportantDates'
+import { updateNoteDates } from '../courseEditor/noteCalendar'
+import StudyDates from '../courseEditor/StudyDates'
+import { addDays, dateKey, prettyDate } from '../../shared/format'
+import { messageOf, request } from '../../shared/request'
 
 import type {
   CourseDetail,
   Material,
+  StudyPlan,
 } from './types'
 
 import { decodeBrief } from '../courseEditor/brief'
@@ -20,13 +33,39 @@ import {
 } from './api'
 
 import { useStudy } from '../../shared/StudyProvider'
-import { messageOf } from '../../shared/request'
-import { prettyDate } from '../../shared/format'
 
 import {
   Modal,
   Notice,
 } from '../../shared/components/UI'
+
+type ScheduleProfile = NonNullable<StudyPlan['scheduling_profile']>
+
+function scheduleSummary(profile: Partial<ScheduleProfile> | undefined) {
+  if (!profile?.daily_minutes) return ''
+  const order = scheduleStrategies.find(item => item.value === profile.strategy)?.label
+  const days = profile.weekdays?.map(index => studyWeekdays[index]).join(', ')
+  const period = profile.start && profile.end
+    ? `${prettyDate(profile.start, true)} – ${prettyDate(profile.end, true)}`
+    : ''
+  const skips = profile.off_dates?.length
+  const priorities = profile.priority_chapter_ids?.length
+  return [
+    `${profile.daily_minutes} min per study day`, days, order, period,
+    skips ? `${skips} ${skips === 1 ? 'day' : 'days'} off` : '',
+    priorities ? `${priorities} priority ${priorities === 1 ? 'chapter' : 'chapters'}` : '',
+  ].filter(Boolean).join(' · ')
+}
+
+function materialStatus(material: Material, state: Workflow['documents'][number]['state'] | undefined) {
+  if (material.ingest_status === 'pending') return 'Processing PDF'
+  if (material.ingest_status !== 'complete') return 'PDF unavailable'
+  if (!material.usable_page_count) return 'No readable pages'
+  if (state === 'locked') return 'Learning started'
+  if (state === 'planned') return 'Chapters ready'
+  if (state === 'unplanned') return 'Awaiting chapter analysis'
+  return 'PDF processed'
+}
 
 export default function CourseInfo({
   courseId,
@@ -38,10 +77,62 @@ export default function CourseInfo({
   const {
     loadCourse,
     refreshCourses,
+    plans,
+    loadPlan,
   } = useStudy()
 
   const config =
     decodeBrief(course.student_brief)
+
+  const [editing, setEditing] = useState(false)
+  const [name, setName] = useState(course.name)
+  const [note, setNote] = useState(config.note)
+  const [events, setEvents] = useState(config.events || [])
+  const [dates, setDates] = useState({ startDate: config.startDate || dateKey(), deadline: config.deadline, earlyDays: config.earlyDays })
+  const plan = plans[course.id]?.plan
+  const hasChapters = Boolean(plan?.chapters.length)
+  const hasRemainingTasks = Boolean(plan?.tasks.some(task => task.status !== 'Completed'))
+  const [workflow, setWorkflow] = useState<Workflow | null>(null)
+  const publishedProfile = plan?.schedule_run_id ? plan.scheduling_profile : undefined
+  const savedProfile = config.scheduling_profile
+  const savedPreferences = scheduleSummary(savedProfile)
+  const publishedSchedule = scheduleSummary(publishedProfile)
+  const preferencesChanged = publishedProfile && savedProfile &&
+    (Object.keys(publishedProfile) as (keyof ScheduleProfile)[]).some(
+      key => String(publishedProfile[key] ?? '') !== String(savedProfile[key] ?? ''),
+    )
+  const courseNameInput = useRef<HTMLInputElement>(null)
+  useEffect(() => { if (courseId !== 'demo') void loadPlan(course.id) }, [course.id, courseId, loadPlan])
+  useEffect(() => {
+    if (courseId === 'demo') return
+    let active = true
+    void getCourseWorkflow(course.id).then(value => {
+      if (active) setWorkflow(value)
+    }).catch(() => {
+      if (active) setWorkflow(null)
+    })
+    return () => { active = false }
+  }, [course.id, course.documents, courseId, plan])
+
+  function changeNote(next: string) {
+    setEvents(current => updateNoteDates(next, current, dates, dateKey(), note))
+    setNote(next)
+  }
+
+  async function saveInfo() {
+    if (!name.trim() || events.some(x => !x.title.trim() || !x.date)) {
+      setError('Enter a course name and a title and full date for every event.'); return
+    }
+    if (!dates.startDate || dates.startDate < dateKey() || !dates.deadline || !Number.isInteger(dates.earlyDays) || dates.earlyDays < 0 || dates.earlyDays > 365 || addDays(dates.deadline, -dates.earlyDays) < dates.startDate) {
+      setError('Choose a valid start date and planned finish date on or after the start date.'); return
+    }
+    setBusy(true); setError('')
+    try {
+      await request(`/api/courses/${course.id}/settings`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, note, events, startDate: dates.startDate, deadline: dates.deadline, earlyDays: dates.earlyDays }) })
+      await reload()
+      setMessage('Course information saved. Use the daily schedule below to regenerate this course’s plan.')
+    } catch (reason) { setError(messageOf(reason)) } finally { setBusy(false) }
+  }
 
   const demo = courseId === 'demo'
 
@@ -56,9 +147,59 @@ export default function CourseInfo({
   const [remove, setRemove] =
     useState<Material | null>(null)
 
+  const [replanPrompt, setReplanPrompt] = useState<'upload' | 'rebuild' | null>(null)
+  const [savedSchedule, setSavedSchedule] = useState<SavedSchedule | null>(null)
+  const [replanError, setReplanError] = useState('')
+
+  function editSettings() {
+    if (!editing) {
+      setName(course.name)
+      setNote(config.note)
+      setEvents(config.events || [])
+      setDates({ startDate: config.startDate || dateKey(), deadline: config.deadline, earlyDays: config.earlyDays })
+      setEditing(true)
+    }
+    setReplanPrompt(null)
+    setReplanError('')
+    requestAnimationFrame(() => courseNameInput.current?.focus())
+  }
+
   async function reload() {
-    await loadCourse(course.id)
-    await refreshCourses()
+    await Promise.all([loadCourse(course.id), refreshCourses()])
+  }
+
+  async function refreshChapters() {
+    const [, result] = await Promise.all([reload(), loadPlan(course.id)])
+    if (!result) throw new Error('Could not refresh the chapter list. Reload the page to see your saved changes.')
+    return result.plan
+  }
+
+  async function replanNow() {
+    if (busy || demo || !hasRemainingTasks) return
+    setReplanPrompt(null)
+    setReplanError('')
+    setSavedSchedule(null)
+    setBusy(true)
+    setMessage('Rescheduling unfinished tasks…')
+    try {
+      const result = await requestSchedule(course.id)
+      await Promise.allSettled([loadPlan(course.id), reload()])
+      if (result.status === 'saved') {
+        setSavedSchedule({
+          method: result.mode ?? plan?.schedule_mode ?? 'agent',
+          start: result.start ?? dateKey(),
+          steps: result.trace ?? [],
+          summary: result.summary,
+        })
+      } else {
+        setReplanError(result.message)
+      }
+    } catch (reason) {
+      setReplanError(messageOf(reason))
+    } finally {
+      setMessage('')
+      setBusy(false)
+    }
   }
 
   async function upload(
@@ -88,66 +229,34 @@ export default function CourseInfo({
     }
 
     setBusy(true)
-    const duplicates: string[] = []
-    let saved = 0
+    setReplanError('')
+    const messages: string[] = []
+    let changesSaved = false
 
     try {
       for (const file of files) {
-        setMessage(
-          `Uploading and processing ${file.name}…`,
-        )
-
-        const result = await uploadMaterial(
-          course.id,
-          file,
-        )
-
+        setMessage(`Uploading and processing ${file.name}…`)
+        const result = await uploadMaterial(course.id, file)
+        changesSaved = true
         if (result.duplicate) {
-          duplicates.push(
-            duplicateMessage(
-              file.name,
-              result.filename,
-            ),
-          )
-        } else {
-          saved += 1
+          messages.push(duplicateMessage(file.name, result.filename))
         }
-
-        setFiles((current) =>
-          current.filter(
-            (item) =>
-              fileKey(item) !==
-              fileKey(file),
-          ),
-        )
+        if (!result.usable_page_count) messages.push(`${file.name} has no readable pages for chapter analysis.`)
+        setFiles(current => current.filter(item => fileKey(item) !== fileKey(file)))
       }
 
-      const parts: string[] = []
-
-      if (saved > 0) {
-        parts.push(
-          'Materials saved. Open the Plan tab to generate a schedule from these PDFs and your note.',
-        )
-      }
-
-      if (duplicates.length) {
-        parts.push(duplicates.join(' '))
-      }
-
-      setMessage(parts.join(' '))
+      setMessage('Analyzing uploaded PDFs into chapters…')
+      const analyzed = await analyzeNewDocuments(course.id)
+      const updatedPlan = await refreshChapters()
+      setMessage(messages.join(' ') || (analyzed ? '' : 'These materials are already up to date.'))
+      if (analyzed && updatedPlan?.chapters.length) setReplanPrompt('upload')
     } catch (reason) {
       setMessage('')
-
-      setError(
-        `${messageOf(reason)} Check the material list before manually retrying; a failed response may still have saved a file.`,
-      )
+      setError(changesSaved
+        ? `${messageOf(reason)} Saved PDFs remain in this course. Check Course materials or use Rebuild chapters to finish analysis.`
+        : messageOf(reason))
+      await Promise.allSettled([reload(), loadPlan(course.id)])
     } finally {
-      try {
-        await reload()
-      } catch (reason) {
-        setError(messageOf(reason))
-      }
-
       setBusy(false)
     }
   }
@@ -157,72 +266,91 @@ export default function CourseInfo({
 
     setBusy(true)
     setError('')
+    setReplanError('')
     setMessage('')
+    let deleted = false
 
     try {
-      await deleteMaterial(
-        course.id,
-        remove.id,
-      )
-
-      await reload()
-
-      setMessage(
-        'Material removed. Any future plan using it will need to be regenerated.',
-      )
+      await deleteMaterial(course.id, remove.id)
+      deleted = true
+      setRemove(null)
+      const updatedPlan = await refreshChapters()
+      setMessage(updatedPlan?.chapters.length
+        ? 'Material removed. The plan and priority chapters are up to date.'
+        : 'Material removed. Upload a PDF to create new chapters.')
     } catch (reason) {
+      setRemove(null)
       setError(messageOf(reason))
+      if (deleted) setMessage('The material was removed.')
+      await Promise.allSettled([reload(), loadPlan(course.id)])
     } finally {
       setBusy(false)
-      setRemove(null)
     }
   }
 
   return (
     <div className="stack">
       <section className="panel">
-        <h2>Course settings</h2>
-
-        <dl className="course-facts">
-          <div>
-            <dt>Learning deadline</dt>
-            <dd>
-              {prettyDate(
-                config.deadline,
-                true,
-              )}
-            </dd>
-          </div>
-
-          <div>
-            <dt>Finish early by</dt>
-            <dd>
-              {config.deadline
-                ? `${config.earlyDays} days`
-                : 'Not set'}
-            </dd>
-          </div>
-
-          <div>
-            <dt>Materials</dt>
-            <dd>
-              {course.documents.length}
-              {' '}PDFs
-            </dd>
-          </div>
-        </dl>
-
-        <h3>Goals and study note</h3>
-
-        <p className="course-note">
-          {config.note ||
-            'No additional note.'}
-        </p>
+        <div className="actions">
+          <h2>Course settings</h2>
+          {!demo && (
+            <button
+              className="button small secondary"
+              type="button"
+              disabled={busy}
+              onClick={() => editing ? setEditing(false) : editSettings()}
+            >
+              {editing ? 'Cancel' : 'Edit'}
+            </button>
+          )}
+        </div>
+        {editing ? <div className="stack">
+          <label className="field"><span>Course name *</span><input ref={courseNameInput} value={name} onChange={e => setName(e.target.value)} maxLength={255} /></label>
+          <label className="field"><span>Course note and calendar dates</span><textarea value={note} onChange={e => changeNote(e.target.value)} maxLength={9000} /></label>
+          <ImportantDates
+            value={events}
+            onChange={setEvents}
+            onFind={note.trim() && note === config.note
+              ? () => setEvents(current => updateNoteDates(note, current, dates, dateKey()))
+              : undefined}
+          />
+          {!hasChapters && <><StudyDates value={dates} onChange={next => setDates({ ...next, startDate: next.startDate || '' })} /><button className="button secondary" disabled={busy} onClick={() => void saveInfo()}>Save course information</button><p className="muted small">Analyze a PDF to enable daily scheduling.</p></>}
+          {hasChapters && plan && <SchedulePanel course={course} plan={plan} courseSettings={{ name, note, events }} courseWorkflow={workflow} inline />}
+        </div> : <>
+          <dl className="course-facts"><div><dt>Course name</dt><dd>{course.name}</dd></div><div><dt>Start learning on</dt><dd>{config.startDate ? prettyDate(config.startDate, true) : plan?.scheduling_profile?.start ? prettyDate(plan.scheduling_profile.start, true) : 'Not set'}</dd></div><div><dt>Learning deadline</dt><dd>{config.deadline ? prettyDate(config.deadline, true) : 'Not set'}</dd></div><div><dt>Finish early by</dt><dd>{config.earlyDays} days</dd></div><div><dt>Materials</dt><dd>{course.documents.length} PDFs</dd></div></dl>
+          <h3>Course note and calendar dates</h3><p className="course-note">{config.note || 'No additional note.'}</p>
+          {config.events?.length ? <ul>{config.events.map((item, i) => <li key={i}>{item.date} · {item.title}</li>)}</ul> : <p className="muted small">No calendar dates added.</p>}
+          <h3>Daily learning schedule</h3>
+          <dl className="course-schedule-summary">
+            <div>
+              <dt>Saved preferences</dt>
+              <dd>{savedPreferences || 'No scheduling preferences saved yet.'}</dd>
+              {preferencesChanged && <dd>These changes will apply when you replan.</dd>}
+            </div>
+            <div>
+              <dt>Published to calendar</dt>
+              <dd>{publishedSchedule || 'No daily schedule has been published.'}</dd>
+            </div>
+          </dl>
+          {hasChapters && !hasRemainingTasks && <p className="muted small">All tasks completed.</p>}
+          {!demo && hasRemainingTasks && (
+            <button type="button" className="button small secondary" disabled={busy} onClick={() => void replanNow()}>
+              {plan?.schedule_run_id ? 'Replan schedule' : 'Generate daily plan'}
+            </button>
+          )}
+        </>}
       </section>
 
       {error && (
         <Notice tone="error">
           {error}
+        </Notice>
+      )}
+
+      {replanError && (
+        <Notice tone="error">
+          {replanError}{' '}
+          <button type="button" className="text-button" onClick={editSettings}>Edit course settings</button>
         </Notice>
       )}
 
@@ -260,13 +388,7 @@ export default function CourseInfo({
                   </div>
 
                   <span className="badge">
-                    {material.ingest_status ===
-                    'complete'
-                      ? 'Ready'
-                      : material.ingest_status ===
-                          'pending'
-                        ? 'Processing'
-                        : 'Unavailable'}
+                    {materialStatus(material, workflow?.documents.find(document => document.id === material.id)?.state)}
                   </span>
 
                   <button
@@ -318,16 +440,36 @@ export default function CourseInfo({
                   : 'Upload materials'}
               </button>
 
-              <small className="muted">
-                Only upload status is
-                available; no analysis
-                percentage is estimated.
-              </small>
+
             </div>
           </form>
         )}
       </section>
 
+      {!demo && <ChapterRebuild courseId={course.id} disabled={busy} onRebuilt={() => setReplanPrompt('rebuild')} />}
+      <Modal
+        open={replanPrompt !== null}
+        title="Chapters are ready"
+        onClose={() => setReplanPrompt(null)}
+      >
+        <div className="stack">
+          <p>
+            {replanPrompt === 'upload'
+              ? 'Your new chapters are available in Plan. '
+              : 'Your updated chapters are available in Plan. '}
+            Replan all unfinished tasks with your saved settings, or edit them first.
+          </p>
+          <div className="actions">
+            <button type="button" className="button" disabled={busy || !hasRemainingTasks} onClick={() => void replanNow()}>
+              Replan now
+            </button>
+            <button type="button" className="button secondary" disabled={busy} onClick={editSettings}>
+              Edit settings and replan
+            </button>
+          </div>
+        </div>
+      </Modal>
+      <ScheduleSuccessDialog courseId={course.id} schedule={savedSchedule} onClose={() => setSavedSchedule(null)} />
       <Modal
         open={Boolean(remove)}
         title="Delete course material?"
@@ -335,9 +477,8 @@ export default function CourseInfo({
         onClose={() => setRemove(null)}
       >
         <p>
-          Delete {remove?.filename}?
-          Future questions will no longer be
-          able to cite this material.
+          Delete {remove?.filename}? Chapters that use only this PDF and their tasks will be removed from the active plan.
+          Past study records will stay in your history.
         </p>
 
         <div className="actions">

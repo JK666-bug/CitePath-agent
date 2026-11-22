@@ -290,3 +290,8 @@
     padding: 2px 4px;
   }
 }
+.calendar-kind { font-weight: 700; font-size: 0.8rem; margin: 0 0 0.35rem; }
+.kind-reading { color: #2863a3; }
+.kind-practice { color: #8b48a7; }
+.kind-review { color: #b96722; }
+.calendar-event { border-left: 3px solid #be6c33; }
