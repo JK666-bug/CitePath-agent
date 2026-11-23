@@ -272,6 +272,7 @@ export function askCourse(
   tabId?: string | null,
   includeWeb = false,
   chat = false,
+  pageNumber?: number,
 ) {
   return request<QAResponse>(
     `/api/courses/${courseId}/questions`,
@@ -286,6 +287,7 @@ export function askCourse(
         tab_id: tabId || undefined,
         include_web: includeWeb,
         chat,
+        page_number: pageNumber,
       }),
     },
   )

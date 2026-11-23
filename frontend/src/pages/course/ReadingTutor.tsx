@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { FileText, Globe } from 'lucide-react'
 
 import AnswerBody from './AnswerBody'
-import { askCourse, listQuestions } from './api'
-import type { QAResponse, Source } from './types'
+import { askCourse, documentFileUrl, listQuestions } from './api'
+import type { QAResponse } from './types'
 import { messageOf } from '../../shared/request'
 import { Notice } from '../../shared/components/UI'
 
@@ -15,27 +15,15 @@ function readingTabId(taskId: string) {
 export default function ReadingTutor({
   courseId,
   taskId,
-  sources,
+  document,
 }: {
   courseId: number
   taskId: string
-  sources: Source[]
+  document: { document_id: number; filename: string; page_count?: number } | null
 }) {
   const tabId = readingTabId(taskId)
-  const documentIds = useMemo(
-    () => [...new Set(sources.map((source) => source.document_id))],
-    [sources],
-  )
-  const filenames = useMemo(() => {
-    const names: string[] = []
-    const seen = new Set<number>()
-    for (const source of sources) {
-      if (seen.has(source.document_id)) continue
-      seen.add(source.document_id)
-      names.push(source.filename)
-    }
-    return names
-  }, [sources])
+  const [pageScope, setPageScope] = useState<{ documentId: number; value: string }>()
+  const page = pageScope?.documentId === document?.document_id ? pageScope?.value ?? '' : ''
   const [messages, setMessages] = useState<QAResponse[]>([])
   const [question, setQuestion] = useState('')
   const [includeWeb, setIncludeWeb] = useState(false)
@@ -68,10 +56,17 @@ export default function ReadingTutor({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (busy) return
+    if (busy || !document) return
     const text = question.trim()
     if (!text || Array.from(text).length > 2000) {
       setError('Enter a question of 1–2,000 characters.')
+      return
+    }
+    const pageNumber = page ? Number(page) : undefined
+    if (pageNumber !== undefined && (
+      !Number.isInteger(pageNumber) || pageNumber < 1 || (document.page_count && pageNumber > document.page_count)
+    )) {
+      setError('Enter a valid page number for this PDF.')
       return
     }
     setBusy(true)
@@ -80,10 +75,11 @@ export default function ReadingTutor({
       const response = await askCourse(
         courseId,
         text,
-        documentIds,
+        [document.document_id],
         tabId,
         includeWeb,
         true,
+        pageNumber,
       )
       setMessages((current) => [
         ...current.filter((item) => item.qa_id !== response.qa_id),
@@ -97,20 +93,13 @@ export default function ReadingTutor({
     }
   }
 
-  const attachment =
-    filenames.length === 0
-      ? 'No PDF'
-      : filenames.length === 1
-        ? filenames[0]
-        : `${filenames.length} PDFs`
-
   return (
     <section className="reading-tutor" aria-label="Chat">
       <div className="qa-thread reading-tutor-thread">
         {!messages.length && !busy && (
           <section className="qa-empty">
-            <h3>Ask anything</h3>
-            <p className="muted">This chat already has the lecture PDF attached. Turn on Web if you also want a web search.</p>
+            <h3>Ask about this PDF</h3>
+            <p className="muted">Ask a question, request a document summary, or enter a page number to focus on one page.</p>
           </section>
         )}
         {messages.map((message) => (
@@ -118,6 +107,27 @@ export default function ReadingTutor({
             <p className="eyebrow">You</p>
             <h3>{message.question || 'Question'}</h3>
             <AnswerBody text={message.answer} />
+            {(message.cited_pages.length > 0 || Boolean(message.web_sources?.length)) && (
+              <div className="source-list" aria-label="Answer sources">
+                {message.cited_pages.map(source => (
+                  <a
+                    className="source-chip"
+                    key={source.document_id + '-' + source.page_number}
+                    href={documentFileUrl(courseId, source.document_id) + '#page=' + source.page_number}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <FileText size={12} aria-hidden="true" />
+                    {source.filename} · p. {source.page_number}
+                  </a>
+                ))}
+                {message.web_sources?.map(source => (
+                  <a className="source-chip" key={source.url} href={source.url} target="_blank" rel="noreferrer">
+                    Web · {source.title}
+                  </a>
+                ))}
+              </div>
+            )}
           </section>
         ))}
         {busy && (
@@ -131,9 +141,9 @@ export default function ReadingTutor({
       </div>
       <form className="qa-composer reading-tutor-composer" noValidate onSubmit={(event) => void submit(event)}>
         <div className="qa-composer-attachments">
-          <span className="qa-pdf-chip" title={filenames.join(', ') || 'No PDF attached'}>
+          <span className="qa-pdf-chip" title={document?.filename ?? 'No PDF selected'}>
             <FileText size={14} strokeWidth={1.8} />
-            <span className="qa-pdf-chip-label">{attachment}</span>
+            <span className="qa-pdf-chip-label">{document?.filename ?? 'No PDF selected'}</span>
           </span>
           <button
             type="button"
@@ -147,14 +157,32 @@ export default function ReadingTutor({
             <span>Web</span>
           </button>
         </div>
+        {document && (
+          <label className="reading-tutor-page small">
+            PDF page
+            <input
+              type="number"
+              min={1}
+              max={document.page_count || undefined}
+              step={1}
+              value={page}
+              disabled={busy}
+              placeholder="All pages"
+              onChange={event => {
+                setPageScope({ documentId: document.document_id, value: event.target.value })
+                setError('')
+              }}
+            />
+          </label>
+        )}
         <div className="qa-composer-row">
           <textarea
             className="qa-composer-input"
             rows={2}
             value={question}
             maxLength={2000}
-            disabled={busy}
-            placeholder={messages.length ? 'Ask a follow-up…' : 'Ask anything…'}
+            disabled={busy || !document}
+            placeholder={messages.length ? 'Ask a follow-up…' : 'Ask about this PDF…'}
             onChange={(event) => {
               setQuestion(event.target.value)
               setError('')
@@ -167,7 +195,7 @@ export default function ReadingTutor({
               event.currentTarget.form?.requestSubmit()
             }}
           />
-          <button className="button" disabled={busy || !question.trim()}>
+          <button className="button" disabled={busy || !document || !question.trim()}>
             {busy ? 'Thinking…' : 'Ask'}
           </button>
         </div>

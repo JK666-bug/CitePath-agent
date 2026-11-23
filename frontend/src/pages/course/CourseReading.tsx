@@ -67,6 +67,7 @@ export default function CourseReading({
       document_id: number
       filename: string
       page_number: number
+      page_count?: number
       has_file: boolean
     }[] = []
     for (const source of sources) {
@@ -79,6 +80,7 @@ export default function CourseReading({
         document_id: source.document_id,
         filename: source.filename,
         page_number: source.page_number,
+        page_count: material?.page_count,
         has_file: Boolean(material?.has_file),
       })
     }
@@ -86,12 +88,12 @@ export default function CourseReading({
   }, [sources, course])
 
   const [selectedId, setSelectedId] = useState<number | null>(null)
-  const activeId =
-    selectedId ??
-    uniqueDocs.find((item) => item.has_file)?.document_id ??
-    uniqueDocs[0]?.document_id ??
+  const active =
+    uniqueDocs.find((item) => item.document_id === selectedId) ??
+    uniqueDocs.find((item) => item.has_file) ??
+    uniqueDocs[0] ??
     null
-  const active = uniqueDocs.find((item) => item.document_id === activeId) ?? null
+  const activeId = active?.document_id
 
   if (error) {
     return (
@@ -184,7 +186,7 @@ export default function CourseReading({
       <ReadingTutor
         courseId={numericId}
         taskId={task.id}
-        sources={sources}
+        document={active}
       />
     </div>
   )

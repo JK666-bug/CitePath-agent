@@ -165,6 +165,25 @@
   border-radius: 0;
 }
 
+.reading-tutor-page {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+
+.reading-tutor-page input {
+  width: 7.5rem;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.reading-turn .source-chip {
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 800px) {
   .reading-stage {
     grid-template-columns: 1fr;

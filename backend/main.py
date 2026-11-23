@@ -75,6 +75,7 @@ class QuestionBody(BaseModel):
     tab_id: str | None = Field(default=None, max_length=64)
     include_web: bool = False
     chat: bool = False
+    page_number: int | None = Field(default=None, strict=True, gt=0)
 
 
 class PlanWindow(BaseModel):
@@ -279,6 +280,7 @@ def document_file(
 ):
     from db.pdf_store import read_pdf_bytes
     from fastapi.responses import Response as FastResponse
+    from urllib.parse import quote
 
     if not owns_document(user["id"], course_id, document_id):
         raise HTTPException(status_code=404, detail="Material not found")
@@ -299,7 +301,7 @@ def document_file(
         content=data,
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f'inline; filename="{filename}"',
+            "Content-Disposition": f"inline; filename=material.pdf; filename*=UTF-8''{quote(filename, safe='')}",
             "Cache-Control": "private, max-age=60",
         },
     )
@@ -807,6 +809,7 @@ def create_question(
                 body.document_ids,
                 body.tab_id,
                 body.include_web,
+                body.page_number,
             )
         return answer_question(
             user["id"],
