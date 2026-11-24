@@ -14,3 +14,4 @@ openai==2.54.0
 python-dotenv==1.2.4
 docling==2.146.0
 ddgs==9.16.1
+httpx==0.28.1

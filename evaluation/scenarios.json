@@ -1,0 +1,51 @@
+{
+  "submission_version": "CitePath-G41-20261124",
+  "course_name": "CitePath acceptance · Python file handling",
+  "sample_pdf": "data/py4e-chapter-07-files.pdf",
+  "expected_readable_pages": 12,
+  "date_rules": {
+    "learning_window_days_after_today": 21,
+    "daily_minutes": 60,
+    "study_weekdays": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
+  },
+  "cases": {
+    "normal": {
+      "mode": "baseline",
+      "strategy": "chapter_order",
+      "publish_after_review": true
+    },
+    "changed_request": {
+      "complete": "first_reading_task",
+      "add_day_off": "first_date_of_remaining_work"
+    },
+    "insufficient_capacity": {
+      "daily_minutes": 1,
+      "finish": "today",
+      "expected_status": "needs_input"
+    },
+    "stale_preview": {
+      "preview_daily_minutes": 65,
+      "updated_daily_minutes": 70,
+      "expected_http_status": 409
+    },
+    "empty_pdf": {
+      "size_bytes": 0,
+      "expected_http_status": 400
+    },
+    "reading_qa": {
+      "question": "According to section 7.8, what happens to the existing contents of a file when it is opened in write mode 'w'?",
+      "expected_answer": "The existing contents are cleared or truncated.",
+      "answer_pattern": "clear|truncat|eras|delet|discard|overwrit|wip|empt|start(s|ing)? fresh|清[除空]|截[断斷]|抹[除去]|[删刪]除|[覆复復]盖|覆蓋",
+      "expected_page": 9,
+      "invalid_page": 99
+    }
+  }
+}

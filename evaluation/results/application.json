@@ -1,0 +1,1331 @@
+{
+  "at": "2026-11-24T17:50:39.374148+08:00",
+  "scope": "Local API, actual services and configured model. Plan workflow uses Fixed rules.",
+  "submission_version": "CitePath-G41-20261124",
+  "sample_pdf": "data/py4e-chapter-07-files.pdf",
+  "records": [
+    {
+      "case": "register_and_create_course",
+      "status": "passed",
+      "duration_ms": 58,
+      "observed": {
+        "service_health": "ok",
+        "course_created": true
+      }
+    },
+    {
+      "case": "empty_pdf_rejected",
+      "status": "passed",
+      "duration_ms": 9,
+      "observed": {
+        "http_status": 400,
+        "detail": "The PDF is empty"
+      }
+    },
+    {
+      "case": "upload_and_chapterization",
+      "status": "passed",
+      "duration_ms": 12983,
+      "observed": {
+        "usable_pages": 12,
+        "indexed_segments": 121,
+        "chapters": 3,
+        "tasks": 6,
+        "original_download_matches": true
+      }
+    },
+    {
+      "case": "normal",
+      "status": "passed",
+      "duration_ms": 179,
+      "observed": {
+        "preview": "preview",
+        "apply": "saved",
+        "days": {
+          "2026-11-24": 60,
+          "2026-11-25": 60,
+          "2026-11-26": 1
+        },
+        "version": 2,
+        "tools": [
+          {
+            "step": 1,
+            "tool": "check_study_capacity",
+            "arguments": {},
+            "ok": true,
+            "source": "system",
+            "observation": {
+              "fits": true,
+              "study_days": 22,
+              "required_minutes": 121,
+              "available_minutes": 1320,
+              "shortfall_minutes": 0
+            }
+          },
+          {
+            "step": 2,
+            "tool": "get_planning_snapshot",
+            "arguments": {},
+            "ok": true,
+            "source": "rules",
+            "observation": {
+              "today_timezone": "Asia/Hong_Kong",
+              "profile": {
+                "start": "2026-11-24",
+                "end": "2026-12-15",
+                "daily_minutes": 60,
+                "weekdays": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ],
+                "off_dates": [],
+                "priority_chapter_ids": [],
+                "strategy": "chapter_order",
+                "note": ""
+              },
+              "eligible_dates": [
+                "2026-11-24",
+                "2026-11-25",
+                "2026-11-26",
+                "2026-11-27",
+                "2026-11-28",
+                "2026-11-29",
+                "2026-11-30",
+                "2026-12-01",
+                "2026-12-02",
+                "2026-12-03",
+                "2026-12-04",
+                "2026-12-05",
+                "2026-12-06",
+                "2026-12-07",
+                "2026-12-08",
+                "2026-12-09",
+                "2026-12-10",
+                "2026-12-11",
+                "2026-12-12",
+                "2026-12-13",
+                "2026-12-14",
+                "2026-12-15"
+              ],
+              "version": 1,
+              "chapters": [
+                {
+                  "id": "4",
+                  "title": "Reading and Searching Text Files",
+                  "chapter_status": "planned",
+                  "review_status": "not_assessed",
+                  "mastery": {
+                    "total": 4,
+                    "attempted": 0,
+                    "mastered": 0
+                  },
+                  "reports_available": []
+                },
+                {
+                  "id": "5",
+                  "title": "Robust File Processing with User Input and Error Handling",
+                  "chapter_status": "planned",
+                  "review_status": "not_assessed",
+                  "mastery": {
+                    "total": 4,
+                    "attempted": 0,
+                    "mastered": 0
+                  },
+                  "reports_available": []
+                },
+                {
+                  "id": "6",
+                  "title": "Writing Files and Debugging Whitespace",
+                  "chapter_status": "planned",
+                  "review_status": "not_assessed",
+                  "mastery": {
+                    "total": 4,
+                    "attempted": 0,
+                    "mastered": 0
+                  },
+                  "reports_available": []
+                }
+              ],
+              "tasks": [
+                {
+                  "id": "reading-4",
+                  "chapterId": "4",
+                  "kind": "Reading",
+                  "status": "Not started",
+                  "previous_date": ""
+                },
+                {
+                  "id": "practice-4",
+                  "chapterId": "4",
+                  "kind": "Practice",
+                  "status": "Not started",
+                  "previous_date": ""
+                },
+                {
+                  "id": "reading-5",
+                  "chapterId": "5",
+                  "kind": "Reading",
+                  "status": "Not started",
+                  "previous_date": ""
+                },
+                {
+                  "id": "practice-5",
+                  "chapterId": "5",
+                  "kind": "Practice",
+                  "status": "Not started",
+                  "previous_date": ""
+                },
+                {
+                  "id": "reading-6",
+                  "chapterId": "6",
+                  "kind": "Reading",
+                  "status": "Not started",
+                  "previous_date": ""
+                },
+                {
+                  "id": "practice-6",
+                  "chapterId": "6",
+                  "kind": "Practice",
+                  "status": "Not started",
+                  "previous_date": ""
+                }
+              ],
+              "new_materials": []
+            },
+            "duration_ms": 1
+          },
+          {
+            "step": 3,
+            "tool": "estimate_task_time",
+            "arguments": {},
+            "ok": true,
+            "source": "rules",
+            "observation": {
+              "estimates": {
+                "reading-4": {
+                  "minutes": 20,
+                  "basis": "Estimated from page text, sources and chapter concepts.",
+                  "has_learning_report": false
+                },
+                "practice-4": {
+                  "minutes": 24,
+                  "basis": "Estimated from the chapter's concept count.",
+                  "has_learning_report": false
+                },
+                "reading-5": {
+                  "minutes": 14,
+                  "basis": "Estimated from page text, sources and chapter concepts.",
+                  "has_learning_report": false
+                },
+                "practice-5": {
+                  "minutes": 24,
+                  "basis": "Estimated from the chapter's concept count.",
+                  "has_learning_report": false
+                },
+                "reading-6": {
+                  "minutes": 15,
+                  "basis": "Estimated from page text, sources and chapter concepts.",
+                  "has_learning_report": false
+                },
+                "practice-6": {
+                  "minutes": 24,
+                  "basis": "Estimated from the chapter's concept count.",
+                  "has_learning_report": false
+                }
+              },
+              "assumptions": "Heuristic minutes, not measured time. Large tasks can span several days."
+            },
+            "duration_ms": 0
+          },
+          {
+            "step": 4,
+            "tool": "propose_daily_schedule",
+            "arguments": {
+              "strategy": "chapter_order"
+            },
+            "ok": true,
+            "source": "rules",
+            "observation": {
+              "candidate_id": "1",
+              "strategy": "chapter_order",
+              "slots": [
+                {
+                  "task_id": "reading-4",
+                  "date": "2026-11-24",
+                  "minutes": 20
+                },
+                {
+                  "task_id": "practice-4",
+                  "date": "2026-11-24",
+                  "minutes": 24
+                },
+                {
+                  "task_id": "reading-5",
+                  "date": "2026-11-24",
+                  "minutes": 14
+                },
+                {
+                  "task_id": "practice-5",
+                  "date": "2026-11-24",
+                  "minutes": 2
+                },
+                {
+                  "task_id": "practice-5",
+                  "date": "2026-11-25",
+                  "minutes": 22
+                },
+                {
+                  "task_id": "reading-6",
+                  "date": "2026-11-25",
+                  "minutes": 15
+                },
+                {
+                  "task_id": "practice-6",
+                  "date": "2026-11-25",
+                  "minutes": 23
+                },
+                {
+                  "task_id": "practice-6",
+                  "date": "2026-11-26",
+                  "minutes": 1
+                }
+              ],
+              "unallocated": [],
+              "weak_chapters": {},
+              "estimated_minutes": 121,
+              "available_minutes": 1320
+            },
+            "duration_ms": 0
+          },
+          {
+            "step": 5,
+            "tool": "validate_daily_schedule",
+            "arguments": {
+              "candidate_id": "1"
+            },
+            "ok": true,
+            "source": "rules",
+            "observation": {
+              "valid": true,
+              "errors": [],
+              "daily_minutes": {
+                "2026-11-24": 60,
+                "2026-11-25": 60,
+                "2026-11-26": 1
+              }
+            },
+            "duration_ms": 0
+          },
+          {
+            "step": 6,
+            "tool": "save_schedule",
+            "arguments": {
+              "candidate_id": "1"
+            },
+            "ok": true,
+            "source": "rules",
+            "observation": {
+              "status": "preview",
+              "run_id": "ffd1ccbf-d708-4b38-aa74-acd60b3e3a87",
+              "version": 1,
+              "message": "Scheduled unfinished tasks using chapter_order; completed work preserved.",
+              "trace": [],
+              "start": "2026-11-24",
+              "mode": "baseline",
+              "summary": {
+                "strategy": "chapter_order",
+                "strategy_source": "preference",
+                "reason": "Tasks within the same priority group follow chapter order.",
+                "first_date": "2026-11-24",
+                "completed_preserved": 0,
+                "changes": [
+                  {
+                    "task_id": "reading-4",
+                    "title": "Read: Reading and Searching Text Files",
+                    "before": [],
+                    "after": [
+                      {
+                        "date": "2026-11-24",
+                        "minutes": 20
+                      }
+                    ]
+                  },
+                  {
+                    "task_id": "practice-4",
+                    "title": "Practice: Reading and Searching Text Files",
+                    "before": [],
+                    "after": [
+                      {
+                        "date": "2026-11-24",
+                        "minutes": 24
+                      }
+                    ]
+                  },
+                  {
+                    "task_id": "reading-5",
+                    "title": "Read: Robust File Processing with User Input and Error Handling",
+                    "before": [],
+                    "after": [
+                      {
+                        "date": "2026-11-24",
+                        "minutes": 14
+                      }
+                    ]
+                  },
+                  {
+                    "task_id": "practice-5",
+                    "title": "Practice: Robust File Processing with User Input and Error Handling",
+                    "before": [],
+                    "after": [
+                      {
+                        "date": "2026-11-24",
+                        "minutes": 2
+                      },
+                      {
+                        "date": "2026-11-25",
+                        "minutes": 22
+                      }
+                    ]
+                  },
+                  {
+                    "task_id": "reading-6",
+                    "title": "Read: Writing Files and Debugging Whitespace",
+                    "before": [],
+                    "after": [
+                      {
+                        "date": "2026-11-25",
+                        "minutes": 15
+                      }
+                    ]
+                  },
+                  {
+                    "task_id": "practice-6",
+                    "title": "Practice: Writing Files and Debugging Whitespace",
+                    "before": [],
+                    "after": [
+                      {
+                        "date": "2026-11-25",
+                        "minutes": 23
+                      },
+                      {
+                        "date": "2026-11-26",
+                        "minutes": 1
+                      }
+                    ]
+                  }
+                ]
+              },
+              "unchanged": false
+            },
+            "duration_ms": 20
+          }
+        ]
+      }
+    },
+    {
+      "case": "changed_request",
+      "status": "passed",
+      "duration_ms": 203,
+      "observed": {
+        "version": 3,
+        "added_day_off": "2026-11-24",
+        "completed_preserved": true,
+        "tools": [
+          {
+            "step": 1,
+            "tool": "check_study_capacity",
+            "arguments": {},
+            "ok": true,
+            "source": "system",
+            "observation": {
+              "fits": true,
+              "study_days": 21,
+              "required_minutes": 101,
+              "available_minutes": 1260,
+              "shortfall_minutes": 0
+            }
+          },
+          {
+            "step": 2,
+            "tool": "get_planning_snapshot",
+            "arguments": {},
+            "ok": true,
+            "source": "rules",
+            "observation": {
+              "today_timezone": "Asia/Hong_Kong",
+              "profile": {
+                "start": "2026-11-24",
+                "end": "2026-12-15",
+                "daily_minutes": 60,
+                "weekdays": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ],
+                "off_dates": [
+                  "2026-11-24"
+                ],
+                "priority_chapter_ids": [],
+                "strategy": "chapter_order",
+                "note": ""
+              },
+              "eligible_dates": [
+                "2026-11-25",
+                "2026-11-26",
+                "2026-11-27",
+                "2026-11-28",
+                "2026-11-29",
+                "2026-11-30",
+                "2026-12-01",
+                "2026-12-02",
+                "2026-12-03",
+                "2026-12-04",
+                "2026-12-05",
+                "2026-12-06",
+                "2026-12-07",
+                "2026-12-08",
+                "2026-12-09",
+                "2026-12-10",
+                "2026-12-11",
+                "2026-12-12",
+                "2026-12-13",
+                "2026-12-14",
+                "2026-12-15"
+              ],
+              "version": 2,
+              "chapters": [
+                {
+                  "id": "4",
+                  "title": "Reading and Searching Text Files",
+                  "chapter_status": "learned",
+                  "review_status": "not_assessed",
+                  "mastery": {
+                    "total": 4,
+                    "attempted": 0,
+                    "mastered": 0
+                  },
+                  "reports_available": []
+                },
+                {
+                  "id": "5",
+                  "title": "Robust File Processing with User Input and Error Handling",
+                  "chapter_status": "planned",
+                  "review_status": "not_assessed",
+                  "mastery": {
+                    "total": 4,
+                    "attempted": 0,
+                    "mastered": 0
+                  },
+                  "reports_available": []
+                },
+                {
+                  "id": "6",
+                  "title": "Writing Files and Debugging Whitespace",
+                  "chapter_status": "planned",
+                  "review_status": "not_assessed",
+                  "mastery": {
+                    "total": 4,
+                    "attempted": 0,
+                    "mastered": 0
+                  },
+                  "reports_available": []
+                }
+              ],
+              "tasks": [
+                {
+                  "id": "reading-4",
+                  "chapterId": "4",
+                  "kind": "Reading",
+                  "status": "Completed",
+                  "previous_date": "2026-11-24"
+                },
+                {
+                  "id": "practice-4",
+                  "chapterId": "4",
+                  "kind": "Practice",
+                  "status": "Not started",
+                  "previous_date": "2026-11-24"
+                },
+                {
+                  "id": "reading-5",
+                  "chapterId": "5",
+                  "kind": "Reading",
+                  "status": "Not started",
+                  "previous_date": "2026-11-24"
+                },
+                {
+                  "id": "practice-5",
+                  "chapterId": "5",
+                  "kind": "Practice",
+                  "status": "Not started",
+                  "previous_date": "2026-11-24"
+                },
+                {
+                  "id": "reading-6",
+                  "chapterId": "6",
+                  "kind": "Reading",
+                  "status": "Not started",
+                  "previous_date": "2026-11-25"
+                },
+                {
+                  "id": "practice-6",
+                  "chapterId": "6",
+                  "kind": "Practice",
+                  "status": "Not started",
+                  "previous_date": "2026-11-25"
+                }
+              ],
+              "new_materials": []
+            },
+            "duration_ms": 0
+          },
+          {
+            "step": 3,
+            "tool": "estimate_task_time",
+            "arguments": {},
+            "ok": true,
+            "source": "rules",
+            "observation": {
+              "estimates": {
+                "practice-4": {
+                  "minutes": 24,
+                  "basis": "Estimated from the chapter's concept count.",
+                  "has_learning_report": false
+                },
+                "reading-5": {
+                  "minutes": 14,
+                  "basis": "Estimated from page text, sources and chapter concepts.",
+                  "has_learning_report": false
+                },
+                "practice-5": {
+                  "minutes": 24,
+                  "basis": "Estimated from the chapter's concept count.",
+                  "has_learning_report": false
+                },
+                "reading-6": {
+                  "minutes": 15,
+                  "basis": "Estimated from page text, sources and chapter concepts.",
+                  "has_learning_report": false
+                },
+                "practice-6": {
+                  "minutes": 24,
+                  "basis": "Estimated from the chapter's concept count.",
+                  "has_learning_report": false
+                }
+              },
+              "assumptions": "Heuristic minutes, not measured time. Large tasks can span several days."
+            },
+            "duration_ms": 0
+          },
+          {
+            "step": 4,
+            "tool": "propose_daily_schedule",
+            "arguments": {
+              "strategy": "chapter_order"
+            },
+            "ok": true,
+            "source": "rules",
+            "observation": {
+              "candidate_id": "1",
+              "strategy": "chapter_order",
+              "slots": [
+                {
+                  "task_id": "practice-4",
+                  "date": "2026-11-25",
+                  "minutes": 24
+                },
+                {
+                  "task_id": "reading-5",
+                  "date": "2026-11-25",
+                  "minutes": 14
+                },
+                {
+                  "task_id": "practice-5",
+                  "date": "2026-11-25",
+                  "minutes": 22
+                },
+                {
+                  "task_id": "practice-5",
+                  "date": "2026-11-26",
+                  "minutes": 2
+                },
+                {
+                  "task_id": "reading-6",
+                  "date": "2026-11-26",
+                  "minutes": 15
+                },
+                {
+                  "task_id": "practice-6",
+                  "date": "2026-11-26",
+                  "minutes": 24
+                }
+              ],
+              "unallocated": [],
+              "weak_chapters": {},
+              "estimated_minutes": 101,
+              "available_minutes": 1260
+            },
+            "duration_ms": 0
+          },
+          {
+            "step": 5,
+            "tool": "validate_daily_schedule",
+            "arguments": {
+              "candidate_id": "1"
+            },
+            "ok": true,
+            "source": "rules",
+            "observation": {
+              "valid": true,
+              "errors": [],
+              "daily_minutes": {
+                "2026-11-25": 60,
+                "2026-11-26": 41
+              }
+            },
+            "duration_ms": 0
+          },
+          {
+            "step": 6,
+            "tool": "save_schedule",
+            "arguments": {
+              "candidate_id": "1"
+            },
+            "ok": true,
+            "source": "rules",
+            "observation": {
+              "status": "preview",
+              "run_id": "4252dea0-8b9a-4caf-bdd3-ae37ec1d9211",
+              "version": 2,
+              "message": "Scheduled unfinished tasks using chapter_order; completed work preserved.",
+              "trace": [],
+              "start": "2026-11-24",
+              "mode": "baseline",
+              "summary": {
+                "strategy": "chapter_order",
+                "strategy_source": "preference",
+                "reason": "Tasks within the same priority group follow chapter order.",
+                "first_date": "2026-11-25",
+                "completed_preserved": 1,
+                "changes": [
+                  {
+                    "task_id": "practice-4",
+                    "title": "Practice: Reading and Searching Text Files",
+                    "before": [
+                      {
+                        "date": "2026-11-24",
+                        "minutes": 24
+                      }
+                    ],
+                    "after": [
+                      {
+                        "date": "2026-11-25",
+                        "minutes": 24
+                      }
+                    ]
+                  },
+                  {
+                    "task_id": "reading-5",
+                    "title": "Read: Robust File Processing with User Input and Error Handling",
+                    "before": [
+                      {
+                        "date": "2026-11-24",
+                        "minutes": 14
+                      }
+                    ],
+                    "after": [
+                      {
+                        "date": "2026-11-25",
+                        "minutes": 14
+                      }
+                    ]
+                  },
+                  {
+                    "task_id": "practice-5",
+                    "title": "Practice: Robust File Processing with User Input and Error Handling",
+                    "before": [
+                      {
+                        "date": "2026-11-24",
+                        "minutes": 2
+                      },
+                      {
+                        "date": "2026-11-25",
+                        "minutes": 22
+                      }
+                    ],
+                    "after": [
+                      {
+                        "date": "2026-11-25",
+                        "minutes": 22
+                      },
+                      {
+                        "date": "2026-11-26",
+                        "minutes": 2
+                      }
+                    ]
+                  },
+                  {
+                    "task_id": "reading-6",
+                    "title": "Read: Writing Files and Debugging Whitespace",
+                    "before": [
+                      {
+                        "date": "2026-11-25",
+                        "minutes": 15
+                      }
+                    ],
+                    "after": [
+                      {
+                        "date": "2026-11-26",
+                        "minutes": 15
+                      }
+                    ]
+                  },
+                  {
+                    "task_id": "practice-6",
+                    "title": "Practice: Writing Files and Debugging Whitespace",
+                    "before": [
+                      {
+                        "date": "2026-11-25",
+                        "minutes": 23
+                      },
+                      {
+                        "date": "2026-11-26",
+                        "minutes": 1
+                      }
+                    ],
+                    "after": [
+                      {
+                        "date": "2026-11-26",
+                        "minutes": 24
+                      }
+                    ]
+                  }
+                ]
+              },
+              "unchanged": false
+            },
+            "duration_ms": 16
+          }
+        ]
+      }
+    },
+    {
+      "case": "insufficient_capacity",
+      "status": "passed",
+      "duration_ms": 103,
+      "observed": {
+        "response": "needs_input",
+        "budget": {
+          "study_days": 1,
+          "required_minutes": 101,
+          "available_minutes": 1,
+          "shortfall_minutes": 100
+        },
+        "published_dates_preserved": true,
+        "tools": [
+          {
+            "step": 1,
+            "tool": "check_study_capacity",
+            "arguments": {},
+            "ok": true,
+            "source": "system",
+            "observation": {
+              "fits": false,
+              "study_days": 1,
+              "required_minutes": 101,
+              "available_minutes": 1,
+              "shortfall_minutes": 100
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "stale_preview",
+      "status": "passed",
+      "duration_ms": 152,
+      "observed": {
+        "apply_http_status": 409,
+        "detail": "Study settings, materials or progress changed. Create a new preview.",
+        "published_dates_preserved": true,
+        "preview_trace": [
+          {
+            "step": 1,
+            "tool": "check_study_capacity",
+            "arguments": {},
+            "ok": true,
+            "source": "system",
+            "observation": {
+              "fits": true,
+              "study_days": 22,
+              "required_minutes": 101,
+              "available_minutes": 1430,
+              "shortfall_minutes": 0
+            }
+          },
+          {
+            "step": 2,
+            "tool": "get_planning_snapshot",
+            "arguments": {},
+            "ok": true,
+            "source": "rules",
+            "observation": {
+              "today_timezone": "Asia/Hong_Kong",
+              "profile": {
+                "start": "2026-11-24",
+                "end": "2026-12-15",
+                "daily_minutes": 65,
+                "weekdays": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ],
+                "off_dates": [],
+                "priority_chapter_ids": [],
+                "strategy": "chapter_order",
+                "note": ""
+              },
+              "eligible_dates": [
+                "2026-11-24",
+                "2026-11-25",
+                "2026-11-26",
+                "2026-11-27",
+                "2026-11-28",
+                "2026-11-29",
+                "2026-11-30",
+                "2026-12-01",
+                "2026-12-02",
+                "2026-12-03",
+                "2026-12-04",
+                "2026-12-05",
+                "2026-12-06",
+                "2026-12-07",
+                "2026-12-08",
+                "2026-12-09",
+                "2026-12-10",
+                "2026-12-11",
+                "2026-12-12",
+                "2026-12-13",
+                "2026-12-14",
+                "2026-12-15"
+              ],
+              "version": 3,
+              "chapters": [
+                {
+                  "id": "4",
+                  "title": "Reading and Searching Text Files",
+                  "chapter_status": "learned",
+                  "review_status": "not_assessed",
+                  "mastery": {
+                    "total": 4,
+                    "attempted": 0,
+                    "mastered": 0
+                  },
+                  "reports_available": []
+                },
+                {
+                  "id": "5",
+                  "title": "Robust File Processing with User Input and Error Handling",
+                  "chapter_status": "planned",
+                  "review_status": "not_assessed",
+                  "mastery": {
+                    "total": 4,
+                    "attempted": 0,
+                    "mastered": 0
+                  },
+                  "reports_available": []
+                },
+                {
+                  "id": "6",
+                  "title": "Writing Files and Debugging Whitespace",
+                  "chapter_status": "planned",
+                  "review_status": "not_assessed",
+                  "mastery": {
+                    "total": 4,
+                    "attempted": 0,
+                    "mastered": 0
+                  },
+                  "reports_available": []
+                }
+              ],
+              "tasks": [
+                {
+                  "id": "reading-4",
+                  "chapterId": "4",
+                  "kind": "Reading",
+                  "status": "Completed",
+                  "previous_date": "2026-11-24"
+                },
+                {
+                  "id": "practice-4",
+                  "chapterId": "4",
+                  "kind": "Practice",
+                  "status": "Not started",
+                  "previous_date": "2026-11-25"
+                },
+                {
+                  "id": "reading-5",
+                  "chapterId": "5",
+                  "kind": "Reading",
+                  "status": "Not started",
+                  "previous_date": "2026-11-25"
+                },
+                {
+                  "id": "practice-5",
+                  "chapterId": "5",
+                  "kind": "Practice",
+                  "status": "Not started",
+                  "previous_date": "2026-11-25"
+                },
+                {
+                  "id": "reading-6",
+                  "chapterId": "6",
+                  "kind": "Reading",
+                  "status": "Not started",
+                  "previous_date": "2026-11-26"
+                },
+                {
+                  "id": "practice-6",
+                  "chapterId": "6",
+                  "kind": "Practice",
+                  "status": "Not started",
+                  "previous_date": "2026-11-26"
+                }
+              ],
+              "new_materials": []
+            },
+            "duration_ms": 0
+          },
+          {
+            "step": 3,
+            "tool": "estimate_task_time",
+            "arguments": {},
+            "ok": true,
+            "source": "rules",
+            "observation": {
+              "estimates": {
+                "practice-4": {
+                  "minutes": 24,
+                  "basis": "Estimated from the chapter's concept count.",
+                  "has_learning_report": false
+                },
+                "reading-5": {
+                  "minutes": 14,
+                  "basis": "Estimated from page text, sources and chapter concepts.",
+                  "has_learning_report": false
+                },
+                "practice-5": {
+                  "minutes": 24,
+                  "basis": "Estimated from the chapter's concept count.",
+                  "has_learning_report": false
+                },
+                "reading-6": {
+                  "minutes": 15,
+                  "basis": "Estimated from page text, sources and chapter concepts.",
+                  "has_learning_report": false
+                },
+                "practice-6": {
+                  "minutes": 24,
+                  "basis": "Estimated from the chapter's concept count.",
+                  "has_learning_report": false
+                }
+              },
+              "assumptions": "Heuristic minutes, not measured time. Large tasks can span several days."
+            },
+            "duration_ms": 0
+          },
+          {
+            "step": 4,
+            "tool": "propose_daily_schedule",
+            "arguments": {
+              "strategy": "chapter_order"
+            },
+            "ok": true,
+            "source": "rules",
+            "observation": {
+              "candidate_id": "1",
+              "strategy": "chapter_order",
+              "slots": [
+                {
+                  "task_id": "practice-4",
+                  "date": "2026-11-24",
+                  "minutes": 24
+                },
+                {
+                  "task_id": "reading-5",
+                  "date": "2026-11-24",
+                  "minutes": 14
+                },
+                {
+                  "task_id": "practice-5",
+                  "date": "2026-11-24",
+                  "minutes": 24
+                },
+                {
+                  "task_id": "reading-6",
+                  "date": "2026-11-24",
+                  "minutes": 3
+                },
+                {
+                  "task_id": "reading-6",
+                  "date": "2026-11-25",
+                  "minutes": 12
+                },
+                {
+                  "task_id": "practice-6",
+                  "date": "2026-11-25",
+                  "minutes": 24
+                }
+              ],
+              "unallocated": [],
+              "weak_chapters": {},
+              "estimated_minutes": 101,
+              "available_minutes": 1430
+            },
+            "duration_ms": 0
+          },
+          {
+            "step": 5,
+            "tool": "validate_daily_schedule",
+            "arguments": {
+              "candidate_id": "1"
+            },
+            "ok": true,
+            "source": "rules",
+            "observation": {
+              "valid": true,
+              "errors": [],
+              "daily_minutes": {
+                "2026-11-24": 65,
+                "2026-11-25": 36
+              }
+            },
+            "duration_ms": 0
+          },
+          {
+            "step": 6,
+            "tool": "save_schedule",
+            "arguments": {
+              "candidate_id": "1"
+            },
+            "ok": true,
+            "source": "rules",
+            "observation": {
+              "status": "preview",
+              "run_id": "8dbea893-5b45-4624-8a55-3ac02db4e051",
+              "version": 3,
+              "message": "Scheduled unfinished tasks using chapter_order; completed work preserved.",
+              "trace": [],
+              "start": "2026-11-24",
+              "mode": "baseline",
+              "summary": {
+                "strategy": "chapter_order",
+                "strategy_source": "preference",
+                "reason": "Tasks within the same priority group follow chapter order.",
+                "first_date": "2026-11-24",
+                "completed_preserved": 1,
+                "changes": [
+                  {
+                    "task_id": "practice-4",
+                    "title": "Practice: Reading and Searching Text Files",
+                    "before": [
+                      {
+                        "date": "2026-11-25",
+                        "minutes": 24
+                      }
+                    ],
+                    "after": [
+                      {
+                        "date": "2026-11-24",
+                        "minutes": 24
+                      }
+                    ]
+                  },
+                  {
+                    "task_id": "reading-5",
+                    "title": "Read: Robust File Processing with User Input and Error Handling",
+                    "before": [
+                      {
+                        "date": "2026-11-25",
+                        "minutes": 14
+                      }
+                    ],
+                    "after": [
+                      {
+                        "date": "2026-11-24",
+                        "minutes": 14
+                      }
+                    ]
+                  },
+                  {
+                    "task_id": "practice-5",
+                    "title": "Practice: Robust File Processing with User Input and Error Handling",
+                    "before": [
+                      {
+                        "date": "2026-11-25",
+                        "minutes": 22
+                      },
+                      {
+                        "date": "2026-11-26",
+                        "minutes": 2
+                      }
+                    ],
+                    "after": [
+                      {
+                        "date": "2026-11-24",
+                        "minutes": 24
+                      }
+                    ]
+                  },
+                  {
+                    "task_id": "reading-6",
+                    "title": "Read: Writing Files and Debugging Whitespace",
+                    "before": [
+                      {
+                        "date": "2026-11-26",
+                        "minutes": 15
+                      }
+                    ],
+                    "after": [
+                      {
+                        "date": "2026-11-24",
+                        "minutes": 3
+                      },
+                      {
+                        "date": "2026-11-25",
+                        "minutes": 12
+                      }
+                    ]
+                  },
+                  {
+                    "task_id": "practice-6",
+                    "title": "Practice: Writing Files and Debugging Whitespace",
+                    "before": [
+                      {
+                        "date": "2026-11-26",
+                        "minutes": 24
+                      }
+                    ],
+                    "after": [
+                      {
+                        "date": "2026-11-25",
+                        "minutes": 24
+                      }
+                    ]
+                  }
+                ]
+              },
+              "unchanged": false
+            },
+            "duration_ms": 16
+          }
+        ]
+      }
+    },
+    {
+      "case": "reading_qa_full_pdf",
+      "status": "passed",
+      "duration_ms": 1571,
+      "observed": {
+        "http_status": 200,
+        "answer": "根据 7.8 节，如果文件已经存在，以写入模式（'w'）打开它会清除旧数据并重新开始，所以要小心！如果文件不存在，则会创建一个新文件。",
+        "cited_pages": [
+          9
+        ],
+        "origin": "reading",
+        "refused": false
+      }
+    },
+    {
+      "case": "reading_qa_selected_page",
+      "status": "passed",
+      "duration_ms": 1306,
+      "observed": {
+        "http_status": 200,
+        "answer": "According to section 7.8, if the file already exists, opening it in write mode ('w') clears out the old data and starts fresh, so you should be careful. If the file doesn't exist, a new one is created.",
+        "cited_pages": [
+          9
+        ],
+        "origin": "reading",
+        "refused": false
+      }
+    },
+    {
+      "case": "reading_qa_bad_page",
+      "status": "passed",
+      "duration_ms": 10,
+      "observed": {
+        "http_status": 400,
+        "detail": "No readable text on PDF page(s): 99."
+      }
+    },
+    {
+      "case": "practice",
+      "status": "passed",
+      "duration_ms": 4313,
+      "observed": {
+        "kind": "mcq",
+        "concept": "file handle",
+        "decision_mode": "agent",
+        "reason": "All concepts are at level 0 with no prior answers, so I'll start with the foundational concept \"file handle\" (id 13). An MCQ is a good first step to check recognition of what a file handle is and how it's used before moving to line iteration and search patterns that depend on it.",
+        "trace": [
+          {
+            "tool": "get_practice_snapshot",
+            "arguments": {},
+            "observation": {
+              "read": true
+            }
+          },
+          {
+            "tool": "choose_next_question",
+            "arguments": {
+              "kind": "mcq",
+              "reason": "All concepts are at level 0 with no prior answers, so I'll start with the foundational concept \"file handle\" (id 13). An MCQ is a good first step to check recognition of what a file handle is and how it's used before moving to line iteration and search patterns that depend on it.",
+              "concept_id": 13
+            },
+            "observation": {
+              "kind": "mcq",
+              "reason": "All concepts are at level 0 with no prior answers, so I'll start with the foundational concept \"file handle\" (id 13). An MCQ is a good first step to check recognition of what a file handle is and how it's used before moving to line iteration and search patterns that depend on it.",
+              "accepted": true,
+              "concept_id": 13
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "exam_generation",
+      "status": "passed",
+      "duration_ms": 5411,
+      "observed": {
+        "generated_questions": 8,
+        "kinds": [
+          "mcq",
+          "short"
+        ]
+      }
+    },
+    {
+      "case": "cleanup_test_course",
+      "status": "passed",
+      "duration_ms": 1557,
+      "observed": {
+        "course_deleted": true,
+        "logged_out": true
+      }
+    }
+  ]
+}

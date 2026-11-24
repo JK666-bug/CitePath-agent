@@ -1,0 +1,34 @@
+[
+  {
+    "scenario": "feasible",
+    "status": "saved",
+    "before": [
+      "practice-4",
+      "reading-4",
+      "review-4"
+    ],
+    "after": [
+      "practice-4",
+      "reading-4"
+    ],
+    "removed": [
+      "review-4"
+    ]
+  },
+  {
+    "scenario": "insufficient_capacity",
+    "status": "needs_input",
+    "before": [
+      "practice-4",
+      "reading-4",
+      "review-4"
+    ],
+    "after": [
+      "practice-4",
+      "reading-4"
+    ],
+    "removed": [
+      "review-4"
+    ]
+  }
+]
